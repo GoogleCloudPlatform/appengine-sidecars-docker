@@ -81,10 +81,6 @@ func StartSync(ctx netcontext.Context, bindingAddr string) error {
 
 // Close shuts down the listener.
 func (p *Proxy) Close() error {
-	// Note using channel to signal a close action rather than
-	// using the usual google3 pattern of a Context because it is
-	// important to avoid google3 dependencies on this code what
-	// must run in a managed VM environment.
 	response := make(chan error, 1)
 	p.close <- response
 	return <-response
