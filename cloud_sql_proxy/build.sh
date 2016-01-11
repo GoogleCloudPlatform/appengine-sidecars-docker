@@ -26,6 +26,6 @@ git -C $DEST checkout 1274cd3d89ac8826e1882355d60ffb2a0cdff116
 go get github.com/GoogleCloudPlatform/cloudsql-proxy/...
 echo "Building in $DEST"
 
-go build -o cloud_sql_proxy github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy/
+CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o cloud_sql_proxy github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy/
 
 echo "Done, your binary is here ./cloud_sql_proxy"
