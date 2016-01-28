@@ -12,7 +12,7 @@ You may obtain a copy of the License at
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- */
+*/
 
 // Package dtog is a proxy that provides a memcached network protocol
 // connection to the App Engine memcache_service.
@@ -28,9 +28,9 @@ import (
 	"strconv"
 
 	"github.com/golang/protobuf/proto"
+	netcontext "golang.org/x/net/context"
 	gaeint "google.golang.org/appengine/notreallyinternal"
 	pb "google.golang.org/appengine/notreallyinternal/memcache"
-	netcontext "golang.org/x/net/context"
 )
 
 // Proxy is the proxy server running on some host:port Address.
@@ -475,6 +475,9 @@ func (s *streams) incr(decrement bool, args ...[]byte) error {
 		}
 		if res.NewValue != nil {
 			s.out.printfLn("%d", *res.NewValue)
+		} else {
+			// This is a case of missing value.
+			s.out.printfLn("NOT_FOUND")
 		}
 	}
 	return nil
