@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright 2007 Google Inc.
+# Copyright 2014 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ from google.appengine.ext.vmruntime import vmstub
 def GetMetadata(attr):
   """Get metadata by key."""
   req = urllib2.Request(
-      'http://metadata/computeMetadata/v1/instance/attributes/%s' % (attr))
+      'http://metadata/computeMetadata/v1/instance/attributes/%s' % attr)
   req.add_header('Metadata-Flavor', 'Google')
   return urllib2.urlopen(req).read()
 
@@ -67,7 +67,8 @@ def VerifyApi():
   """
   stub = vmstub.VMStub()
   apiproxy_stub_map.apiproxy = apiproxy_stub_map.APIProxyStubMap(stub)
-  for _ in xrange(120):
+  start = time.time()
+  while True:
     try:
       num_instances = modules.get_num_instances()
       print 'number of instances: ', num_instances
@@ -75,7 +76,8 @@ def VerifyApi():
     except Exception as e:  # pylint: disable=broad-except
       print 'API is not available yet because of exception:', e
     time.sleep(1)
-  sys.exit(1)
+    if time.time() > start + 120:
+      sys.exit(1)
 
 
 if __name__ == '__main__':
