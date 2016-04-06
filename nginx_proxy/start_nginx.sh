@@ -13,12 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+CERT_DIR=/etc/ssl/localcerts
+KEY_FILE=${CERT_DIR}/lb.key
+CSR_FILE=${CERT_DIR}/lb.csr
+CRT_FILE=${CERT_DIR}/lb.crt
+
 if [[ -n ${GAE_EXTRA_NGINX_CONFS} ]]; then
   for conf in ${GAE_EXTRA_NGINX_CONFS}; do
     if [[ -f /var/lib/nginx/optional/${conf} ]]; then
       cp /var/lib/nginx/optional/${conf}  /var/lib/nginx/extra
     fi
   done
+fi
+
+mkdir -p ${CERT_DIR}
+if [[ ! -f ${KEY_FILE} ]]; then
+  rm -f ${CSR_FILE} ${CRT_FILE}
+  openssl genrsa -out ${KEY_FILE} 2048
+  openssl req -new -key ${KEY_FILE} -out ${CSR_FILE} -subj "/"
+  openssl x509 -req -in ${CSR_FILE} -signkey ${KEY_FILE} -out ${CRT_FILE}
 fi
 
 if [[ -f ${CONF_FILE} ]]; then
