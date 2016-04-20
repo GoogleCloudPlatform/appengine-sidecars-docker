@@ -33,6 +33,12 @@ import (
 	pb "google.golang.org/appengine/notreallyinternal/memcache"
 )
 
+const (
+	// Max App Engine Memcache value size (10^6 bytes).
+	// https://cloud.google.com/appengine/docs/python/memcache/
+	maxMemcacheValueSize = 1000000
+)
+
 // Proxy is the proxy server running on some host:port Address.
 type Proxy struct {
 	BindingAddr string
@@ -192,7 +198,9 @@ const (
 // serveConn is the main loop serving one connection to the proxy.
 func serveConn(conn net.Conn, ctx netcontext.Context) {
 	defer conn.Close()
-	s := &streams{ctx, bufio.NewReader(conn), &lineWriter{*bufio.NewWriter(conn)}}
+	// Use a larger buffer than default to help reading larger memcache
+	// values, which can go up to 10^6 bytes (1Mb).
+	s := &streams{ctx, bufio.NewReaderSize(conn, 65535), &lineWriter{*bufio.NewWriter(conn)}}
 	for {
 		line, err := s.in.ReadBytes('\n')
 		if err != nil {
@@ -371,6 +379,16 @@ func unpackFirstStorageCmdArgs(args ...[]byte) (key []byte, flags uint32,
 		return
 	}
 	bytes = uint32(bytesUpc)
+	// Make sure we only accept up to 1000000 bytes to read (max value size
+	// for App Engine cache). Other parts of the code will allocate memory
+	// based on this number and this will only fail once we actually hit
+	// App Engine Memcache.
+	if bytes > maxMemcacheValueSize {
+		err = clientError{"bad command line format",
+			fmt.Sprintf("Value size should not be greater than %d, but got %d.",
+				maxMemcacheValueSize, bytes)}
+		return
+	}
 	return
 }
 
@@ -486,7 +504,9 @@ func (s *streams) incr(decrement bool, args ...[]byte) error {
 func (s *streams) readValue(expectedLen uint32) ([]byte, error) {
 	terminatedLen := expectedLen + 2 // + 2 for \r\n
 	value := make([]byte, terminatedLen)
-	n, err := s.in.Read(value)
+
+	// ReadFull guarantees that it reads until the end of the value buffer.
+	n, err := io.ReadFull(s.in, value)
 	if err != nil {
 		return nil, clientError{"bad command line format",
 			fmt.Sprintf("reading value %v", err),
