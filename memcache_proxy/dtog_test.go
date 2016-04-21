@@ -50,7 +50,6 @@ func generateString(n int, r rune) string {
 }
 
 var maxMemcachePayloadValue = generateString(1000000, 'a')
-var overMaxMemcachePayloadValue = generateString(1000001, 'a')
 
 // Read lines from connection, folding in errors with responses and
 // returning special markers for timeout and EOF.
@@ -445,14 +444,6 @@ func TestAll(t *testing.T) {
 			}),
 			"set aMaxPayloadKey 111 3600 " + strconv.Itoa(len(maxMemcachePayloadValue)) + "\r\n" + maxMemcachePayloadValue + "\r\n",
 			[]string{},
-		},
-		{"set request over max memcache size ",
-			setNeverCalled,
-			"set aOverMaxPayloadKey 111 3600 " + strconv.Itoa(len(overMaxMemcachePayloadValue)) + "\r\n" + overMaxMemcachePayloadValue + "\r\n",
-			[]string{
-				"CLIENT_ERROR MEMCACHED_E2BIG\r\n",
-				timeoutMarker,
-			},
 		},
 		{"set request with whitespace",
 			fakeSetContext(t, func(req *pb.MemcacheSetRequest, _ *pb.MemcacheSetResponse) {

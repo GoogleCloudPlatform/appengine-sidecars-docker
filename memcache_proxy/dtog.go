@@ -33,12 +33,6 @@ import (
 	pb "google.golang.org/appengine/notreallyinternal/memcache"
 )
 
-const (
-	// Max App Engine Memcache value size (10^6 bytes).
-	// https://cloud.google.com/appengine/docs/python/memcache/
-	maxMemcacheValueSize = 1000000
-)
-
 // Proxy is the proxy server running on some host:port Address.
 type Proxy struct {
 	BindingAddr string
@@ -379,16 +373,6 @@ func unpackFirstStorageCmdArgs(args ...[]byte) (key []byte, flags uint32,
 		return
 	}
 	bytes = uint32(bytesUpc)
-	// Make sure we only accept up to 1000000 bytes to read (max value size
-	// for App Engine cache). Other parts of the code will allocate memory
-	// based on this number and this will only fail once we actually hit
-	// App Engine Memcache.
-	if bytes > maxMemcacheValueSize {
-		err = clientError{"MEMCACHED_E2BIG",
-			fmt.Sprintf("Value size should not be greater than %d, but got %d.",
-				maxMemcacheValueSize, bytes)}
-		return
-	}
 	return
 }
 
