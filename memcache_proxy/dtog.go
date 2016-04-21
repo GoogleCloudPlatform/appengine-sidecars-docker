@@ -384,7 +384,7 @@ func unpackFirstStorageCmdArgs(args ...[]byte) (key []byte, flags uint32,
 	// based on this number and this will only fail once we actually hit
 	// App Engine Memcache.
 	if bytes > maxMemcacheValueSize {
-		err = clientError{"bad command line format",
+		err = clientError{"MEMCACHED_E2BIG",
 			fmt.Sprintf("Value size should not be greater than %d, but got %d.",
 				maxMemcacheValueSize, bytes)}
 		return

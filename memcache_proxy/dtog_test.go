@@ -450,7 +450,7 @@ func TestAll(t *testing.T) {
 			setNeverCalled,
 			"set aOverMaxPayloadKey 111 3600 " + strconv.Itoa(len(overMaxMemcachePayloadValue)) + "\r\n" + overMaxMemcachePayloadValue + "\r\n",
 			[]string{
-				"CLIENT_ERROR bad command line format\r\n",
+				"CLIENT_ERROR MEMCACHED_E2BIG\r\n",
 				timeoutMarker,
 			},
 		},
