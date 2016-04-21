@@ -12,7 +12,7 @@ You may obtain a copy of the License at
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- */
+*/
 
 package dtog
 
@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -39,6 +40,16 @@ const (
 	// Binding Addr for testing purposes.
 	bindingAddr = "localhost:11211"
 )
+
+func generateString(n int, r rune) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = r
+	}
+	return string(b)
+}
+
+var maxMemcachePayloadValue = generateString(1000000, 'a')
 
 // Read lines from connection, folding in errors with responses and
 // returning special markers for timeout and EOF.
@@ -407,6 +418,31 @@ func TestAll(t *testing.T) {
 				}
 			}),
 			"set aKey 111 3600 10\r\nsome value\r\n",
+			[]string{},
+		},
+		{"set request max memcache size ",
+			fakeSetContext(t, func(req *pb.MemcacheSetRequest, _ *pb.MemcacheSetResponse) {
+				serviceCalled = true
+				// Test request.
+				want := &pb.MemcacheSetRequest{
+					NameSpace: proto.String(""),
+					Item: []*pb.MemcacheSetRequest_Item{
+						&pb.MemcacheSetRequest_Item{
+							Key:            []byte("aMaxPayloadKey"),
+							Value:          []byte(maxMemcachePayloadValue),
+							Flags:          proto.Uint32(111),
+							SetPolicy:      pb.MemcacheSetRequest_SET.Enum(),
+							ExpirationTime: proto.Uint32(3600),
+						},
+					},
+				}
+				if !proto.Equal(req, want) {
+					t.Errorf("got  <%s>\nwant <%s>",
+						proto.MarshalTextString(req),
+						proto.MarshalTextString(want))
+				}
+			}),
+			"set aMaxPayloadKey 111 3600 " + strconv.Itoa(len(maxMemcachePayloadValue)) + "\r\n" + maxMemcachePayloadValue + "\r\n",
 			[]string{},
 		},
 		{"set request with whitespace",

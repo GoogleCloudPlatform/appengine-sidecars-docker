@@ -192,7 +192,9 @@ const (
 // serveConn is the main loop serving one connection to the proxy.
 func serveConn(conn net.Conn, ctx netcontext.Context) {
 	defer conn.Close()
-	s := &streams{ctx, bufio.NewReader(conn), &lineWriter{*bufio.NewWriter(conn)}}
+	// Use a larger buffer than default to help reading larger memcache
+	// values, which can go up to 10^6 bytes (1Mb).
+	s := &streams{ctx, bufio.NewReaderSize(conn, 65535), &lineWriter{*bufio.NewWriter(conn)}}
 	for {
 		line, err := s.in.ReadBytes('\n')
 		if err != nil {
@@ -486,7 +488,9 @@ func (s *streams) incr(decrement bool, args ...[]byte) error {
 func (s *streams) readValue(expectedLen uint32) ([]byte, error) {
 	terminatedLen := expectedLen + 2 // + 2 for \r\n
 	value := make([]byte, terminatedLen)
-	n, err := s.in.Read(value)
+
+	// ReadFull guarantees that it reads until the end of the value buffer.
+	n, err := io.ReadFull(s.in, value)
 	if err != nil {
 		return nil, clientError{"bad command line format",
 			fmt.Sprintf("reading value %v", err),
