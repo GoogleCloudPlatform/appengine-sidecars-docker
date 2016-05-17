@@ -2,7 +2,7 @@
 # docker run -d -v /var/log:/var/log:rw -v /var/lib/docker:/var/lib/docker:rw
 FROM gcr.io/google_appengine/base
 RUN apt-get -q update && \
-    apt-get -y install apt-utils adduser ca-certificates curl lsb-release && \
+    apt-get -y install apt-utils adduser ca-certificates curl lsb-release build-essential && \
     apt-get clean && \
     rm /var/lib/apt/lists/*_*
 
