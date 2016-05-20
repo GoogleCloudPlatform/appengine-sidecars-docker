@@ -13,6 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+CERT_DIR=/etc/ssl/localcerts
+KEY_FILE=${CERT_DIR}/lb.key
+CSR_FILE=${CERT_DIR}/lb.csr
+CRT_FILE=${CERT_DIR}/lb.crt
+
+mkdir -p ${CERT_DIR}
+if [[ ! -f "${KEY_FILE}" ]]; then
+  rm -f ${CSR_FILE} ${CRT_FILE}
+  openssl genrsa -out ${KEY_FILE} 2048
+  openssl req -new -key ${KEY_FILE} -out ${CSR_FILE} -subj "/"
+  openssl x509 -req -in ${CSR_FILE} -signkey ${KEY_FILE} -out ${CRT_FILE}
+fi
+
 if [[ -n ${GAE_EXTRA_NGINX_CONFS} ]]; then
   for conf in ${GAE_EXTRA_NGINX_CONFS}; do
     if [[ -f /var/lib/nginx/optional/${conf} ]]; then
@@ -21,9 +34,12 @@ if [[ -n ${GAE_EXTRA_NGINX_CONFS} ]]; then
   done
 fi
 
-if [[ -f ${CONF_FILE} ]]; then
-  cp ${CONF_FILE} /etc/nginx/nginx.conf
+# Start crond so that log rotation works.
+/usr/sbin/service cron restart
+
+# use the override nginx.conf if there is one.
+if [[ -f "${CONF_FILE}" ]]; then
+  cp "${CONF_FILE}" /etc/nginx/nginx.conf
 fi
 
-/usr/sbin/nginx
-
+/usr/sbin/nginx -p /usr -c /etc/nginx/nginx.conf
