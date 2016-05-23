@@ -1,6 +1,6 @@
 # Nginx Proxy that forwards requests into the appengine application.
 
-FROM gcr.io/google-appengine/base
+FROM gcr.io/google_appengine/base
 
 # Add the Cloud SDK distribution URI as a package source
 # Import the Google Cloud public key
