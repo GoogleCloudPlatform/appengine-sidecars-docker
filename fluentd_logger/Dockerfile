@@ -17,6 +17,8 @@ ADD managed_vms.conf /etc/google-fluentd/google-fluentd.conf
 
 CMD []
 
+EXPOSE 24224
+
 ENTRYPOINT ["/opt/google-fluentd/embedded/bin/ruby", \
             "/usr/sbin/google-fluentd", \
             "--log", "/var/log/google-fluentd/google-fluentd.log"]
