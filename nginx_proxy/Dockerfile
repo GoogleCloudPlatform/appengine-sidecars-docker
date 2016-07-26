@@ -14,7 +14,7 @@ RUN apt-get -q update && \
     curl --silent https://packages.cloud.google.com/apt/doc/apt-key.gpg \
         | apt-key add - && \
     apt-get update && \
-    apt-get install -y endpoints-runtime && \
+    apt-get install -y cron python endpoints-runtime && \
     apt-get clean && \
     rm /var/lib/apt/lists/*_*
 
