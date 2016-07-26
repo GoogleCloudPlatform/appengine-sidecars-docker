@@ -18,8 +18,8 @@ KEY_FILE=${CERT_DIR}/lb.key
 CSR_FILE=${CERT_DIR}/lb.csr
 CRT_FILE=${CERT_DIR}/lb.crt
 
-SERVICE_NAME=''
-SERVICE_VERSION=''
+ENDPOINTS_SERVICE_NAME=''
+ENDPOINTS_SERVICE_VERSION=''
 
 usage () {
   cat << END_USAGE
@@ -31,7 +31,7 @@ configuration is already provided on disk:
 $(command basename $0)
 (2) Starts nginx with a custom Endpoints service name and service version, and
 have nginx obtain the service configuration:
-$(command basename $0) -n SERVICE_NAME -v SERVICE_VERSION
+$(command basename $0) -n ENDPOINTS_SERVICE_NAME -v ENDPOINTS_SERVICE_VERSION
 Options:
     -h
         Shows this message.
@@ -42,15 +42,15 @@ Options:
         Required. The version of the Endpoints Service which is assigned
         when deploying the service API specification.
         e.g. 2016-04-20R662
-dd    -
+    -
 END_USAGE
   exit 1
 }
 while getopts 'ha:n:N:p:S:s:v:' arg; do
   case ${arg} in
     h) usage;;
-    n) SERVICE_NAME="${OPTARG}";;
-    v) SERVICE_VERSION="${OPTARG}";;
+    n) ENDPOINTS_SERVICE_NAME="${OPTARG}";;
+    v) ENDPOINTS_SERVICE_VERSION="${OPTARG}";;
     ?) usage;;
   esac
 done
@@ -81,9 +81,10 @@ fi
 
 # fetch Service Configuration from Service Management if the service name and
 # service version are provided.
-if [[ -n "${SERVICE_NAME}" && -n "${SERVICE_VERSION}" ]]; then
+if [[ -n "${ENDPOINTS_SERVICE_NAME}" && \
+      -n "${ENDPOINTS_SERVICE_VERSION}" ]]; then
   /usr/sbin/fetch_service_config.sh \
-    -s "${SERVICE_NAME}" -v "${SERVICE_VERSION}" || exit $?
+    -s "${ENDPOINTS_SERVICE_NAME}" -v "${ENDPOINTS_SERVICE_VERSION}" || exit $?
 fi
 
 /usr/sbin/nginx -p /usr -c /etc/nginx/nginx.conf
