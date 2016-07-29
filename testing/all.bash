@@ -22,6 +22,7 @@
 # nginx_proxy
 ####
 
+pwd
 if [ $(basename $PWD) != appengine-sidecars-docker ]; then
   echo "This script should be run from the appengine-sidecars-docker directory."
   exit 1
