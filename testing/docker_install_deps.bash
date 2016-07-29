@@ -19,8 +19,8 @@ set -e -x
 
 ####### Install Go
 
-mkdir -p /gotmp
-pushd /gotmp
+mkdir -p /tmp
+pushd /tmp
 
 GOROOT="${GOROOT:-/usr/local/go}"
 GO_VERSION="${GO_VERSION:-1.6.3}"
