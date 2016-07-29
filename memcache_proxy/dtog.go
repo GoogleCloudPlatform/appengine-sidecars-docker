@@ -246,6 +246,8 @@ func (s *streams) demux(command string, args ...[]byte) error {
 		return s.flush(args...)
 	case "stats":
 		return s.stats()
+	case "version":
+		return s.version()
 	default:
 		return serverError{fmt.Errorf("unimplemented command")}
 	}
@@ -672,5 +674,12 @@ func (s *streams) stats() error {
 		s.out.printfLn("STAT oldest_item_age %d", res.Stats.GetOldestItemAge())
 	}
 	s.out.printLn([]byte("END"))
+	return nil
+}
+
+// version handles the "version" command on the memcached socket and
+// returns "not implemented" as this proxy is not versioned.
+func (s *streams) version() error {
+	s.out.printfLn("VERSION not implemented")
 	return nil
 }
