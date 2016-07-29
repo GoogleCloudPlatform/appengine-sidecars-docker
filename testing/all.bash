@@ -37,6 +37,12 @@ go env
 GO_PKGS=$(go list -v github.com/GoogleCloudPlatform/appengine-sidecars-docker/... | grep -v memcache_proxy)
 go test -v $GO_PKGS
 
+#### go vet, go fmt, etc.
+
+# NOTE(cbro): vet has false positives. If a check fails, consider removing this or ignoring that check.
+go vet ./...
+diff -u <(echo -n) <(gofmt -d -s .)
+
 #### Build Cloud SQL
 
 pushd cloud_sql_proxy
