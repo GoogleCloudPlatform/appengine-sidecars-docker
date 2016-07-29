@@ -783,6 +783,14 @@ func TestAll(t *testing.T) {
 				timeoutMarker,
 			},
 		},
+		{"version request",
+			nil,
+			"version\r\n",
+			[]string{
+				"VERSION App Engine\r\n",
+				timeoutMarker,
+			},
+		},
 	}
 
 	for i, test := range tests {
