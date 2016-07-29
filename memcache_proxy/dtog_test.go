@@ -787,7 +787,7 @@ func TestAll(t *testing.T) {
 			nil,
 			"version\r\n",
 			[]string{
-				"VERSION not implemented\r\n",
+				"VERSION App Engine\r\n",
 				timeoutMarker,
 			},
 		},

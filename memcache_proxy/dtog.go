@@ -678,8 +678,8 @@ func (s *streams) stats() error {
 }
 
 // version handles the "version" command on the memcached socket and
-// returns "not implemented" as this proxy is not versioned.
+// returns "App Engine" as this proxy is not versioned.
 func (s *streams) version() error {
-	s.out.printfLn("VERSION not implemented")
+	s.out.printfLn("VERSION App Engine")
 	return nil
 }
