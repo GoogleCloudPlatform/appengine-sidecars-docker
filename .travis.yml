@@ -1,0 +1,11 @@
+matrix:
+  include:
+  - env: GO_VERSION=1.6.3
+  - env: GO_VERSION=1.7rc3
+
+install:
+- testing/docker_install_deps.bash
+- export PATH=$PATH:/usr/local/go/bin
+
+script:
+- testing/all.bash
