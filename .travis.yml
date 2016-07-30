@@ -11,6 +11,8 @@ matrix:
 
 before_install:
 - pwd
+- export GOROOT=$HOME/.go
+- mkdir -p $GOROOT
 - export GOPATH=$HOME
 - mkdir -p $GOPATH/src/github.com/GoogleCloudPlatform
 - cd .. && mv appengine-sidecars-docker $GOPATH/src/github.com/GoogleCloudPlatform
@@ -18,7 +20,7 @@ before_install:
 
 install:
 - testing/docker_install_deps.bash
-- export PATH=$PATH:/usr/local/go/bin
+- export PATH=$GOROOT/bin:$PATH
 
 script:
 - testing/all.bash
