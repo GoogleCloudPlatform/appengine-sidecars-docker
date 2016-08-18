@@ -317,7 +317,7 @@ func (s *streams) delete(args ...[]byte) error {
 	noreply := length == 2
 
 	items := []*pb.MemcacheDeleteRequest_Item{
-		&pb.MemcacheDeleteRequest_Item{Key: args[0]},
+		{Key: args[0]},
 	}
 
 	req := &pb.MemcacheDeleteRequest{
@@ -539,7 +539,7 @@ func (s *streams) store(policy storePolicy, args ...[]byte) error {
 	req := &pb.MemcacheSetRequest{
 		NameSpace: proto.String(""),
 		Item: []*pb.MemcacheSetRequest_Item{
-			&pb.MemcacheSetRequest_Item{
+			{
 				Key:            key,
 				Value:          value,
 				Flags:          &flags,
@@ -583,7 +583,7 @@ func (s *streams) cas(args ...[]byte) error {
 	req := &pb.MemcacheSetRequest{
 		NameSpace: proto.String(""),
 		Item: []*pb.MemcacheSetRequest_Item{
-			&pb.MemcacheSetRequest_Item{
+			{
 				Key:            key,
 				Value:          value,
 				Flags:          &flags,
