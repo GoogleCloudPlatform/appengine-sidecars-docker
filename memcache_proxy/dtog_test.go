@@ -402,7 +402,7 @@ func TestAll(t *testing.T) {
 				want := &pb.MemcacheSetRequest{
 					NameSpace: proto.String(""),
 					Item: []*pb.MemcacheSetRequest_Item{
-						&pb.MemcacheSetRequest_Item{
+						{
 							Key:            []byte("aKey"),
 							Value:          []byte("some value"),
 							Flags:          proto.Uint32(111),
@@ -427,7 +427,7 @@ func TestAll(t *testing.T) {
 				want := &pb.MemcacheSetRequest{
 					NameSpace: proto.String(""),
 					Item: []*pb.MemcacheSetRequest_Item{
-						&pb.MemcacheSetRequest_Item{
+						{
 							Key:            []byte("aMaxPayloadKey"),
 							Value:          []byte(maxMemcachePayloadValue),
 							Flags:          proto.Uint32(111),
@@ -452,7 +452,7 @@ func TestAll(t *testing.T) {
 				want := &pb.MemcacheSetRequest{
 					NameSpace: proto.String(""),
 					Item: []*pb.MemcacheSetRequest_Item{
-						&pb.MemcacheSetRequest_Item{
+						{
 							Key:            []byte("anotherKey"),
 							Value:          []byte("ANOTHER VALUE"),
 							Flags:          proto.Uint32(22222),
@@ -552,7 +552,7 @@ func TestAll(t *testing.T) {
 				want := &pb.MemcacheSetRequest{
 					NameSpace: proto.String(""),
 					Item: []*pb.MemcacheSetRequest_Item{
-						&pb.MemcacheSetRequest_Item{
+						{
 							Key:            []byte("aKey"),
 							Value:          []byte("some value"),
 							Flags:          proto.Uint32(111),
@@ -577,7 +577,7 @@ func TestAll(t *testing.T) {
 				want := &pb.MemcacheSetRequest{
 					NameSpace: proto.String(""),
 					Item: []*pb.MemcacheSetRequest_Item{
-						&pb.MemcacheSetRequest_Item{
+						{
 							Key:            []byte("aKey"),
 							Value:          []byte("some value"),
 							Flags:          proto.Uint32(111),
@@ -602,7 +602,7 @@ func TestAll(t *testing.T) {
 				want := &pb.MemcacheSetRequest{
 					NameSpace: proto.String(""),
 					Item: []*pb.MemcacheSetRequest_Item{
-						&pb.MemcacheSetRequest_Item{
+						{
 							Key:            []byte("aKey"),
 							Value:          []byte("some value"),
 							Flags:          proto.Uint32(111),
