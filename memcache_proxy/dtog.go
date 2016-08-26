@@ -670,6 +670,7 @@ func (s *streams) stats() error {
 		s.out.printfLn("STAT curr_items %d", res.Stats.GetItems())
 		s.out.printfLn("STAT bytes %d", res.Stats.GetBytes())
 		s.out.printfLn("STAT oldest_item_age %d", res.Stats.GetOldestItemAge())
+		s.out.printLn([]byte("STAT version not implemented"))
 	}
 	s.out.printLn([]byte("END"))
 	return nil
