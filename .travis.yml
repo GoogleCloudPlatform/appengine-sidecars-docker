@@ -1,0 +1,26 @@
+# Don't build other branches that are being used for PRs.
+# Currently only the master branch is used in this repo.
+branches:
+  only:
+    - master
+
+matrix:
+  include:
+  - env: GO_VERSION=1.6.3
+  - env: GO_VERSION=1.7rc3
+
+before_install:
+- pwd
+- export GOROOT=$HOME/.go
+- mkdir -p $GOROOT
+- export GOPATH=$HOME
+- mkdir -p $GOPATH/src/github.com/GoogleCloudPlatform
+- cd .. && mv appengine-sidecars-docker $GOPATH/src/github.com/GoogleCloudPlatform
+- cd $GOPATH/src/github.com/GoogleCloudPlatform/appengine-sidecars-docker
+
+install:
+- testing/docker_install_deps.bash
+- export PATH=$GOROOT/bin:$PATH
+
+script:
+- testing/all.bash

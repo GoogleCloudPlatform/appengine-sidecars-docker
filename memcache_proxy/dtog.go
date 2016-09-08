@@ -246,6 +246,8 @@ func (s *streams) demux(command string, args ...[]byte) error {
 		return s.flush(args...)
 	case "stats":
 		return s.stats()
+	case "version":
+		return s.version()
 	default:
 		return serverError{fmt.Errorf("unimplemented command")}
 	}
@@ -315,7 +317,7 @@ func (s *streams) delete(args ...[]byte) error {
 	noreply := length == 2
 
 	items := []*pb.MemcacheDeleteRequest_Item{
-		&pb.MemcacheDeleteRequest_Item{Key: args[0]},
+		{Key: args[0]},
 	}
 
 	req := &pb.MemcacheDeleteRequest{
@@ -537,7 +539,7 @@ func (s *streams) store(policy storePolicy, args ...[]byte) error {
 	req := &pb.MemcacheSetRequest{
 		NameSpace: proto.String(""),
 		Item: []*pb.MemcacheSetRequest_Item{
-			&pb.MemcacheSetRequest_Item{
+			{
 				Key:            key,
 				Value:          value,
 				Flags:          &flags,
@@ -581,7 +583,7 @@ func (s *streams) cas(args ...[]byte) error {
 	req := &pb.MemcacheSetRequest{
 		NameSpace: proto.String(""),
 		Item: []*pb.MemcacheSetRequest_Item{
-			&pb.MemcacheSetRequest_Item{
+			{
 				Key:            key,
 				Value:          value,
 				Flags:          &flags,
@@ -673,5 +675,12 @@ func (s *streams) stats() error {
 		s.out.printLn([]byte("STAT version not implemented"))
 	}
 	s.out.printLn([]byte("END"))
+	return nil
+}
+
+// version handles the "version" command on the memcached socket and
+// returns "App Engine" as this proxy is not versioned.
+func (s *streams) version() error {
+	s.out.printfLn("VERSION App Engine")
 	return nil
 }
