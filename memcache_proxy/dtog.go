@@ -184,6 +184,7 @@ func (e serverError) writeTo(s *streams) {
 type storePolicy int
 
 const (
+	proxyVersion = "App Engine"
 	set storePolicy = iota
 	add
 	replace
@@ -672,7 +673,7 @@ func (s *streams) stats() error {
 		s.out.printfLn("STAT curr_items %d", res.Stats.GetItems())
 		s.out.printfLn("STAT bytes %d", res.Stats.GetBytes())
 		s.out.printfLn("STAT oldest_item_age %d", res.Stats.GetOldestItemAge())
-		s.out.printLn([]byte("STAT version not implemented"))
+		s.out.printfLn("STAT version %s", proxyVersion)
 	}
 	s.out.printLn([]byte("END"))
 	return nil
@@ -681,6 +682,6 @@ func (s *streams) stats() error {
 // version handles the "version" command on the memcached socket and
 // returns "App Engine" as this proxy is not versioned.
 func (s *streams) version() error {
-	s.out.printfLn("VERSION App Engine")
+	s.out.printfLn("VERSION %s", proxyVersion)
 	return nil
 }
