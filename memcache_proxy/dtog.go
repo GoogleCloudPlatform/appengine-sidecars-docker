@@ -184,8 +184,9 @@ func (e serverError) writeTo(s *streams) {
 type storePolicy int
 
 const (
-	proxyVersion             = "App Engine"
-	set          storePolicy = iota
+	proxyVersion = "App Engine"
+
+	set storePolicy = iota
 	add
 	replace
 )
