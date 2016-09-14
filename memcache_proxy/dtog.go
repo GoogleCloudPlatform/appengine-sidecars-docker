@@ -185,7 +185,7 @@ type storePolicy int
 
 const (
 	proxyVersion = "App Engine"
-	set storePolicy = iota
+	storePolicy  = iota
 	add
 	replace
 )
