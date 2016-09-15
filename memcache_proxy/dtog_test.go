@@ -749,6 +749,7 @@ func TestAll(t *testing.T) {
 				"STAT curr_items 444\r\n",
 				"STAT bytes 555\r\n",
 				"STAT oldest_item_age 666\r\n",
+				"STAT version App Engine\r\n",
 				"END\r\n",
 				timeoutMarker,
 			},
