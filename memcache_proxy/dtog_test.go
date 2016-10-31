@@ -37,8 +37,8 @@ const (
 	timeoutMarker = "-----timeout-----"
 	eofMarker     = "-----eof-----"
 
-	// Binding Addr for testing purposes.
-	bindingAddr = "localhost:11211"
+	// Listen on a random port.
+	bindingAddr = "localhost:0"
 )
 
 func generateString(n int, r rune) string {
@@ -98,7 +98,7 @@ func sendCommand(ctx netcontext.Context, command string, expectedLines int) []st
 	}()
 
 	// Open connection to the proxy.
-	conn, err := net.Dial("tcp", proxy.BindingAddr)
+	conn, err := net.Dial("tcp", proxy.ln.Addr().String())
 	if err != nil {
 		log.Fatal(err)
 	}

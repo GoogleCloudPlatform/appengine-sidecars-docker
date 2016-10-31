@@ -38,5 +38,5 @@ go build -o memcachep main/memcached2g.go
 echo "Testing in $DEST"
 go test $DEST/dtog/dtog.go $DEST/dtog/dtog_test.go
 
-echo "Done, you binary is here ./memcachep"
+echo "Done, your binary is here ./memcachep"
 
