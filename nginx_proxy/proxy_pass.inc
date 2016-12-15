@@ -11,4 +11,3 @@ proxy_set_header X-Google-Real-IP $remote_addr;
 # 86400 seconds (24 hours) is the maximum a server is allowed.
 proxy_send_timeout 86400s;
 proxy_read_timeout 86400s;
-

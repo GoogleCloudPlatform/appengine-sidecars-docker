@@ -37,8 +37,8 @@ const (
 	timeoutMarker = "-----timeout-----"
 	eofMarker     = "-----eof-----"
 
-	// Binding Addr for testing purposes.
-	bindingAddr = "localhost:11211"
+	// Listen on a random port.
+	bindingAddr = "localhost:0"
 )
 
 func generateString(n int, r rune) string {
@@ -98,7 +98,7 @@ func sendCommand(ctx netcontext.Context, command string, expectedLines int) []st
 	}()
 
 	// Open connection to the proxy.
-	conn, err := net.Dial("tcp", proxy.BindingAddr)
+	conn, err := net.Dial("tcp", proxy.ln.Addr().String())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -402,7 +402,7 @@ func TestAll(t *testing.T) {
 				want := &pb.MemcacheSetRequest{
 					NameSpace: proto.String(""),
 					Item: []*pb.MemcacheSetRequest_Item{
-						&pb.MemcacheSetRequest_Item{
+						{
 							Key:            []byte("aKey"),
 							Value:          []byte("some value"),
 							Flags:          proto.Uint32(111),
@@ -427,7 +427,7 @@ func TestAll(t *testing.T) {
 				want := &pb.MemcacheSetRequest{
 					NameSpace: proto.String(""),
 					Item: []*pb.MemcacheSetRequest_Item{
-						&pb.MemcacheSetRequest_Item{
+						{
 							Key:            []byte("aMaxPayloadKey"),
 							Value:          []byte(maxMemcachePayloadValue),
 							Flags:          proto.Uint32(111),
@@ -452,7 +452,7 @@ func TestAll(t *testing.T) {
 				want := &pb.MemcacheSetRequest{
 					NameSpace: proto.String(""),
 					Item: []*pb.MemcacheSetRequest_Item{
-						&pb.MemcacheSetRequest_Item{
+						{
 							Key:            []byte("anotherKey"),
 							Value:          []byte("ANOTHER VALUE"),
 							Flags:          proto.Uint32(22222),
@@ -552,7 +552,7 @@ func TestAll(t *testing.T) {
 				want := &pb.MemcacheSetRequest{
 					NameSpace: proto.String(""),
 					Item: []*pb.MemcacheSetRequest_Item{
-						&pb.MemcacheSetRequest_Item{
+						{
 							Key:            []byte("aKey"),
 							Value:          []byte("some value"),
 							Flags:          proto.Uint32(111),
@@ -577,7 +577,7 @@ func TestAll(t *testing.T) {
 				want := &pb.MemcacheSetRequest{
 					NameSpace: proto.String(""),
 					Item: []*pb.MemcacheSetRequest_Item{
-						&pb.MemcacheSetRequest_Item{
+						{
 							Key:            []byte("aKey"),
 							Value:          []byte("some value"),
 							Flags:          proto.Uint32(111),
@@ -602,7 +602,7 @@ func TestAll(t *testing.T) {
 				want := &pb.MemcacheSetRequest{
 					NameSpace: proto.String(""),
 					Item: []*pb.MemcacheSetRequest_Item{
-						&pb.MemcacheSetRequest_Item{
+						{
 							Key:            []byte("aKey"),
 							Value:          []byte("some value"),
 							Flags:          proto.Uint32(111),
@@ -749,6 +749,7 @@ func TestAll(t *testing.T) {
 				"STAT curr_items 444\r\n",
 				"STAT bytes 555\r\n",
 				"STAT oldest_item_age 666\r\n",
+				"STAT version App Engine\r\n",
 				"END\r\n",
 				timeoutMarker,
 			},
@@ -780,6 +781,14 @@ func TestAll(t *testing.T) {
 			"\r\n", // Send a blank line
 			[]string{
 				"ERROR\r\n",
+				timeoutMarker,
+			},
+		},
+		{"version request",
+			nil,
+			"version\r\n",
+			[]string{
+				"VERSION App Engine\r\n",
 				timeoutMarker,
 			},
 		},

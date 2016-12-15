@@ -12,10 +12,9 @@ You may obtain a copy of the License at
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- */
+*/
 
-// main launches the memcache d/g proxy bridge with a context suitable
-// for managed VMs.
+// Command memcachep runs a memcache d/g proxy bridge for App Engine flexible environment.
 package main
 
 import (
@@ -24,20 +23,32 @@ import (
 	"os"
 
 	"dtog"
+
 	gaeint "google.golang.org/appengine/notreallyinternal"
 )
 
+const (
+	applicationEnv = "GAE_LONG_APP_ID"
+	moduleEnv      = "GAE_MODULE_NAME"
+	versionEnv     = "GAE_MODULE_VERSION"
+	instanceEnv    = "GAE_MODULE_INSTANCE"
+
+	apiHostEnv = "API_HOST"
+	apiPortEnv = "API_PORT"
+)
+
 var (
-	bindingAddr = flag.String("binding_address", "localhost:11211",
-		"host:port the memcached daemon will listen on. For example 0.0.0.0:11211.")
-	application = flag.String("application", "", "app ID override")
-	module      = flag.String("module", "", "module override")
-	version     = flag.String("version", "", "major version override")
-	instance    = flag.String("instance", "", "instance override")
-	apiHost     = flag.String("api_host", "appengine.googleapis.internal", "for dev, set to the 'localhost'")
-	apiPort     = flag.String("api_port", "10001",
-		"for dev, set to the <port>' as reported by dev_appserver: 'Starting API "+
-			"server at: http://localhost:<port>'")
+	addr = flag.String("binding_address", "localhost:11211", "Address to listen on.")
+
+	application = flag.String("application", os.Getenv(applicationEnv), "The GAE App ID.")
+	module      = flag.String("module", os.Getenv(moduleEnv), "The GAE Module ID.")
+	version     = flag.String("version", os.Getenv(versionEnv), "The GAE major version.")
+	instance    = flag.String("instance", os.Getenv(instanceEnv), "The GAE instance ID.")
+
+	apiHost = flag.String("api_host", getenvDefault(apiHostEnv, "appengine.googleapis.internal"),
+		"Host of the GAE API Server. For dev_appserver, use localhost.")
+	apiPort = flag.String("api_port", getenvDefault(apiPortEnv, "10001"),
+		"Port of the GAE API Server. For dev_appserver, use the reported when starting dev_appserver.")
 )
 
 func init() {
@@ -48,42 +59,32 @@ func init() {
 func main() {
 	flag.Parse()
 
-	// Apply the overrides.
-	// The final order of overrides will be:
-	// 1. those cmd line parameters
-	// 2. the matching standard GAE env variables (see below)
-	// 3. the VM metadata entries ("instance/attributes/gae_project" for example.)
-	if application != nil {
-		if err := os.Setenv("GAE_LONG_APP_ID", *application); err != nil {
-			panic(err)
-		}
-	}
-	if module != nil {
-		if err := os.Setenv("GAE_MODULE_NAME", *module); err != nil {
-			panic(err)
-		}
-	}
-	if version != nil {
-		if err := os.Setenv("GAE_MODULE_VERSION", *version); err != nil {
-			panic(err)
-		}
-	}
-	if instance != nil {
-		if err := os.Setenv("GAE_MODULE_INSTANCE", *instance); err != nil {
-			panic(err)
-		}
-	}
-	if apiHost != nil {
-		if err := os.Setenv("API_HOST", *apiHost); err != nil {
-			panic(err)
-		}
-	}
-	if apiPort != nil {
-		if err := os.Setenv("API_PORT", *apiPort); err != nil {
-			panic(err)
-		}
-	}
+	// Apply environment variable overrides, in order of preference:
+	// 1. Command-line flags.
+	// 2. Matching standard GAE env variables (see below)
+	// 3. VM metadata entries (e.g., "instance/attributes/gae_project")
+	mustSetenv(applicationEnv, *application)
+	mustSetenv(moduleEnv, *module)
+	mustSetenv(versionEnv, *version)
+	mustSetenv(instanceEnv, *instance)
+	mustSetenv(apiHostEnv, *apiHost)
+	mustSetenv(apiPortEnv, *apiPort)
+
 	ctx := gaeint.BackgroundContext()
-	err := dtog.StartSync(ctx, *bindingAddr) // should never return
-	log.Fatalf("problem with d/g proxy %v", err)
+	log.Fatalf("StartSync: %v", dtog.StartSync(ctx, *addr))
+}
+
+// getenvDefault returns the value of os.Getenv(k), or d if the environment variable does not exist.
+func getenvDefault(k, d string) string {
+	if v := os.Getenv(k); v != "" {
+		return v
+	}
+	return d
+}
+
+// mustSetenv sets an environment variable.
+func mustSetenv(k, v string) {
+	if err := os.Setenv(k, v); err != nil {
+		log.Fatalf("Setenv %s=%s: %v", k, v, err)
+	}
 }

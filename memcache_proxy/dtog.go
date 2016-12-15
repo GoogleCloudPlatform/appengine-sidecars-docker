@@ -184,6 +184,8 @@ func (e serverError) writeTo(s *streams) {
 type storePolicy int
 
 const (
+	proxyVersion = "App Engine"
+
 	set storePolicy = iota
 	add
 	replace
@@ -246,6 +248,8 @@ func (s *streams) demux(command string, args ...[]byte) error {
 		return s.flush(args...)
 	case "stats":
 		return s.stats()
+	case "version":
+		return s.version()
 	default:
 		return serverError{fmt.Errorf("unimplemented command")}
 	}
@@ -315,7 +319,7 @@ func (s *streams) delete(args ...[]byte) error {
 	noreply := length == 2
 
 	items := []*pb.MemcacheDeleteRequest_Item{
-		&pb.MemcacheDeleteRequest_Item{Key: args[0]},
+		{Key: args[0]},
 	}
 
 	req := &pb.MemcacheDeleteRequest{
@@ -537,7 +541,7 @@ func (s *streams) store(policy storePolicy, args ...[]byte) error {
 	req := &pb.MemcacheSetRequest{
 		NameSpace: proto.String(""),
 		Item: []*pb.MemcacheSetRequest_Item{
-			&pb.MemcacheSetRequest_Item{
+			{
 				Key:            key,
 				Value:          value,
 				Flags:          &flags,
@@ -581,7 +585,7 @@ func (s *streams) cas(args ...[]byte) error {
 	req := &pb.MemcacheSetRequest{
 		NameSpace: proto.String(""),
 		Item: []*pb.MemcacheSetRequest_Item{
-			&pb.MemcacheSetRequest_Item{
+			{
 				Key:            key,
 				Value:          value,
 				Flags:          &flags,
@@ -670,7 +674,15 @@ func (s *streams) stats() error {
 		s.out.printfLn("STAT curr_items %d", res.Stats.GetItems())
 		s.out.printfLn("STAT bytes %d", res.Stats.GetBytes())
 		s.out.printfLn("STAT oldest_item_age %d", res.Stats.GetOldestItemAge())
+		s.out.printfLn("STAT version %s", proxyVersion)
 	}
 	s.out.printLn([]byte("END"))
+	return nil
+}
+
+// version handles the "version" command on the memcached socket and
+// returns "App Engine" as this proxy is not versioned.
+func (s *streams) version() error {
+	s.out.printfLn("VERSION %s", proxyVersion)
 	return nil
 }
