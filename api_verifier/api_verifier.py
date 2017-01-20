@@ -76,7 +76,7 @@ def VerifyApi():
     except Exception as e:  # pylint: disable=broad-except
       print 'API is not available yet because of exception:', e
     time.sleep(1)
-    if time.time() > start + 120:
+    if time.time() > start + 900:
       sys.exit(1)
 
 
@@ -84,4 +84,3 @@ if __name__ == '__main__':
   if 'DEFAULT_TICKET' not in os.environ:
     os.environ['DEFAULT_TICKET'] = DefaultTicket()
   VerifyApi()
-
