@@ -35,7 +35,7 @@ module Fluent
         if record['stream'] == 'stderr'
           new_tag = stderr_tag
         end
-        Engine.emit(new_tag, time_sec, new_record)
+        router.emit(new_tag, time_sec, new_record)
       end
       next_chain.next
     end
