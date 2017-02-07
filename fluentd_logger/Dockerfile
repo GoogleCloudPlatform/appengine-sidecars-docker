@@ -8,8 +8,6 @@ RUN apt-get -q update && \
 
 RUN curl -s https://storage.googleapis.com/signals-agents/logging/google-fluentd-install.sh | DO_NOT_INSTALL_CATCH_ALL_CONFIG=1 bash
 
-RUN /usr/sbin/google-fluentd-gem install --conservative fluent-plugin-google-cloud:0.5.2
-
 # Add cloud agent driver
 ADD out_from_docker.rb /etc/google-fluentd/plugin/out_from_docker.rb
 
