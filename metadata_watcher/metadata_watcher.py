@@ -135,7 +135,7 @@ class MetadataWatcher(object):
     """Returns true if the process to watch metadata change is timeout."""
     if not timeout_seconds:
       return False
-    return time.time() >= self.start_time + timeout_seconds 
+    return time.time() >= self.start_time + timeout_seconds
 
   def GetAttribute(self, metadata_key, timeout_seconds=None):
     """Fetches the value of the given metadata key.
