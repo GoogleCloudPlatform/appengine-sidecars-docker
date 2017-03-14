@@ -167,11 +167,11 @@ class MetadataWatcher(object):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Set up metadata watcher.')
   parser.add_argument(
-      '--key', type=str, required=True, help='metadata key to be watched.')
+      '--key', type=str, required=True, help='Metadata key to be watched.')
   parser.add_argument(
-      '--timeout', type=int, required=False, help='number of seconds to watch.')
+      '--timeout', type=int, required=False, help='Number of seconds to watch.')
   parser.add_argument(
-      '--etag', type=str, required=False, help='etag in HTTP headers.')
+      '--etag', type=str, required=False, help='Etag in HTTP headers.')
   args = parser.parse_args()
 
   logger = logging.getLogger()
