@@ -7,8 +7,6 @@ RUN apt-get -q update && \
     rm /var/lib/apt/lists/*_*
 
 RUN curl -s https://storage.googleapis.com/signals-agents/logging/google-fluentd-install.sh | DO_NOT_INSTALL_CATCH_ALL_CONFIG=1 bash
-COPY fluent-plugin-google-cloud-0.5.4.gem /root/fluent.gem
-RUN /usr/sbin/google-fluentd-gem install --conservative --local /root/fluent.gem
 
 RUN /usr/sbin/google-fluentd-gem install --conservative fluent-plugin-google-cloud:0.6
 RUN /usr/sbin/google-fluentd-gem install --conservative fluent-plugin-detect-exceptions:0.0.5
