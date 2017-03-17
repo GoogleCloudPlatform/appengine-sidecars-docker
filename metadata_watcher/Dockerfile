@@ -1,4 +1,4 @@
-# Dockerfile extending the generic Python image to run an metadata watcher app.
+# Dockerfile extending the debian8 image to run an metadata watcher app.
 
 FROM gcr.io/google_appengine/debian8
 
