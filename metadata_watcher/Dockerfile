@@ -7,6 +7,7 @@ RUN apt-get install -y --no-install-recommends python python-pip
 RUN apt-get clean
 RUN pip install google-compute-engine
 
+RUN mkdir -p /home/vmagent/metadata_watcher
 WORKDIR /home/vmagent/metadata_watcher
 ADD metadata_watcher.py .
 ENTRYPOINT ["./metadata_watcher.py"]
