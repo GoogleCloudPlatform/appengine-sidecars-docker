@@ -2,9 +2,10 @@
 
 FROM gcr.io/google_appengine/debian8
 
-RUN apt-get update
-RUN apt-get install -y --no-install-recommends python python-pip
-RUN apt-get clean
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends python python-pip && \
+    apt-get clean
 RUN pip install google-compute-engine
 
 RUN mkdir -p /home/vmagent/metadata_watcher
