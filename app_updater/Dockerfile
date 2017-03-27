@@ -1,5 +1,5 @@
 # Dockerfile extending the debian8 image to run app_updater.py to check
-gae_full_app_container is available.
+# gae_full_app_container is available.
 
 FROM gcr.io/google_appengine/debian8
 
