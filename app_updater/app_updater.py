@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A tool for handling an instance attribute updates in the metadata server."""
+"""An agent for handling app container updates."""
 
 import argparse
 import logging
