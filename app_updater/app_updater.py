@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A tool for watching an instance attribute changes in the metadata server."""
+"""An agent for handling app container updates."""
 
 import argparse
 import logging
@@ -43,7 +43,7 @@ def _RetryIfValueIsEmptyHandler(value):
 
 
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser(description='Set up metadata watcher.')
+  parser = argparse.ArgumentParser(description='Set up app updater.')
   parser.add_argument(
       '--key', type=str, required=True, help='Metadata key to be watched.')
   parser.add_argument(
