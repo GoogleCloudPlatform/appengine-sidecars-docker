@@ -17,6 +17,7 @@
 
 import argparse
 import logging
+import os
 import signal
 import sys
 from google_compute_engine import metadata_watcher
@@ -48,18 +49,24 @@ if __name__ == '__main__':
       '--key', type=str, required=True, help='Metadata key to be watched.')
   parser.add_argument(
       '--timeout', type=int, required=False, help='Number of seconds to watch.')
+  parser.add_argument(
+      '--daemon', type=bool, required=False, help='Whether run as a daemon.')
   args = parser.parse_args()
 
   logger = logging.getLogger()
   logger.setLevel(logging.INFO)
 
-  timeout = args.timeout or 600
-  signal.signal(signal.SIGALRM, _ExitWithExceptionHandle)
-  signal.alarm(timeout)
+  if args.daemon:
+    while True:
+      pass
+  else:
+    timeout = args.timeout or 600
+    signal.signal(signal.SIGALRM, _ExitWithExceptionHandle)
+    signal.alarm(timeout)
 
-  watcher = metadata_watcher.MetadataWatcher()
-  watcher.WatchMetadata(_RetryIfValueIsEmptyHandler,
-                        metadata_key='instance/attributes/%s' % args.key,
-                        recursive=False,
-                        timeout=timeout)
+    watcher = metadata_watcher.MetadataWatcher()
+    watcher.WatchMetadata(_RetryIfValueIsEmptyHandler,
+                          metadata_key='instance/attributes/%s' % args.key,
+                          recursive=False,
+                          timeout=timeout)
 
