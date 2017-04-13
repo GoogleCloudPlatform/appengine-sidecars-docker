@@ -5,7 +5,8 @@ FROM gcr.io/google_appengine/debian8
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends python python-pip && \
+    apt-get install -y --no-install-recommends python python-pip curl && \
+    curl -fsSL https://get.docker.com/ | sh && \
     apt-get clean
 RUN pip install google-compute-engine
 
