@@ -1,1 +1,0 @@
-echo "Running IAP Verifier tests..."
