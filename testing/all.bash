@@ -56,3 +56,7 @@ pushd memcache_proxy
 ./build.sh
 popd
 
+#### Run tests for iap_verifier
+pushd iap_verifier
+./test.sh
+popd
