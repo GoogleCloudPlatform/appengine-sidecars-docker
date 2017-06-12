@@ -13,7 +13,7 @@ class TestIapVerifier(unittest.TestCase):
 	def testKeyFile(self):
 		iap_verifier.Main({
 			'key': 'AEF_IAP_state',
-			'output_state_file': cls.pathname_,
+			'output_state_file': self.pathname_,
 		})
 
 if __name__ == '__main__':
