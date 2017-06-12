@@ -29,7 +29,7 @@ def _ExitWithExceptionHandle(signum, frame):
   sys.exit(1)
 
 
-def _RetryIfValueIsEmptyHandler(value, output_file):
+def _RetryIfValueIsEmptyHandler(value, output_file, post_update):
   """Exits with 0 if the given value is not empty.
 
   Args:
@@ -41,19 +41,23 @@ def _RetryIfValueIsEmptyHandler(value, output_file):
     f = open(output_file, 'w')
     f.write(value)
     f.close()
-    # Cancel the alarm.
-    signal.alarm(0)
-    sys.exit(0)
+    post_update()
   else:
     logging.info('Retry due to empty value.')
 
+def _CleanExit():
+  # Cancel the alarm.
+  signal.alarm(0)
+  sys.exit(0)
 
-def Main(args, watcher=None):
+
+def Main(args, watcher=None, post_update=_CleanExit):
   """Runs the watcher.
 
   Args:
     args: map => [string, string], Command line arguments
     watcher: MetadataWatcher, used to stub out MetadataWatcher for testing.
+    post_update: function, what to do after the wach completed, exits by default.
   """
   logger = logging.getLogger()
   logger.setLevel(logging.INFO)
@@ -63,10 +67,14 @@ def Main(args, watcher=None):
   signal.alarm(timeout)
 
   watcher = watcher or metadata_watcher.MetadataWatcher()
-  watcher.WatchMetadata(partial(_RetryIfValueIsEmptyHandler, output_file=args.output_state_file),
-                        metadata_key='instance/attributes/%s' % args.key,
-                        recursive=False,
-                        timeout=timeout)
+  watcher.WatchMetadata(
+    partial(
+      _RetryIfValueIsEmptyHandler,
+      output_file=args.output_state_file,
+      post_update=post_update),
+    metadata_key='instance/attributes/%s' % args.key,
+    recursive=False,
+    timeout=timeout)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Watches for IAP state changes.')
