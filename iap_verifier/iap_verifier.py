@@ -16,9 +16,11 @@
 """An agent for handling app container updates."""
 
 import argparse
+import json
 import logging
 import signal
 import sys
+from functools import partial
 from google_compute_engine import metadata_watcher
 
 
@@ -27,14 +29,18 @@ def _ExitWithExceptionHandle(signum, frame):
   sys.exit(1)
 
 
-def _RetryIfValueIsEmptyHandler(value):
+def _RetryIfValueIsEmptyHandler(value, output_file):
   """Exits with 0 if the given value is not empty.
 
   Args:
     value: unicode string, the value of the metadata attribute.
+    output_file: ascii string, where to write the resulting value to.
   """
   if value:
     logging.info('The latest value is %s.', value)
+    f = open(output_file, 'w')
+    f.write(value)
+    f.close()
     # Cancel the alarm.
     signal.alarm(0)
     sys.exit(0)
@@ -47,6 +53,8 @@ if __name__ == '__main__':
   parser.add_argument(
       '--key', type=str, required=True, help='Metadata key to be watched for IAP state.')
   parser.add_argument(
+      '--output_state_file', type=str, required=True, help='Where to output the state object to.')
+  parser.add_argument(
       '--timeout', type=int, required=False, help='Number of seconds to watch.')
   args = parser.parse_args()
 
@@ -58,7 +66,7 @@ if __name__ == '__main__':
   signal.alarm(timeout)
 
   watcher = metadata_watcher.MetadataWatcher()
-  watcher.WatchMetadata(_RetryIfValueIsEmptyHandler,
+  watcher.WatchMetadata(partial(_RetryIfValueIsEmptyHandler, output_file=args.output_state_file),
                         metadata_key='instance/attributes/%s' % args.key,
                         recursive=False,
                         timeout=timeout)
