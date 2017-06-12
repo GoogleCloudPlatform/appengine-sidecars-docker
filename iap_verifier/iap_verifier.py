@@ -43,9 +43,9 @@ def _RetryIfValueIsEmptyHandler(value):
 
 
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser(description='Set up app updater.')
+  parser = argparse.ArgumentParser(description='Watches for IAP state changes.')
   parser.add_argument(
-      '--key', type=str, required=True, help='Metadata key to be watched.')
+      '--key', type=str, required=True, help='Metadata key to be watched for IAP state.')
   parser.add_argument(
       '--timeout', type=int, required=False, help='Number of seconds to watch.')
   args = parser.parse_args()
