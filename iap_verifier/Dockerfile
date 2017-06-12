@@ -9,8 +9,10 @@ RUN apt-get update && \
     apt-get clean
 RUN pip install google-compute-engine
 
+RUN mkdir /iap_verifier
+VOLUME /iap_verifier
+
 RUN mkdir -p /home/vmagent/iap_verifier
 WORKDIR /home/vmagent/iap_verifier
 ADD iap_verifier.py .
-ENTRYPOINT ["./iap_verifier.py"]
-
+ENTRYPOINT ["./iap_verifier.py", "--key=AEF_IAP_state", "--output_state_file=/iap_verifier/state.json"]
