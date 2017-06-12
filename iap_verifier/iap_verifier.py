@@ -48,6 +48,26 @@ def _RetryIfValueIsEmptyHandler(value, output_file):
     logging.info('Retry due to empty value.')
 
 
+def Main(args, watcher=None):
+  """Runs the watcher.
+
+  Args:
+    args: map => [string, string], Command line arguments
+    watcher: MetadataWatcher, used to stub out MetadataWatcher for testing.
+  """
+  logger = logging.getLogger()
+  logger.setLevel(logging.INFO)
+
+  timeout = args.timeout or 600
+  signal.signal(signal.SIGALRM, _ExitWithExceptionHandle)
+  signal.alarm(timeout)
+
+  watcher = watcher or metadata_watcher.MetadataWatcher()
+  watcher.WatchMetadata(partial(_RetryIfValueIsEmptyHandler, output_file=args.output_state_file),
+                        metadata_key='instance/attributes/%s' % args.key,
+                        recursive=False,
+                        timeout=timeout)
+
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Watches for IAP state changes.')
   parser.add_argument(
@@ -57,17 +77,5 @@ if __name__ == '__main__':
   parser.add_argument(
       '--timeout', type=int, required=False, help='Number of seconds to watch.')
   args = parser.parse_args()
-
-  logger = logging.getLogger()
-  logger.setLevel(logging.INFO)
-
-  timeout = args.timeout or 600
-  signal.signal(signal.SIGALRM, _ExitWithExceptionHandle)
-  signal.alarm(timeout)
-
-  watcher = metadata_watcher.MetadataWatcher()
-  watcher.WatchMetadata(partial(_RetryIfValueIsEmptyHandler, output_file=args.output_state_file),
-                        metadata_key='instance/attributes/%s' % args.key,
-                        recursive=False,
-                        timeout=timeout)
+  Main(args)
 
