@@ -36,3 +36,7 @@ mkdir -p $GOROOT
 tar -C $GOROOT --strip-components=1 -xzf go.tar.gz
 
 popd
+
+####### Install pip and google_compute_engine
+apt-get update && apt-get install -y python-pip
+pip install google-compute-engine
