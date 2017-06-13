@@ -25,12 +25,11 @@ from google_compute_engine import metadata_watcher
 
 
 def _ExitWithExceptionHandle(signum, frame):
-  logging.error('Timeout when retrieving metadata.')
-  sys.exit(1)
+  logging.error('Timeout when retrieving metadata. Retrying...')
 
 
-def _RetryIfValueIsEmptyHandler(value, output_file, post_update):
-  """Exits with 0 if the given value is not empty.
+def _RetryIfValueIsEmptyHandler(value, output_file):
+  """Writes out to the state file on updates.
 
   Args:
     value: unicode string, the value of the metadata attribute.
@@ -41,18 +40,11 @@ def _RetryIfValueIsEmptyHandler(value, output_file, post_update):
     f = open(output_file, 'w')
     f.write(value)
     f.close()
-    if post_update:
-      post_update()
   else:
     logging.info('Retry due to empty value.')
 
-def _CleanExit():
-  # Cancel the alarm.
-  signal.alarm(0)
-  sys.exit(0)
 
-
-def Main(args, watcher=None, post_update=_CleanExit):
+def Main(args, watcher=None, loop_watcher=True):
   """Runs the watcher.
 
   Args:
@@ -68,14 +60,17 @@ def Main(args, watcher=None, post_update=_CleanExit):
   signal.alarm(timeout)
 
   watcher = watcher or metadata_watcher.MetadataWatcher()
-  watcher.WatchMetadata(
-    partial(
-      _RetryIfValueIsEmptyHandler,
-      output_file=args.output_state_file,
-      post_update=post_update),
-    metadata_key='instance/attributes/%s' % args.key,
-    recursive=False,
-    timeout=timeout)
+
+  while True:
+    watcher.WatchMetadata(
+      partial(
+        _RetryIfValueIsEmptyHandler,
+        output_file=args.output_state_file),
+      metadata_key='instance/attributes/%s' % args.key,
+      recursive=False,
+      timeout=timeout)
+    if loop_watcher:
+      break
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Watches for IAP state changes.')
@@ -87,4 +82,3 @@ if __name__ == '__main__':
       '--timeout', type=int, required=False, help='Number of seconds to watch.')
   args = parser.parse_args()
   Main(args)
-
