@@ -2,12 +2,13 @@ import os
 import tempfile
 import unittest
 import iap_watcher
+from jsobject import Object
 
 class TestIapVerifier(unittest.TestCase):
 
 	class TestMetadataWatcher:
 		"""Used to mock out metadata watcher."""
-		def WatchMetadata(self, function):
+		def WatchMetadata(self, function, **args):
 			function(self.result_value_)
 
 		def SetWatchMetadataResult(self, result_value):
@@ -16,7 +17,8 @@ class TestIapVerifier(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):
 		cls.metadata_watcher_ = cls.TestMetadataWatcher()
-		cls.handler_, cls.pathname_ = tempfile.mkstemp()
+		handler, cls.pathname_ = tempfile.mkstemp()
+		cls.handler_ = os.fdopen(handler)
 
 	@classmethod
 	def tearDownClass(cls):
@@ -25,10 +27,11 @@ class TestIapVerifier(unittest.TestCase):
 
 	def testKeyFile(self):
 		self.metadata_watcher_.SetWatchMetadataResult("test123")
-		iap_watcher.Main({
+		iap_watcher.Main(Object({
 			'key': 'AEF_IAP_state',
+			'timeout': None,
 			'output_state_file': self.pathname_,
-		},
+		}),
 		watcher=self.metadata_watcher_,
 		post_update=None)
 		self.assertEqual("test123", self.handler_.read())
