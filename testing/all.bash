@@ -44,6 +44,17 @@ go test -v $GO_PKGS
 go vet ./...
 diff -u <(echo -n) <(gofmt -d -s .)
 
+#### Build Cloud SQL
+
+pushd cloud_sql_proxy
+./build.sh
+popd
+
+#### Build Memcache proxy
+
+pushd memcache_proxy
+./build.sh
+popd
 
 #### Run tests for iap_watcher
 pushd iap_watcher
