@@ -41,7 +41,8 @@ def _RetryIfValueIsEmptyHandler(value, output_file, post_update):
     f = open(output_file, 'w')
     f.write(value)
     f.close()
-    post_update()
+    if post_update:
+      post_update()
   else:
     logging.info('Retry due to empty value.')
 

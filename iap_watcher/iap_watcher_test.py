@@ -1,20 +1,37 @@
+import os
 import tempfile
 import unittest
-import iap_verifier
+import iap_watcher
 
 class TestIapVerifier(unittest.TestCase):
 
-	def setUpModule(self):
-		self.handler_, self.pathname_ = tempfile.mkstemp()
+	class TestMetadataWatcher:
+		"""Used to mock out metadata watcher."""
+		def WatchMetadata(self, function):
+			function(self.result_value_)
 
-	def tearDownClass(self):
-		self.handler_.close()
+		def SetWatchMetadataResult(self, result_value):
+			self.result_value_ = result_value
+
+	@classmethod
+	def setUpClass(cls):
+		cls.metadata_watcher_ = cls.TestMetadataWatcher()
+		cls.handler_, cls.pathname_ = tempfile.mkstemp()
+
+	@classmethod
+	def tearDownClass(cls):
+		cls.handler_.close()
+		os.remove(cls.pathname_)
 
 	def testKeyFile(self):
-		iap_verifier.Main({
+		self.metadata_watcher_.SetWatchMetadataResult("test123")
+		iap_watcher.Main({
 			'key': 'AEF_IAP_state',
 			'output_state_file': self.pathname_,
-		})
+		},
+		watcher=self.metadata_watcher_,
+		post_update=None)
+		self.assertEqual("test123", self.handler_.read())
 
 if __name__ == '__main__':
 	unittest.main()
