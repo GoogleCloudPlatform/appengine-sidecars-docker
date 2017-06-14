@@ -38,4 +38,4 @@ tar -C $GOROOT --strip-components=1 -xzf go.tar.gz
 popd
 
 ####### Install pip and google_compute_engine
-pip install google-compute-engine jsobject
+sudo pip install google-compute-engine jsobject
