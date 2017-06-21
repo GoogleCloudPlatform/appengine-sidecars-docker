@@ -67,12 +67,12 @@ def Main(argv, watcher=None, loop_watcher=True):
 
   while True:
     watcher.WatchMetadata(
-        partial(
-            _RetryIfValueIsEmptyHandler,
-            output_file=argv.output_state_file),
-        metadata_key='instance/attributes/%s' % argv.key,
-        recursive=False,
-        timeout=timeout)
+      partial(
+        _RetryIfValueIsEmptyHandler,
+        output_file=args.output_state_file),
+      metadata_key='instance/attributes/%s' % args.key,
+      recursive=False,
+      timeout=timeout)
     if loop_watcher:
       break
 
