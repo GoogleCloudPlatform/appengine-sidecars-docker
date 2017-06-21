@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 import unittest
 import iap_watcher
@@ -17,24 +18,60 @@ class TestIapVerifier(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     cls.metadata_watcher_ = cls.TestMetadataWatcher()
-    handler, cls.pathname_ = tempfile.mkstemp()
-    cls.handler_ = os.fdopen(handler)
+    cls.pathname_ = tempfile.mkdtemp()
 
   @classmethod
   def tearDownClass(cls):
-    cls.handler_.close()
-    os.remove(cls.pathname_)
+    shutil.rmtree(cls.pathname_)
 
-  def testKeyFile(self):
-    self.metadata_watcher_.SetWatchMetadataResult("test123")
+  def testEnable(self):
+    """Tests for the state file exists on metadata enable."""
+    path = '%s/tmp' % self.pathname_
+    self.metadata_watcher_.SetWatchMetadataResult('{"enabled": true}')
     iap_watcher.Main(Object({
         'key': 'AEF_IAP_state',
         'timeout': None,
-        'output_state_file': self.pathname_,
+        'output_state_file': path,
       }),
       watcher=self.metadata_watcher_,
       loop_watcher=True)
-    self.assertEqual("test123", self.handler_.read())
+    self.assertTrue(os.path.isfile(path))
+
+  def testDisabledNoEnable(self):
+    """Tests for the state file does not exist on metadata disabled."""
+    path = '%s/tmp' % self.pathname_
+    self.metadata_watcher_.SetWatchMetadataResult('{"enabled": false}')
+    iap_watcher.Main(Object({
+        'key': 'AEF_IAP_state',
+        'timeout': None,
+        'output_state_file': path,
+      }),
+      watcher=self.metadata_watcher_,
+      loop_watcher=True)
+    self.assertFalse(os.path.isfile(path))
+
+  def testEnableDisable(self):
+    """Tests for the state file upon switched states."""
+    path = '%s/tmp' % self.pathname_
+    self.metadata_watcher_.SetWatchMetadataResult('{"enabled": true}')
+    iap_watcher.Main(Object({
+        'key': 'AEF_IAP_state',
+        'timeout': None,
+        'output_state_file': path,
+      }),
+      watcher=self.metadata_watcher_,
+      loop_watcher=True)
+    self.assertTrue(os.path.isfile(path))
+
+    self.metadata_watcher_.SetWatchMetadataResult('{"enabled": false}')
+    iap_watcher.Main(Object({
+        'key': 'AEF_IAP_state',
+        'timeout': None,
+        'output_state_file': path,
+      }),
+      watcher=self.metadata_watcher_,
+      loop_watcher=True)
+    self.assertFalse(os.path.isfile(path))
 
 if __name__ == '__main__':
   unittest.main()

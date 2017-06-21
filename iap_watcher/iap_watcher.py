@@ -18,6 +18,7 @@
 import argparse
 import json
 import logging
+import os
 import signal
 import sys
 from functools import partial
@@ -37,9 +38,12 @@ def _RetryIfValueIsEmptyHandler(value, output_file):
   """
   if value:
     logging.info('The latest value is %s.', value)
-    f = open(output_file, 'w')
-    f.write(value)
-    f.close()
+    metadata = json.loads(value)
+    if metadata['enabled']:
+      f = open(output_file, 'w')
+      f.close()
+    elif os.path.isfile(output_file):
+      os.remove(output_file)
   else:
     logging.info('Retry due to empty value.')
 
