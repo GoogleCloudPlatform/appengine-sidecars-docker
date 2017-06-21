@@ -16,12 +16,12 @@
 """An agent for handling app container updates."""
 
 import argparse
+from functools import partial
 import json
 import logging
 import os
 import signal
-import sys
-from functools import partial
+
 from google_compute_engine import metadata_watcher
 
 
@@ -48,18 +48,18 @@ def _RetryIfValueIsEmptyHandler(value, output_file):
     logging.info('Retry due to empty value.')
 
 
-def Main(args, watcher=None, loop_watcher=True):
+def Main(argv, watcher=None, loop_watcher=True):
   """Runs the watcher.
 
   Args:
-    args: map => [string, string], Command line arguments
+    argv: map => [string, string], Command line arguments
     watcher: MetadataWatcher, used to stub out MetadataWatcher for testing.
-    post_update: function, what to do after the wach completed, exits by default.
+    loop_watcher: Boolean, whether or not to loop upon an update.
   """
   logger = logging.getLogger()
   logger.setLevel(logging.INFO)
 
-  timeout = args.timeout or 600
+  timeout = argv.timeout or 600
   signal.signal(signal.SIGALRM, _ExitWithExceptionHandle)
   signal.alarm(timeout)
 
@@ -67,22 +67,22 @@ def Main(args, watcher=None, loop_watcher=True):
 
   while True:
     watcher.WatchMetadata(
-      partial(
-        _RetryIfValueIsEmptyHandler,
-        output_file=args.output_state_file),
-      metadata_key='instance/attributes/%s' % args.key,
-      recursive=False,
-      timeout=timeout)
+        partial(
+            _RetryIfValueIsEmptyHandler,
+            output_file=argv.output_state_file),
+        metadata_key='instance/attributes/%s' % argv.key,
+        recursive=False,
+        timeout=timeout)
     if loop_watcher:
       break
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Watches for IAP state changes.')
-  parser.add_argument(
-      '--key', type=str, required=True, help='Metadata key to be watched for IAP state.')
-  parser.add_argument(
-      '--output_state_file', type=str, required=True, help='Where to output the state object to.')
-  parser.add_argument(
-      '--timeout', type=int, required=False, help='Number of seconds to watch.')
+  parser.add_argument('--key', type=str, required=True,
+                      help='Metadata key to be watched for IAP state.')
+  parser.add_argument('--output_state_file', type=str, required=True,
+                      help='Where to output the state object to.')
+  parser.add_argument('--timeout', type=int, required=False,
+                      help='Number of seconds to watch.')
   args = parser.parse_args()
   Main(args)

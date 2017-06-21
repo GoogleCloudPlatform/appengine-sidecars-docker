@@ -5,10 +5,12 @@ import unittest
 import iap_watcher
 from jsobject import Object
 
+
 class TestIapVerifier(unittest.TestCase):
 
-  class TestMetadataWatcher:
+  class TestMetadataWatcher(Object):
     """Used to mock out metadata watcher."""
+
     def WatchMetadata(self, function, **args):
       function(self.result_value_)
 
