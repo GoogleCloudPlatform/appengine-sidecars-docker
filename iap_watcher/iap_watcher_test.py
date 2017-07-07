@@ -39,7 +39,7 @@ class TestIapVerifier(unittest.TestCase):
       loop_watcher=True)
     self.assertTrue(os.path.isfile(path))
 
-  def testDisabledNoEnable(self):
+  def testDisable(self):
     """Tests for the state file does not exist on metadata disabled."""
     path = '%s/tmp' % self.pathname_
     self.metadata_watcher_.SetWatchMetadataResult('{"enabled": false}')
@@ -53,7 +53,7 @@ class TestIapVerifier(unittest.TestCase):
     self.assertFalse(os.path.isfile(path))
 
   def testEnableDisable(self):
-    """Tests for the state file upon switched states."""
+    """Tests for the state file upon switching to enabled."""
     path = '%s/tmp' % self.pathname_
     self.metadata_watcher_.SetWatchMetadataResult('{"enabled": true}')
     iap_watcher.Main(Object({
@@ -74,6 +74,39 @@ class TestIapVerifier(unittest.TestCase):
       watcher=self.metadata_watcher_,
       loop_watcher=True)
     self.assertFalse(os.path.isfile(path))
+
+  def testDisableEnable(self):
+    """Tests for the state file upon switching to disabled."""
+    path = '%s/tmp' % self.pathname_
+    self.metadata_watcher_.SetWatchMetadataResult('{"enabled": true}')
+    iap_watcher.Main(Object({
+        'iap_metadata_key': 'AEF_IAP_state',
+        'timeout': None,
+        'output_state_file': path,
+      }),
+      watcher=self.metadata_watcher_,
+      loop_watcher=True)
+    self.assertTrue(os.path.isfile(path))
+
+    self.metadata_watcher_.SetWatchMetadataResult('{"enabled": false}')
+    iap_watcher.Main(Object({
+        'iap_metadata_key': 'AEF_IAP_state',
+        'timeout': None,
+        'output_state_file': path,
+      }),
+      watcher=self.metadata_watcher_,
+      loop_watcher=True)
+    self.assertFalse(os.path.isfile(path))
+
+    self.metadata_watcher_.SetWatchMetadataResult('{"enabled": true}')
+    iap_watcher.Main(Object({
+        'iap_metadata_key': 'AEF_IAP_state',
+        'timeout': None,
+        'output_state_file': path,
+      }),
+      watcher=self.metadata_watcher_,
+      loop_watcher=True)
+    self.assertTrue(os.path.isfile(path))
 
 if __name__ == '__main__':
   unittest.main()
