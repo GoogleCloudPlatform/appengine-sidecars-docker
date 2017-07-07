@@ -17,6 +17,6 @@ WORKDIR /home/vmagent/iap_watcher
 ADD iap_watcher.py .
 ENTRYPOINT ["./iap_watcher.py", "--key=AEF_IAP_state", "--output_state_file=/iap_watcher/state.json"]
 
-RUN echo "15 */12 * * * curl "https://www.gstatic.com/iap/verify/public_key" > /iap_watcher/iap_verify_keys.txt" >> .tmp_cron
+RUN echo "15 */12 * * * curl "https://www.gstatic.com/iap/verify/public_key-jwk" > /iap_watcher/iap_verify_keys.txt" >> .tmp_cron
 RUN crontab .tmp_cron
 RUN rm .tmp_cron
