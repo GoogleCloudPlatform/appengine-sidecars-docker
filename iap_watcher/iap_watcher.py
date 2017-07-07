@@ -29,7 +29,7 @@ def _ExitWithExceptionHandle(signum, frame):
   logging.error('Timeout when retrieving metadata. Retrying...')
 
 
-def _RetryIfValueIsEmptyHandler(value, output_file):
+def UpdateStateFileFromMetadataHandler(value, output_file):
   """Writes out to the state file on updates.
 
   Args:
@@ -40,8 +40,8 @@ def _RetryIfValueIsEmptyHandler(value, output_file):
     logging.info('The latest value is %s.', value)
     metadata = json.loads(value)
     if metadata['enabled']:
-      f = open(output_file, 'w')
-      f.close()
+      with open(output_file, 'w') as file:
+        pass
     elif os.path.isfile(output_file):
       os.remove(output_file)
   else:
@@ -68,7 +68,7 @@ def Main(argv, watcher=None, loop_watcher=True):
   while True:
     watcher.WatchMetadata(
       partial(
-        _RetryIfValueIsEmptyHandler,
+        UpdateStateFileFromMetadataHandler,
         output_file=argv.output_state_file),
       metadata_key='instance/attributes/%s' % argv.key,
       recursive=False,
