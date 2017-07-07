@@ -31,7 +31,7 @@ class TestIapVerifier(unittest.TestCase):
     path = '%s/tmp' % self.pathname_
     self.metadata_watcher_.SetWatchMetadataResult('{"enabled": true}')
     iap_watcher.Main(Object({
-        'key': 'AEF_IAP_state',
+        'iap_metadata_key': 'AEF_IAP_state',
         'timeout': None,
         'output_state_file': path,
       }),
@@ -44,7 +44,7 @@ class TestIapVerifier(unittest.TestCase):
     path = '%s/tmp' % self.pathname_
     self.metadata_watcher_.SetWatchMetadataResult('{"enabled": false}')
     iap_watcher.Main(Object({
-        'key': 'AEF_IAP_state',
+        'iap_metadata_key': 'AEF_IAP_state',
         'timeout': None,
         'output_state_file': path,
       }),
@@ -57,7 +57,7 @@ class TestIapVerifier(unittest.TestCase):
     path = '%s/tmp' % self.pathname_
     self.metadata_watcher_.SetWatchMetadataResult('{"enabled": true}')
     iap_watcher.Main(Object({
-        'key': 'AEF_IAP_state',
+        'iap_metadata_key': 'AEF_IAP_state',
         'timeout': None,
         'output_state_file': path,
       }),
@@ -67,7 +67,7 @@ class TestIapVerifier(unittest.TestCase):
 
     self.metadata_watcher_.SetWatchMetadataResult('{"enabled": false}')
     iap_watcher.Main(Object({
-        'key': 'AEF_IAP_state',
+        'iap_metadata_key': 'AEF_IAP_state',
         'timeout': None,
         'output_state_file': path,
       }),

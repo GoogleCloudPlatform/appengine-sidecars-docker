@@ -70,7 +70,7 @@ def Main(argv, watcher=None, loop_watcher=True):
       partial(
         UpdateStateFileFromMetadataHandler,
         output_file=argv.output_state_file),
-      metadata_key='instance/attributes/%s' % argv.key,
+      metadata_key='instance/attributes/%s' % argv.iap_metadata_key,
       recursive=False,
       timeout=timeout)
     if loop_watcher:
@@ -78,7 +78,7 @@ def Main(argv, watcher=None, loop_watcher=True):
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Watches for IAP state changes.')
-  parser.add_argument('--key', type=str, required=True,
+  parser.add_argument('--iap_metadata_key', type=str, required=True,
                       help='Metadata key to be watched for IAP state.')
   parser.add_argument('--output_state_file', type=str, required=True,
                       help='Where to output the state object to.')
