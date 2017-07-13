@@ -71,6 +71,11 @@ NGX_CONF_HEALTHCHECK_TEMPLATE = """
       root {root_dir};
     }}
 """
+NGX_CONF_HEALTHCHECK_TEMPLATE_NO_IAP_DIRECTIVES = """
+    location = /healthcheck {{
+      root {root_dir};
+    }}
+"""
 NGX_CONF_POSTAMBLE = """
   } # server
 } # http
@@ -110,21 +115,24 @@ class NginxTest(unittest.TestCase):
   def tearDown(self):
     self.stopNginx()
 
-  def createIapJwtVerifyDirective(self, on, indent):
-    return indent + '  iap_jwt_verify ' + ('on;\n' if on else 'off;\n')
+  def createIapJwtVerifyDirective(self, on):
+    return '  iap_jwt_verify ' + ('on;\n' if on else 'off;\n')
 
-  def createLocConfBlocks(self, loc_iap_directive):
+  def createLocConfBlocks(self, loc_iap_directive, omit_all_iap_directives):
     indent = '    '
 
     # location config for '/'
     loc_conf = indent + 'location / {\n'
-    if (loc_iap_directive != None):
-      loc_conf += self.createIapJwtVerifyDirective(loc_iap_directive, indent)
+    if not omit_all_iap_directives and loc_iap_directive != None:
+      loc_conf += indent + self.createIapJwtVerifyDirective(loc_iap_directive)
     loc_conf += indent + '  root {0};\n'.format(self.cur_dir)
     loc_conf += indent + '}\n'
 
     # location config for '/healthcheck'
-    loc_conf += NGX_CONF_HEALTHCHECK_TEMPLATE.format(root_dir=self.cur_dir)
+    hc_template = (NGX_CONF_HEALTHCHECK_TEMPLATE_NO_IAP_DIRECTIVES
+                   if omit_all_iap_directives
+                   else NGX_CONF_HEALTHCHECK_TEMPLATE)
+    loc_conf += hc_template.format(root_dir=self.cur_dir)
 
     return loc_conf
 
@@ -133,26 +141,32 @@ class NginxTest(unittest.TestCase):
                      iap_on_srv,
                      iap_on_loc,
                      state_cache_time_sec,
-                     key_cache_time_sec):
+                     key_cache_time_sec,
+                     omit_all_iap_directives=False):
     f = open(CONF_FILE_NAME, 'w')
     f.write(NGX_CONF_PREAMBLE)
     f.write(NGX_CONF_HTTP_BLOCK_OPEN);
-    if iap_on_main != None:
-      f.write(self.createIapJwtVerifyDirective(iap_on_main, ''))
-    f.write(NGX_CONF_IAP_PARAMS_TEMPLATE.format(
-               iap_state_file_name=IAP_STATE_FILE_NAME,
-               state_cache_time_sec=state_cache_time_sec,
-               key_cache_time_sec=key_cache_time_sec))
+    if not omit_all_iap_directives:
+      if iap_on_main != None:
+        f.write(self.createIapJwtVerifyDirective(iap_on_main))
+      f.write(NGX_CONF_IAP_PARAMS_TEMPLATE.format(
+                 iap_state_file_name=IAP_STATE_FILE_NAME,
+                 state_cache_time_sec=state_cache_time_sec,
+                 key_cache_time_sec=key_cache_time_sec))
     f.write(NGX_CONF_SRV_BLOCK_OPEN_TEMPLATE.format(ngx_port=NGX_PORT))
-    if iap_on_srv != None:
-      f.write(self.createIapJwtVerifyDirective(iap_on_srv, '  '))
-    f.write(self.createLocConfBlocks(iap_on_loc))
+    if not omit_all_iap_directives and iap_on_srv != None:
+      f.write('  ' + self.createIapJwtVerifyDirective(iap_on_srv))
+    f.write(self.createLocConfBlocks(iap_on_loc, omit_all_iap_directives))
     f.write(NGX_CONF_POSTAMBLE);
     f.truncate()
     f.close()
 
   def createConfFileSimple(self, enforce, state_cache_time, key_cache_time):
     self.createConfFile(None, None, enforce, state_cache_time, key_cache_time)
+
+  def createConfFileSimplest(self, enforce):
+    self.createConfFileSimple(
+        enforce, FIVE_MINUTES_IN_SECONDS, TWELVE_HOURS_IN_SECONDS)
 
   def createIapStateFile(self):
     """Create the IAP state file (indicates that IAP is on)."""
@@ -255,8 +269,7 @@ class NginxTest(unittest.TestCase):
   def test_iap_on_enforcement_on(self):
     """If IAP is on (i.e. state file present) and enforcement is on, then
     enforcement should be expected."""
-    self.createConfFileSimple(
-        True, FIVE_MINUTES_IN_SECONDS, TWELVE_HOURS_IN_SECONDS)
+    self.createConfFileSimplest(True)
     self.createIapStateFile()
     self.startNginx()
     self.makeAndEvaluateStandardRequests(True)
@@ -264,8 +277,7 @@ class NginxTest(unittest.TestCase):
   def test_iap_off_enforcement_on(self):
     """If IAP is off (i.e. state file not present) and enforcement is on, then
     enforcement should NOT be expected."""
-    self.createConfFileSimple(
-        True, FIVE_MINUTES_IN_SECONDS, TWELVE_HOURS_IN_SECONDS)
+    self.createConfFileSimplest(True)
     self.deleteIapStateFile()
     self.startNginx()
     self.makeAndEvaluateStandardRequests(False)
@@ -273,8 +285,7 @@ class NginxTest(unittest.TestCase):
   def test_iap_on_enforcement_off(self):
     """If IAP is on (i.e. state file present) and enforcement is off, then
     enforcement should NOT be expected."""
-    self.createConfFileSimple(
-        False, FIVE_MINUTES_IN_SECONDS, TWELVE_HOURS_IN_SECONDS)
+    self.createConfFileSimplest(False)
     self.createIapStateFile()
     self.startNginx()
     self.makeAndEvaluateStandardRequests(False)
@@ -282,8 +293,7 @@ class NginxTest(unittest.TestCase):
   def test_iap_off_enforcement_off(self):
     """If IAP is off (i.e. state file not present) and enforcement is off, then
     enforcement should NOT be expected."""
-    self.createConfFileSimple(
-        False, FIVE_MINUTES_IN_SECONDS, TWELVE_HOURS_IN_SECONDS)
+    self.createConfFileSimplest(False)
     self.deleteIapStateFile()
     self.startNginx()
     self.makeAndEvaluateStandardRequests(False)
@@ -398,6 +408,16 @@ class NginxTest(unittest.TestCase):
                  'http://localhost/',
                  headers = { IAP_JWT_HEADER_NAME: OTHER_VALID_JWT })
     self.assertAppResponse(conn.getresponse())
+
+  def test_no_iap_jwt_verify_directives(self):
+    """nginx should start up just fine and requests should not be blocked if no
+    iap_jwt_verify* directives (including value setters) are present in the
+    config"""
+    # Create a config file with NO IAP directives.
+    self.createConfFile(None, None, None, None, None, True)
+    self.createIapStateFile()
+    self.startNginx()
+    self.makeAndEvaluateStandardRequests(False)
 
 
 if __name__ == '__main__':
