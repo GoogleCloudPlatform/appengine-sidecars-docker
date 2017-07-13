@@ -35,8 +35,8 @@ cc_library(
     ),
     hdrs = glob([
         "jsoncpp-1.8.0/include/json/*.h",
-	"jsoncpp-1.8.0/src/lib_json/*.h",
-	"jsoncpp-1.8.0/src/lib_json/*.inl"
+        "jsoncpp-1.8.0/src/lib_json/*.h",
+        "jsoncpp-1.8.0/src/lib_json/*.inl",
     ]),
     copts = [
         "-Iexternal/jsoncpp/jsoncpp-1.8.0/include",

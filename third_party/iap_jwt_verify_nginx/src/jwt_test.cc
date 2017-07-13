@@ -28,7 +28,6 @@
 #include "src/jwt.h"
 
 #include "gtest/gtest.h"
-
 #include "test/b64_encode.h"
 
 namespace google {
@@ -42,7 +41,9 @@ TEST(JwtTest, ValidJwtParsesSuccessfully) {
   const std::string encoded_header =
       "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InhkS193dyJ9";
   const std::string encoded_payload =
-      "eyJpc3MiOiJodHRwczovL2Nsb3VkLmdvb2dsZS5jb20vaWFwIiwic3ViIjoiYWNjb3VudHMuZ29vZ2xlLmNvbToxMjM0NSIsImVtYWlsIjoibm9ib2R5QGV4YW1wbGUuY29tIiwiYXVkIjoiL2EvYi9jL2QiLCJleHAiOjYwMCwiaWF0IjowfQ";
+      "eyJpc3MiOiJodHRwczovL2Nsb3VkLmdvb2dsZS5jb20vaWFwIiwic3ViIjoiYWNjb3VudHMu"
+      "Z29vZ2xlLmNvbToxMjM0NSIsImVtYWlsIjoibm9ib2R5QGV4YW1wbGUuY29tIiwiYXVkIjoi"
+      "L2EvYi9jL2QiLCJleHAiOjYwMCwiaWF0IjowfQ";
   const std::string encoded_signature = "AAE";
   const std::string jwt_str =
       encoded_header + "." + encoded_payload + "." + encoded_signature;

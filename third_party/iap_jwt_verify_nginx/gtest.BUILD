@@ -32,11 +32,11 @@ cc_library(
     name = "main",
     srcs = glob(
         ["googletest-release-1.8.0/googletest/src/*.cc"],
-	exclude = ["googletest-release-1.8.0/googletest/src/gtest-all.cc"]
+        exclude = ["googletest-release-1.8.0/googletest/src/gtest-all.cc"],
     ),
     hdrs = glob([
         "googletest-release-1.8.0/googletest/include/**/*.h",
-	"googletest-release-1.8.0/googletest/src/*.h"
+        "googletest-release-1.8.0/googletest/src/*.h",
     ]),
     copts = [
         "-Iexternal/gtest/googletest-release-1.8.0/googletest/include",

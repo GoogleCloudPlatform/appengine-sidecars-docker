@@ -26,6 +26,13 @@
 #
 ################################################################################
 
+JSONCPP_COPTS_FLAGS = [
+    "-Iexternal/boringssl/include",
+    "-Iexternal/jsoncpp/jsoncpp-1.8.0/include",
+]
+
+BSSL_INCLUDE_COPT = "-Iexternal/boringssl/include"
+
 py_test(
     name = "nginx_test",
     srcs = ["nginx_test.py"],
@@ -97,10 +104,7 @@ cc_binary(
     data = [
         ":keys",
     ],
-    copts = [
-        "-Iexternal/jsoncpp/jsoncpp-1.8.0/include",
-        "-Iexternal/jsoncpp/jsoncpp-1.8.0/src/lib_json",
-    ],
+    copts = JSONCPP_COPTS_FLAGS,
 )
 
 # Utility binary to create public/private key files for use in testing
@@ -115,11 +119,7 @@ cc_binary(
         "@boringssl//:crypto",
         "@jsoncpp//:lib_json",
     ],
-    copts = [
-        "-Iexternal/boringssl/include",
-        "-Iexternal/jsoncpp/jsoncpp-1.8.0/include",
-        "-Iexternal/jsoncpp/jsoncpp-1.8.0/src/lib_json",
-    ],
+    copts = JSONCPP_COPTS_FLAGS + [BSSL_INCLUDE_COPT],
 )
 
 cc_library(
@@ -140,11 +140,7 @@ cc_library(
         "@boringssl//:crypto",
         "@jsoncpp//:lib_json",
     ],
-    copts = [
-        "-Iexternal/boringssl/include",
-        "-Iexternal/jsoncpp/jsoncpp-1.8.0/include",
-        "-Iexternal/jsoncpp/jsoncpp-1.8.0/src/lib_json",
-    ],
+    copts = JSONCPP_COPTS_FLAGS + [BSSL_INCLUDE_COPT],
     visibility = [
         "//src:__pkg__",
     ],

@@ -44,7 +44,7 @@ bool iap_jwt_is_valid(const char *raw_jwt,
 
 bool verify_iap_jwt_sig(const Jwt &jwt, const iap_key_map_t &keys);
 
-std::unique_ptr<uint8_t []> jose_sig_to_der_sig(
+std::unique_ptr<uint8_t[]> jose_sig_to_der_sig(
     const uint8_t *jose_sig, size_t jose_sig_len, size_t *der_sig_len);
 
 std::shared_ptr<iap_key_map_t> load_keys(const char *file_name,

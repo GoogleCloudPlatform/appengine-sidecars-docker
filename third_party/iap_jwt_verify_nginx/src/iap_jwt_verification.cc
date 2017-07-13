@@ -68,7 +68,7 @@ bool iap_jwt_is_valid(const char *const raw_jwt,
     return false;
   }
 
-  if (now < jwt->iat() - 60 || now > jwt->exp() + 60) {
+  if (now < jwt->iat() - CLOCK_SKEW || now > jwt->exp() + CLOCK_SKEW) {
     return false;
   }
 
@@ -100,13 +100,13 @@ bool verify_iap_jwt_sig(const Jwt &jwt, const iap_key_map_t &keys) {
          header_dot_payload.length(),
          digest);
   size_t der_sig_len;
-  std::unique_ptr<const uint8_t []> der_sig = jose_sig_to_der_sig(
+  std::unique_ptr<const uint8_t[]> der_sig = jose_sig_to_der_sig(
       jwt.signature_bytes(), jwt.signature_length(), &der_sig_len);
   if (der_sig == nullptr) {
     return false;
   }
 
-  if (ECDSA_verify(0,
+  if (ECDSA_verify(0,  // ignored
                    digest,
                    SHA256_DIGEST_LENGTH,
                    der_sig.get(),
@@ -121,7 +121,7 @@ bool verify_iap_jwt_sig(const Jwt &jwt, const iap_key_map_t &keys) {
 // Most of this implementation is copied from the BoringSSL code that creates
 // DER-encoded signatures in the first place--see crypto/dsa/dsa_asn1.c in the
 // BoringSSL codebase.
-std::unique_ptr<uint8_t []> jose_sig_to_der_sig(
+std::unique_ptr<uint8_t[]> jose_sig_to_der_sig(
     const uint8_t *const jose_sig,
     const size_t jose_sig_len,
     size_t *const der_sig_len) {
@@ -163,7 +163,7 @@ std::unique_ptr<uint8_t []> jose_sig_to_der_sig(
   }
 
   *der_sig_len = CBB_len(&der_sig_cbb);
-  std::unique_ptr<uint8_t []> der_sig(new (std::nothrow) uint8_t[*der_sig_len]);
+  std::unique_ptr<uint8_t[]> der_sig(new (std::nothrow) uint8_t[*der_sig_len]);
   const uint8_t *der_sig_bytes = CBB_data(&der_sig_cbb);
   for (size_t i = 0; i < *der_sig_len; i++) {
     der_sig.get()[i] = der_sig_bytes[i];

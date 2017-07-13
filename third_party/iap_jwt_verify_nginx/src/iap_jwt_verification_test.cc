@@ -48,7 +48,7 @@ namespace {
 constexpr char VALID_JWT[] = "eyJhbGciOiJFUzI1NiIsImtpZCI6IjFhIiwidHlwIjoiSldUIn0.eyJhdWQiOiIvcHJvamVjdHMvMTIzNC9hcHBzL3NvbWUtYXBwLWlkIiwiZW1haWwiOiJub2JvZHlAZXhhbXBsZS5jb20iLCJleHAiOjE2MDAsImlhdCI6MTAwMSwiaXNzIjoiaHR0cHM6Ly9jbG91ZC5nb29nbGUuY29tL2lhcCIsInN1YiI6ImFjY291bnRzLmdvb2dsZS5jb206MTIzNDUifQ.Oez6MwXTCLuJ-U8VHVgiHtADGv818ZMQjnjOQSgUJ9NU1UcLT5ZyT8DqgbAnRLuv0Tf9hdmcBilouJD46oPo2w";
 constexpr size_t VALID_JWT_LEN = strlen(VALID_JWT);
 
-// A time at which VALId_JWT should be valid.
+// A time at which VALID_JWT should be valid.
 constexpr uint64_t VALID_TIME = 1100;
 
 constexpr char AUD[] = "/projects/1234/apps/some-app-id";

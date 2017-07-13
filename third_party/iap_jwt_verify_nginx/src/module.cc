@@ -78,6 +78,7 @@ ngx_str_t *extract_iap_jwt_header(ngx_http_request_t *r) {
   part = &r->headers_in.headers.part;
   h = reinterpret_cast<ngx_table_elt_t *>(part->elts);
 
+  static const ngx_str_t HEADER_NAME = ngx_string(IAP_JWT_HEADER_NAME);
   for (i = 0;; i++) {
     if (i >= part->nelts) {
       if (part->next == nullptr) {
@@ -89,9 +90,8 @@ ngx_str_t *extract_iap_jwt_header(ngx_http_request_t *r) {
       i = 0;
     }
 
-    static const ngx_str_t header_name = ngx_string(IAP_JWT_HEADER_NAME);
-    if (header_name.len != h[i].key.len
-        || ngx_strcasecmp(header_name.data, h[i].key.data) != 0) {
+    if (HEADER_NAME.len != h[i].key.len
+        || ngx_strcasecmp(HEADER_NAME.data, h[i].key.data) != 0) {
       continue;
     }
 
@@ -123,9 +123,8 @@ ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
       // Check the condition again to account for the case where another thread
       // acquired and released the lock between when we checked the condition
       // and when we acquired the lock.
-      if (now >=
-            main_conf->last_iap_state_check.load()
-                + main_conf->iap_state_cache_time_sec) {
+      if (now >= main_conf->last_iap_state_check.load()
+              + main_conf->iap_state_cache_time_sec) {
         ngx_fd_t fd = ngx_open_file(
             main_conf->iap_state_file.data,
             NGX_FILE_RDONLY,

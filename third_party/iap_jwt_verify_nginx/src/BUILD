@@ -26,8 +26,15 @@
 #
 ################################################################################
 
-gtest_include_copt = (
+GTEST_INCLUDE_COPT = (
     "-Iexternal/gtest/googletest-release-1.8.0/googletest/include")
+
+BSSL_INCLUDE_COPT = "-Iexternal/boringssl/include"
+
+JSONCPP_COPTS_FLAGS = [
+    "-Iexternal/jsoncpp/jsoncpp-1.8.0/include",
+    "-Iexternal/jsoncpp/jsoncpp-1.8.0/src/lib_json",
+]
 
 cc_library(
     name = "ngx_iap_jwt_verify",
@@ -48,11 +55,7 @@ cc_library(
         "@jsoncpp//:lib_json",
         "@nginx//:http",
     ],
-    copts = [
-        "-Iexternal/boringssl/include",
-        "-Iexternal/jsoncpp/jsoncpp-1.8.0/include",
-        "-Iexternal/jsoncpp/jsoncpp-1.8.0/src/lib_json",
-    ],
+    copts = JSONCPP_COPTS_FLAGS + [ BSSL_INCLUDE_COPT ],
 )
 
 cc_library(
@@ -77,11 +80,7 @@ cc_library(
         "@boringssl//:crypto",
         "@jsoncpp//:lib_json",
     ],
-    copts = [
-        "-Iexternal/boringssl/include",
-        "-Iexternal/jsoncpp/jsoncpp-1.8.0/include",
-        "-Iexternal/jsoncpp/jsoncpp-1.8.0/src/lib_json",
-    ],
+    copts = JSONCPP_COPTS_FLAGS + [ BSSL_INCLUDE_COPT ],
 )
 
 cc_test(
@@ -94,7 +93,7 @@ cc_test(
         "@gtest//:main",
     ],
     copts = [
-        gtest_include_copt,
+        GTEST_INCLUDE_COPT,
     ],
     size = "small",
 )
@@ -111,11 +110,7 @@ cc_test(
         ":iap_jwt_verification",
         "@gtest//:main",
     ],
-    copts = [
-        gtest_include_copt,
-        "-Iexternal/jsoncpp/jsoncpp-1.8.0/include",
-        "-Iexternal/jsoncpp/jsoncpp-1.8.0/src/lib_json",
-    ],
+    copts = JSONCPP_COPTS_FLAGS + [ GTEST_INCLUDE_COPT ],
     size = "small",
 )
 
@@ -129,11 +124,9 @@ cc_test(
         "//test:iap_jwt_generation",
         "@gtest//:main",
     ],
-    copts = [
-        "-Iexternal/boringssl/include",
-        "-Iexternal/jsoncpp/jsoncpp-1.8.0/include",
-        "-Iexternal/jsoncpp/jsoncpp-1.8.0/src/lib_json",
-        gtest_include_copt,
+    copts = JSONCPP_COPTS_FLAGS + [
+        BSSL_INCLUDE_COPT,
+        GTEST_INCLUDE_COPT,
     ],
     size = "small",
 )
@@ -150,11 +143,9 @@ cc_test(
         "@gtest//:main",
         "@jsoncpp//:lib_json",
     ],
-    copts = [
-        "-Iexternal/boringssl/include",
-        "-Iexternal/jsoncpp/jsoncpp-1.8.0/include",
-        "-Iexternal/jsoncpp/jsoncpp-1.8.0/src/lib_json",
-        gtest_include_copt,
+    copts = JSONCPP_COPTS_FLAGS + [
+        BSSL_INCLUDE_COPT,
+        GTEST_INCLUDE_COPT,
     ],
     size = "small",
 )
