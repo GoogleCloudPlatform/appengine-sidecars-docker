@@ -95,12 +95,12 @@ string sign_iap_jwt(string header_dot_payload, string kid) {
   SHA256(reinterpret_cast<const uint8_t *>(header_dot_payload.data()),
          header_dot_payload.length(),
          digest);
-  std::unique_ptr<uint8_t []> der_sig(new uint8_t[ECDSA_size(key.get())]);
+  std::unique_ptr<uint8_t[]> der_sig(new uint8_t[ECDSA_size(key.get())]);
   unsigned int der_sig_len;
   ECDSA_sign(
       0, digest, SHA256_DIGEST_LENGTH, der_sig.get(), &der_sig_len, key.get());
   unsigned int sig_len;
-  std::unique_ptr<uint8_t []> sig =
+  std::unique_ptr<uint8_t[]> sig =
       der_sig_to_jose_sig(der_sig.get(), der_sig_len, &sig_len);
   return url_safe_b64_encode(sig.get(), sig_len);
 }
@@ -122,7 +122,7 @@ namespace {
   }
 }
 
-std::unique_ptr<uint8_t []> der_sig_to_jose_sig(
+std::unique_ptr<uint8_t[]> der_sig_to_jose_sig(
     const uint8_t *der_sig, unsigned int der_sig_len, unsigned int *sig_len) {
   CBS der_sig_cbs;
   CBS_init(&der_sig_cbs, der_sig, der_sig_len);
@@ -131,7 +131,7 @@ std::unique_ptr<uint8_t []> der_sig_to_jose_sig(
   CBS_get_asn1(&seq, &r, CBS_ASN1_INTEGER);
   CBS_get_asn1(&seq, &s, CBS_ASN1_INTEGER);
   *sig_len = 2*FINITE_FIELD_BYTE_SIZE;
-  std::unique_ptr<uint8_t []> sig(new uint8_t[*sig_len]);
+  std::unique_ptr<uint8_t[]> sig(new uint8_t[*sig_len]);
   copy_der_int_cbs_to_array(&r, sig.get());
   copy_der_int_cbs_to_array(&s, sig.get() + FINITE_FIELD_BYTE_SIZE);
   return sig;

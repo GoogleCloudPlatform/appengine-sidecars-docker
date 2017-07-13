@@ -39,7 +39,7 @@ namespace test {
 
 std::string generate_iap_jwt(Json::Value &header, Json::Value &payload);
 std::string sign_iap_jwt(std::string header_dot_payload, std::string kid);
-std::unique_ptr<uint8_t []> der_sig_to_jose_sig(
+std::unique_ptr<uint8_t[]> der_sig_to_jose_sig(
     const uint8_t *der_sig, unsigned int der_sig_len, unsigned int *sig_len);
 
 }  // namespace test
