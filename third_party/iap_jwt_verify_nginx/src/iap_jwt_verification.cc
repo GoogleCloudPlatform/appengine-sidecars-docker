@@ -140,7 +140,7 @@ std::unique_ptr<uint8_t[]> jose_sig_to_der_sig(
       BN_bin2bn(
           jose_sig + FINITE_FIELD_BYTE_SIZE, FINITE_FIELD_BYTE_SIZE, nullptr));
   if (s == nullptr) {
-    return false;
+    return nullptr;
   }
 
   CBB der_sig_cbb;
