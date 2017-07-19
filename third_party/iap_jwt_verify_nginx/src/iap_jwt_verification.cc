@@ -164,6 +164,12 @@ std::unique_ptr<uint8_t[]> jose_sig_to_der_sig(
 
   *der_sig_len = CBB_len(&der_sig_cbb);
   std::unique_ptr<uint8_t[]> der_sig(new (std::nothrow) uint8_t[*der_sig_len]);
+
+  if (der_sig == nullptr) {
+    CBB_cleanup(&der_sig_cbb);
+    return nullptr;
+  }
+
   const uint8_t *der_sig_bytes = CBB_data(&der_sig_cbb);
   for (size_t i = 0; i < *der_sig_len; i++) {
     der_sig.get()[i] = der_sig_bytes[i];
