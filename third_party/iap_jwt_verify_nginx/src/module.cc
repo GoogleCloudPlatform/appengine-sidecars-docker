@@ -108,6 +108,8 @@ ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
       reinterpret_cast<ngx_iap_jwt_verify_loc_conf_t *>(
           ngx_http_get_module_loc_conf(r, ngx_iap_jwt_verify_module));
 
+  // If IAP JWT verification is off for this location, return NGX_OK to allow
+  // access.
   if (loc_conf->iap_jwt_verify == 0) {
     return NGX_OK;
   }
