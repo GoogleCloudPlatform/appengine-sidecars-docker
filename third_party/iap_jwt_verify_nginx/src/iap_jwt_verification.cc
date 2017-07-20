@@ -99,84 +99,20 @@ bool verify_iap_jwt_sig(const Jwt &jwt, const iap_key_map_t &keys) {
   SHA256(reinterpret_cast<const uint8_t *>(header_dot_payload.data()),
          header_dot_payload.length(),
          digest);
-  size_t der_sig_len;
-  std::unique_ptr<const uint8_t[]> der_sig = jose_sig_to_der_sig(
-      jwt.signature_bytes(), jwt.signature_length(), &der_sig_len);
-  if (der_sig == nullptr) {
+
+  if (jwt.signature_length() != 2*FINITE_FIELD_BYTE_SIZE) {
     return false;
   }
 
-  if (ECDSA_verify(0,  // ignored
-                   digest,
-                   SHA256_DIGEST_LENGTH,
-                   der_sig.get(),
-                   der_sig_len,
-                   key_iter->second.get()) != 1) {
-    return false;
-  }
-
-  return true;
-}
-
-// Most of this implementation is copied from the BoringSSL code that creates
-// DER-encoded signatures in the first place--see crypto/dsa/dsa_asn1.c in the
-// BoringSSL codebase.
-std::unique_ptr<uint8_t[]> jose_sig_to_der_sig(
-    const uint8_t *const jose_sig,
-    const size_t jose_sig_len,
-    size_t *const der_sig_len) {
-  if (jose_sig_len != 2*FINITE_FIELD_BYTE_SIZE) {
-    return nullptr;
-  }
-
-  // Convert the two components of the jose signature into BIGNUMs
-  bssl::UniquePtr<BIGNUM> r(
-      BN_bin2bn(jose_sig, FINITE_FIELD_BYTE_SIZE, nullptr));
-  if (r == nullptr) {
-    return nullptr;
-  }
-
-  bssl::UniquePtr<BIGNUM> s(
-      BN_bin2bn(
-          jose_sig + FINITE_FIELD_BYTE_SIZE, FINITE_FIELD_BYTE_SIZE, nullptr));
-  if (s == nullptr) {
-    return nullptr;
-  }
-
-  CBB der_sig_cbb;
-
-  // Second argument is only a guideline--we know the resulting ASN.1 will have
-  // to contain the two 32-byte integers, as well as some overhead for the
-  // encoding. The suggested space should more than cover this.
-  if (CBB_init(&der_sig_cbb, 2*FINITE_FIELD_BYTE_SIZE + 20) != 1) {
-    CBB_cleanup(&der_sig_cbb);
-    return nullptr;
-  }
-
-  CBB child;
-  if (CBB_add_asn1(&der_sig_cbb, &child, CBS_ASN1_SEQUENCE) != 1
-      || BN_marshal_asn1(&child, r.get()) != 1
-      || BN_marshal_asn1(&child, s.get()) != 1
-      || CBB_flush(&der_sig_cbb) != 1) {
-    CBB_cleanup(&der_sig_cbb);
-    return nullptr;
-  }
-
-  *der_sig_len = CBB_len(&der_sig_cbb);
-  std::unique_ptr<uint8_t[]> der_sig(new (std::nothrow) uint8_t[*der_sig_len]);
-
-  if (der_sig == nullptr) {
-    CBB_cleanup(&der_sig_cbb);
-    return nullptr;
-  }
-
-  const uint8_t *der_sig_bytes = CBB_data(&der_sig_cbb);
-  for (size_t i = 0; i < *der_sig_len; i++) {
-    der_sig.get()[i] = der_sig_bytes[i];
-  }
-
-  CBB_cleanup(&der_sig_cbb);
-  return der_sig;
+  const uint8_t *const sig_bytes = jwt.signature_bytes();
+  bssl::UniquePtr<ECDSA_SIG> ecdsa_sig(ECDSA_SIG_new());
+  BN_bin2bn(sig_bytes, FINITE_FIELD_BYTE_SIZE, ecdsa_sig->r);
+  BN_bin2bn(
+      sig_bytes + FINITE_FIELD_BYTE_SIZE, FINITE_FIELD_BYTE_SIZE, ecdsa_sig->s);
+  return ECDSA_do_verify(digest,
+                         SHA256_DIGEST_LENGTH,
+                         ecdsa_sig.get(),
+                         key_iter->second.get()) == 1;
 }
 
 std::shared_ptr<iap_key_map_t> load_keys(const char *file_name,
