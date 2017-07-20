@@ -54,6 +54,7 @@ bool iap_jwt_is_valid(const char *raw_jwt,
 
 // Verify the signature of the provided Jwt using the keys given in |keys|.
 // Returns true if the signature is valid.
+// An ES256 signature and P256 keys are assumed.
 bool verify_iap_jwt_sig(const Jwt &jwt, const iap_key_map_t &keys);
 
 // Convert a JOSE-format ES256 signature to the DER-encoded format required by
