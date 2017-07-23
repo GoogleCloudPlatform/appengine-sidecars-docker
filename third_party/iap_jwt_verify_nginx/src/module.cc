@@ -51,6 +51,13 @@ constexpr char IAP_JWT_AUD_PROJECTS[] = "/projects/";
 // A constant used to construct the expected JWT audience.
 constexpr char IAP_JWT_AUD_APPS[] = "/apps/";
 
+// The name of the nginx variable used to store the IAP JWT verification
+// module's action.
+constexpr char IAP_JWT_ACTION_VAR_NAME[] = "iap_jwt_action";
+
+// Index of the action variable in a request object.
+ngx_int_t action_var_idx;
+
 // Used to synchronize state updates.
 ngx_atomic_t iap_state_lock;
 
@@ -58,13 +65,10 @@ ngx_atomic_t iap_state_lock;
 // pointer.
 std::mutex key_mutex;
 
-// calculate the hash of an ngx_str_t
-ngx_uint_t hash_ngx_string(ngx_str_t const *const str) {
-  ngx_uint_t hash = 0;
-  for (size_t i = 0; i < str->len; i++) {
-    hash = ngx_hash(hash, str->data[i]);
-  }
-  return hash;
+ngx_int_t ngx_http_iap_jwt_action_var_get(
+    ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data) {
+  *v = r->variables[action_var_idx];
+  return NGX_OK;
 }
 
 // Extract the X-Goog-Iap-Jwt-Assertion header. Unfortunately, nginx internals
@@ -101,12 +105,21 @@ ngx_str_t *extract_iap_jwt_header(ngx_http_request_t *r) {
   return nullptr;
 }
 
+char foobar[] = "foobar";
+
 // IAP JWT verification handler--core business logic lives here and in functions
 // called by this handler.
 ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
   ngx_iap_jwt_verify_loc_conf_t *loc_conf =
       reinterpret_cast<ngx_iap_jwt_verify_loc_conf_t *>(
           ngx_http_get_module_loc_conf(r, ngx_iap_jwt_verify_module));
+
+  ngx_http_variable_value_t *action_var_val = r->variables + action_var_idx;
+  action_var_val->len = strlen("foobar");
+  action_var_val->data = reinterpret_cast<u_char *>(foobar);
+  action_var_val->valid = 1;
+  action_var_val->no_cacheable = 1;
+  action_var_val->not_found = 0;
 
   // If IAP JWT verification is off for this location, return NGX_OK to allow
   // access.
@@ -274,6 +287,19 @@ ngx_int_t init_expected_aud(ngx_conf_t *cf,
   return NGX_OK;
 }
 
+ngx_int_t ngx_iap_jwt_verify_preconfiguration(ngx_conf_t *cf) {
+  // Create the variable that will be used to record the action taken by the
+  // verification logic.
+  static ngx_str_t action_var_name = ngx_string(IAP_JWT_ACTION_VAR_NAME);
+  ngx_http_variable_t *action_var = ngx_http_add_variable(
+      cf,
+      &action_var_name,
+      NGX_HTTP_VAR_CHANGEABLE && NGX_HTTP_VAR_NOCACHEABLE);
+  action_var->get_handler = ngx_http_iap_jwt_action_var_get;
+  action_var_idx = ngx_http_get_variable_index(cf, &action_var_name);
+  return NGX_OK;
+}
+
 // Postconfiguration--installs the IAP JWT Verification module's handler into
 // the list of NGX_HTTP_ACCESS_PHASE handlers and assembles the expected
 // audience value from the supplied configuration pieces.
@@ -388,7 +414,7 @@ char *ngx_iap_jwt_verify_merge_loc_conf(
 // The module context conatins initialization and configuration callbacks.
 ngx_http_module_t ngx_iap_jwt_verify_module_ctx = {
     // ngx_int_t (*preconfiguration)(ngx_conf_t *cf);
-    nullptr,
+    ngx_iap_jwt_verify_preconfiguration,
     // ngx_int_t (*postconfiguration)(ngx_conf_t *cf);
     ngx_iap_jwt_verify_postconfiguration,
     // void *(*create_main_conf)(ngx_conf_t *cf);
