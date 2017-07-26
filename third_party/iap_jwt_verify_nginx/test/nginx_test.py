@@ -50,8 +50,12 @@ events {
 }
 """
 NGX_CONF_HTTP_BLOCK_OPEN = """
-http {
-  access_log off;
+http {{
+  log_format custom '$remote_addr [$time_local] "$request" $status '
+  '$body_bytes_sent "$http_user_agent" '
+  'iap_jwt_action=$iap_jwt_action';
+
+  access_log {path}/access.log custom;
 """
 NGX_CONF_IAP_PARAMS_TEMPLATE = """
   iap_jwt_verify_project_number 1234;
@@ -145,7 +149,7 @@ class NginxTest(unittest.TestCase):
                      omit_all_iap_directives=False):
     f = open(CONF_FILE_NAME, 'w')
     f.write(NGX_CONF_PREAMBLE)
-    f.write(NGX_CONF_HTTP_BLOCK_OPEN);
+    f.write(NGX_CONF_HTTP_BLOCK_OPEN.format(path=self.cur_dir))
     if not omit_all_iap_directives:
       if iap_on_main != None:
         f.write(self.createIapJwtVerifyDirective(iap_on_main))
@@ -411,13 +415,67 @@ class NginxTest(unittest.TestCase):
 
   def test_no_iap_jwt_verify_directives(self):
     """nginx should start up just fine and requests should not be blocked if no
-    iap_jwt_verify* directives (including value setters) are present in the
+    iap_jwt_verify.* directives (including value setters) are present in the
     config"""
     # Create a config file with NO IAP directives.
     self.createConfFile(None, None, None, None, None, True)
     self.createIapStateFile()
     self.startNginx()
     self.makeAndEvaluateStandardRequests(False)
+
+  def test_iap_jwt_action_setting(self):
+    """The iap_jwt_action variable is set by the IAP JWT access handler. Its
+    intended purpose is to be written to the access log for metric generation.
+    This test ensures that it is set properly and writing it to the access log
+    succeeds as expected."""
+    # Make sure access logs written by previous tests don't mess us up.
+    try:
+      os.remove("access.log")
+    except:
+      pass
+
+    self.createConfFileSimple(True, 0, TWELVE_HOURS_IN_SECONDS)
+    self.deleteIapStateFile()
+    self.startNginx()
+    conn = httplib.HTTPConnection('localhost', NGX_PORT)
+
+    conn.request('GET', 'http://localhost/healthcheck')
+    conn.getresponse().read()  # Must do this prior to making another request
+
+    conn = httplib.HTTPConnection('localhost', NGX_PORT)
+    conn.request('GET', 'http://localhost/')
+    conn.getresponse().read()
+
+    self.createIapStateFile()
+    conn.request('GET', 'http://localhost/')
+    conn.getresponse().read()
+    conn.request('GET',
+                 'http://localhost/',
+                 headers = { IAP_JWT_HEADER_NAME: VALID_JWT })
+    conn.getresponse().read()
+    conn.request('GET',
+                 'http://localhost/',
+                 headers = { IAP_JWT_HEADER_NAME: INVALID_JWT })
+    conn.getresponse().read()
+
+    # If the access handler doesn't get inserted because the IAP JWT module is
+    # not in use anywhere, we still expect a "noop_off" action value.
+    self.stopNginx()
+    self.createConfFileSimple(False, 0, TWELVE_HOURS_IN_SECONDS)
+    self.startNginx()
+    conn = httplib.HTTPConnection('localhost', NGX_PORT)
+    conn.request('GET', 'http://localhost/')
+    conn.getresponse().read()
+
+    access_log = open("access.log", 'r')
+    lines = access_log.readlines()
+    self.assertEqual(len(lines), 6)
+    self.assertIn('iap_jwt_action=noop_off', lines[0])
+    self.assertIn('iap_jwt_action=noop_iap_off', lines[1])
+    self.assertIn('iap_jwt_action=deny', lines[2])
+    self.assertIn('iap_jwt_action=allow', lines[3])
+    self.assertIn('iap_jwt_action=deny', lines[4])
+    self.assertIn('iap_jwt_action=noop_off', lines[0])
 
 
 if __name__ == '__main__':

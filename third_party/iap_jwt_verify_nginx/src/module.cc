@@ -65,9 +65,27 @@ ngx_atomic_t iap_state_lock;
 // pointer.
 std::mutex key_mutex;
 
+const ngx_str_t ACTION_NOOP_OFF = ngx_string("noop_off");
+const ngx_str_t ACTION_NOOP_IAP_OFF = ngx_string("noop_iap_off");
+const ngx_str_t ACTION_ALLOW = ngx_string("allow");
+const ngx_str_t ACTION_DENY = ngx_string("deny");
+
+void set_action_value(ngx_http_variable_value_t *v, const ngx_str_t &action) {
+  v->len = action.len;
+  v->data = action.data;
+  v->valid = 1;
+  v->no_cacheable = 0;
+  v->not_found = 0;
+}
+
 ngx_int_t ngx_http_iap_jwt_action_var_get(
     ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data) {
-  *v = r->variables[action_var_idx];
+  ngx_http_variable_value_t *real_val = r->variables + action_var_idx;
+  if (real_val->data == nullptr || real_val->len == 0) {
+    set_action_value(real_val, ACTION_NOOP_OFF);
+  }
+
+  *v = *real_val;
   return NGX_OK;
 }
 
@@ -105,8 +123,6 @@ ngx_str_t *extract_iap_jwt_header(ngx_http_request_t *r) {
   return nullptr;
 }
 
-char foobar[] = "foobar";
-
 // IAP JWT verification handler--core business logic lives here and in functions
 // called by this handler.
 ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
@@ -115,15 +131,11 @@ ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
           ngx_http_get_module_loc_conf(r, ngx_iap_jwt_verify_module));
 
   ngx_http_variable_value_t *action_var_val = r->variables + action_var_idx;
-  action_var_val->len = strlen("foobar");
-  action_var_val->data = reinterpret_cast<u_char *>(foobar);
-  action_var_val->valid = 1;
-  action_var_val->no_cacheable = 1;
-  action_var_val->not_found = 0;
 
   // If IAP JWT verification is off for this location, return NGX_OK to allow
   // access.
   if (loc_conf->iap_jwt_verify == 0) {
+    set_action_value(action_var_val, ACTION_NOOP_OFF);
     return NGX_OK;
   }
 
@@ -172,12 +184,8 @@ ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
   }
 
   if (!main_conf->iap_on) {
+    set_action_value(action_var_val, ACTION_NOOP_IAP_OFF);
     return NGX_OK;
-  }
-
-  ngx_str_t *jwt_value = extract_iap_jwt_header(r);
-  if (jwt_value == nullptr) {
-    return NGX_HTTP_FORBIDDEN;
   }
 
   std::unique_lock<std::mutex> lock(key_mutex);
@@ -222,10 +230,18 @@ ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
     // acceptable (this would ignore potential issues with key fetching), so
     // after 30 seconds, requests will be denied if key_map remains nullptr.
     if (now > main_conf->last_key_map_update + 30) {
+      set_action_value(action_var_val, ACTION_ALLOW);
       return NGX_OK;
     } else {
+      set_action_value(action_var_val, ACTION_DENY);
       return NGX_HTTP_FORBIDDEN;
     }
+  }
+
+  ngx_str_t *jwt_value = extract_iap_jwt_header(r);
+  if (jwt_value == nullptr) {
+    set_action_value(action_var_val, ACTION_DENY);
+    return NGX_HTTP_FORBIDDEN;
   }
 
   if (iap_jwt_is_valid(
@@ -235,9 +251,11 @@ ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
           reinterpret_cast<const char *>(main_conf->expected_aud.data),
           main_conf->expected_aud.len,
           key_map)) {
+    set_action_value(action_var_val, ACTION_ALLOW);
     return NGX_OK;
   }
 
+  set_action_value(action_var_val, ACTION_DENY);
   return NGX_HTTP_FORBIDDEN;
 }
 
