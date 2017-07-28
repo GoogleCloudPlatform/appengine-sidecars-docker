@@ -36,11 +36,16 @@ namespace cloud {
 namespace iap {
 
 // Only trust IAP state for a maximum of five minutes.
-constexpr int MAX_STATE_CACHE_TIME_SEC = 300;  // 5 minutes
+constexpr unsigned int MAX_STATE_CACHE_TIME_SEC = 300;  // 5 minutes
 
 // While the theoretically time to cache the JWT verification keys is 1 day,
 // refresh every 12 hours to be on the safe side.
-constexpr int MAX_KEY_CACHE_TIME_SEC = 43200;  // 12 hours
+constexpr unsigned int MAX_KEY_CACHE_TIME_SEC = 43200;  // 12 hours
+
+// Used for fail open logic--if the mtime of the IAP state file is more than
+// this many seconds in the past, then we assume that metadata fetching is
+// not working and fail open preemptively.
+constexpr unsigned int MAX_STATE_STALENESS_SEC = 120;
 
 // nginx lowercases headers prior to hashing, so using a lowercase value here
 constexpr char IAP_JWT_HEADER_NAME[] = "x-goog-iap-jwt-assertion";
@@ -160,6 +165,18 @@ ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
         if (fd != NGX_INVALID_FILE) {
           // Existence of file ==> IAP is ON
           main_conf->iap_on = true;
+
+          // Fail-open logic
+          ngx_file_info_t info;
+          ngx_fd_info(fd, &info);
+          time_t mtime = ngx_file_mtime(&info);
+
+          if (now >= mtime + MAX_STATE_STALENESS_SEC) {
+            main_conf->fail_open_because_state_stale = true;
+          } else {
+            main_conf->fail_open_because_state_stale = false;
+          }
+
           if (ngx_close_file(fd) == NGX_FILE_ERROR) {
             // TODO: log the error for diagnostics.
             // Preferably without danger of excessive log spam.
@@ -185,6 +202,12 @@ ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
 
   if (!main_conf->iap_on) {
     set_action_value(action_var_val, ACTION_NOOP_IAP_OFF);
+    return NGX_OK;
+  }
+
+  if (main_conf->fail_open_because_state_stale) {
+    // TODO: log fail-open error for processing.
+    set_action_value(action_var_val, ACTION_ALLOW);
     return NGX_OK;
   }
 
@@ -371,6 +394,9 @@ char *ngx_iap_jwt_verify_init_main_conf(ngx_conf_t *cf, void *conf) {
   // Always assume IAP is off initially--state indicator file may not have been
   // created yet.
   main_conf->iap_on = false;
+
+  // Make sure we are not failing open to start with.
+  main_conf->fail_open_because_state_stale = false;
 
   // These should be zero due to the use of ngx_pcalloc above, but since having
   // their initial values be zero is important for correctness, take no chances.

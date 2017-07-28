@@ -83,6 +83,10 @@ typedef struct {
   // runtime from the presence/absence of of the iap_state_file.
   volatile bool iap_on;
 
+  // Used to mark whether we are in a fail-open regime on account of the state
+  // file not having been modified recently enough.
+  volatile bool fail_open_because_state_stale;
+
   // Time (in seconds since epoch start) that the IAP state was last checked.
   std::atomic<time_t> last_iap_state_check;
 

@@ -477,6 +477,20 @@ class NginxTest(unittest.TestCase):
     self.assertIn('iap_jwt_action=deny', lines[4])
     self.assertIn('iap_jwt_action=noop_off', lines[0])
 
+  def test_fail_open_because_stale_state(self):
+    """Verifies the failsafe mechanism that causes all requests to be passed
+    through if the IAP state file has gone too long without being updated. The
+    current hardcoded "maximum time since last modification" is 120 seconds."""
+    self.createConfFileSimple(True, 0, TWELVE_HOURS_IN_SECONDS)
+    self.createIapStateFile()
+    self.startNginx()
+    self.makeAndEvaluateStandardRequests(True)
+    time.sleep(120)
+    self.makeAndEvaluateStandardRequests(False)
+    self.createIapStateFile()
+    self.makeAndEvaluateStandardRequests(True)
+    pass
+
 
 if __name__ == '__main__':
   unittest.main()
