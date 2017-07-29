@@ -43,7 +43,7 @@ KEY_FILE_NAME = 'keys.jwk'
 NGX_CONF_PREAMBLE = """
 daemon on;
 worker_processes 1;
-error_log stderr error;
+error_log error.log error;
 pid nginx.pid;
 events {
   worker_connections 32;
@@ -467,7 +467,7 @@ class NginxTest(unittest.TestCase):
     conn.request('GET', 'http://localhost/')
     conn.getresponse().read()
 
-    access_log = open("access.log", 'r')
+    access_log = open('access.log', 'r')
     lines = access_log.readlines()
     self.assertEqual(len(lines), 6)
     self.assertIn('iap_jwt_action=noop_off', lines[0])
@@ -477,19 +477,40 @@ class NginxTest(unittest.TestCase):
     self.assertIn('iap_jwt_action=deny', lines[4])
     self.assertIn('iap_jwt_action=noop_off', lines[0])
 
-  def test_fail_open_because_stale_state(self):
+  def test_fail_open_because_state_is_stale(self):
     """Verifies the failsafe mechanism that causes all requests to be passed
     through if the IAP state file has gone too long without being updated. The
     current hardcoded "maximum time since last modification" is 120 seconds."""
+    # Make sure error logs written by previous tests don't mess us up.
+    try:
+      os.remove("error.log")
+    except:
+      pass
+
     self.createConfFileSimple(True, 0, TWELVE_HOURS_IN_SECONDS)
     self.createIapStateFile()
     self.startNginx()
     self.makeAndEvaluateStandardRequests(True)
+
+    # After this sleep, the state file should be stale and thus we should be in
+    # a "fail open" state.
     time.sleep(120)
     self.makeAndEvaluateStandardRequests(False)
+
+    # Since we set the state checking interval to zero in the config file,
+    # expect the update to the state file to be picked up instantly.
     self.createIapStateFile()
     self.makeAndEvaluateStandardRequests(True)
-    pass
+
+    # We expect three fail open events in the error log, since
+    # makeAndEvaluateStandardRequests makes three calls to enforced locations.
+    error_log = open('error.log', 'r')
+    lines = error_log.readlines()
+    fail_open_count = 0
+    for line in lines:
+      if "iap_jwt_fail_open:cause=state" in line:
+        fail_open_count += 1
+    self.assertEqual(3, fail_open_count)
 
 
 if __name__ == '__main__':

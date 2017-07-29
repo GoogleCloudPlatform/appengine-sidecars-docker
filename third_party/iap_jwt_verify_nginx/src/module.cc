@@ -170,12 +170,8 @@ ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
           ngx_file_info_t info;
           ngx_fd_info(fd, &info);
           time_t mtime = ngx_file_mtime(&info);
-
-          if (now >= mtime + MAX_STATE_STALENESS_SEC) {
-            main_conf->fail_open_because_state_stale = true;
-          } else {
-            main_conf->fail_open_because_state_stale = false;
-          }
+          main_conf->fail_open_because_state_stale =
+              now >= mtime + MAX_STATE_STALENESS_SEC;
 
           if (ngx_close_file(fd) == NGX_FILE_ERROR) {
             // TODO: log the error for diagnostics.
@@ -206,7 +202,16 @@ ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
   }
 
   if (main_conf->fail_open_because_state_stale) {
-    // TODO: log fail-open error for processing.
+    // nginx sometimes invokes access handlers multiple times (e.g. due to
+    // internal redirects). We can check the 'valid' field of the action
+    // variable as a way to determine if we've already hit the fail-open logic
+    // for the current request. This prevents multiple log lines being written,
+    // ensuring accuracy of the fail-open metric.
+    if (action_var_val->valid == 1) {
+      ngx_log_error(
+          NGX_LOG_ERR, r->connection->log, 0, "iap_jwt_fail_open:cause=state");
+    }
+
     set_action_value(action_var_val, ACTION_ALLOW);
     return NGX_OK;
   }
