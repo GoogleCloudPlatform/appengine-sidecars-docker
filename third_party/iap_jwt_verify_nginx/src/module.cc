@@ -227,7 +227,9 @@ ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
   if ((now >= main_conf->last_key_map_update + main_conf->key_cache_time_sec
        // If we're failing open, we want to be more aggressive about trying to
        // get updated keys.
-       || main_conf->fail_open_because_keys_stale)
+       || main_conf->fail_open_because_keys_stale
+       || key_map == nullptr)
+      // But not too aggressive
       && now >= main_conf->last_key_map_update_attempt
           + MIN_KEY_UPDATE_INTERVAL_SEC) {
     main_conf->last_key_map_update_attempt = now;

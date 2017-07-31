@@ -553,5 +553,38 @@ class NginxTest(unittest.TestCase):
         fail_open_count += 1
     self.assertEqual(3, fail_open_count)
 
+  def test_fail_open_because_keys_are_null(self):
+    """Verifies that if a valid key map can't be loaded, then all requests are
+    passed through to the application. Also verify the ability to recover from
+    this state."""
+    # Make sure error logs written by previous tests don't mess us up.
+    try:
+      os.remove("error.log")
+    except:
+      pass
+
+    os.remove(KEY_FILE_NAME)
+    self.createConfFileSimple(True, FIVE_MINUTES_IN_SECONDS, 0)
+    self.createIapStateFile()
+    self.startNginx()
+    self.makeAndEvaluateStandardRequests(False)
+
+    shutil.copyfile('test/keys.jwk', KEY_FILE_NAME)
+
+    # wait for minimum interval before another key update will be attempted
+    time.sleep(60)
+    self.makeAndEvaluateStandardRequests(True)
+
+    # We expect three fail open events in the error log, since
+    # makeAndEvaluateStandardRequests makes three calls to enforced locations.
+    error_log = open('error.log', 'r')
+    lines = error_log.readlines()
+    fail_open_count = 0
+    for line in lines:
+      if "iap_jwt_fail_open:cause=keys_null" in line:
+        fail_open_count += 1
+    self.assertEqual(3, fail_open_count)
+
+
 if __name__ == '__main__':
   unittest.main()
