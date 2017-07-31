@@ -58,6 +58,9 @@ http {{
 
   access_log {path}/access.log custom;
 """
+NGX_CONF_LOGS_ONLY_ON = """
+  iap_jwt_verify_logs_only on;
+"""
 NGX_CONF_IAP_PARAMS_TEMPLATE = """
   iap_jwt_verify_project_number 1234;
   iap_jwt_verify_app_id some-app-id;
@@ -116,6 +119,16 @@ class NginxTest(unittest.TestCase):
     # Make sure we always start with a clean copy.
     shutil.copyfile('test/keys.jwk', KEY_FILE_NAME)
 
+    # clear logs
+    try:
+      os.remove("error.log")
+    except:
+      pass
+    try:
+      os.remove("access.log")
+    except:
+      pass
+
   def tearDown(self):
     self.stopNginx()
 
@@ -146,11 +159,14 @@ class NginxTest(unittest.TestCase):
                      iap_on_loc,
                      state_cache_time_sec,
                      key_cache_time_sec,
-                     omit_all_iap_directives=False):
+                     omit_all_iap_directives=False,
+                     logs_only=False):
     f = open(CONF_FILE_NAME, 'w')
     f.write(NGX_CONF_PREAMBLE)
     f.write(NGX_CONF_HTTP_BLOCK_OPEN.format(path=self.cur_dir))
     if not omit_all_iap_directives:
+      if logs_only:
+        f.write(NGX_CONF_LOGS_ONLY_ON);
       if iap_on_main != None:
         f.write(self.createIapJwtVerifyDirective(iap_on_main))
       f.write(NGX_CONF_IAP_PARAMS_TEMPLATE.format(
@@ -427,12 +443,6 @@ class NginxTest(unittest.TestCase):
     intended purpose is to be written to the access log for metric generation.
     This test ensures that it is set properly and writing it to the access log
     succeeds as expected."""
-    # Make sure access logs written by previous tests don't mess us up.
-    try:
-      os.remove("access.log")
-    except:
-      pass
-
     self.createConfFileSimple(True, 0, TWELVE_HOURS_IN_SECONDS)
     self.deleteIapStateFile()
     self.startNginx()
@@ -480,12 +490,6 @@ class NginxTest(unittest.TestCase):
     """Verifies the failsafe mechanism that causes all requests to be passed
     through if the IAP state file has gone too long without being updated. The
     current hardcoded "maximum time since last modification" is 120 seconds."""
-    # Make sure error logs written by previous tests don't mess us up.
-    try:
-      os.remove("error.log")
-    except:
-      pass
-
     self.createConfFileSimple(True, 0, TWELVE_HOURS_IN_SECONDS)
     self.createIapStateFile()
     self.startNginx()
@@ -517,12 +521,6 @@ class NginxTest(unittest.TestCase):
     through if the key file has gone too long without being updated. The
     hardcoded limit for this is 1 day, the maximum theoretically safe key
     caching duration."""
-    # Make sure error logs written by previous tests don't mess us up.
-    try:
-      os.remove("error.log")
-    except:
-      pass
-
     self.createConfFileSimple(True, FIVE_MINUTES_IN_SECONDS, 30)
     self.createIapStateFile()
     self.startNginx()
@@ -557,12 +555,6 @@ class NginxTest(unittest.TestCase):
     """Verifies that if a valid key map can't be loaded, then all requests are
     passed through to the application. Also verify the ability to recover from
     this state."""
-    # Make sure error logs written by previous tests don't mess us up.
-    try:
-      os.remove("error.log")
-    except:
-      pass
-
     os.remove(KEY_FILE_NAME)
     self.createConfFileSimple(True, FIVE_MINUTES_IN_SECONDS, 0)
     self.createIapStateFile()
@@ -585,6 +577,21 @@ class NginxTest(unittest.TestCase):
         fail_open_count += 1
     self.assertEqual(3, fail_open_count)
 
+  def test_logs_only(self):
+    """Ensure that all request are passed-through in logs-only mode, but
+    appropriate access logs are still written with the actions that would have
+    been taken."""
+    self.createConfFile(False, False, True, 60, 300, False, True)
+    self.createIapStateFile()
+    self.startNginx()
+    self.makeAndEvaluateStandardRequests(False)
+    access_log = open('access.log', 'r')
+    lines = access_log.readlines()
+    self.assertEqual(len(lines), 4)
+    self.assertIn('iap_jwt_action=deny', lines[0])
+    self.assertIn('iap_jwt_action=allow', lines[1])
+    self.assertIn('iap_jwt_action=deny', lines[2])
+    self.assertIn('iap_jwt_action=noop_off', lines[3])
 
 if __name__ == '__main__':
   unittest.main()

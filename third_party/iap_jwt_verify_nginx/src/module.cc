@@ -292,7 +292,7 @@ ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
   ngx_str_t *jwt_value = extract_iap_jwt_header(r);
   if (jwt_value == nullptr) {
     set_action_value(action_var_val, ACTION_DENY);
-    return NGX_HTTP_FORBIDDEN;
+    return main_conf->logs_only == 0 ? NGX_HTTP_FORBIDDEN : NGX_OK;
   }
 
   if (iap_jwt_is_valid(
@@ -307,7 +307,7 @@ ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
   }
 
   set_action_value(action_var_val, ACTION_DENY);
-  return NGX_HTTP_FORBIDDEN;
+  return main_conf->logs_only == 0 ? NGX_HTTP_FORBIDDEN : NGX_OK;
 }
 
 // Assemble the expected JWT audience and store it in the main IAP module
@@ -406,6 +406,7 @@ void *ngx_iap_jwt_verify_create_main_conf(ngx_conf_t *cf) {
     return NGX_CONF_ERROR;
   }
 
+  conf->logs_only = NGX_CONF_UNSET;
   conf->iap_state_cache_time_sec = NGX_CONF_UNSET;
   conf->key_cache_time_sec = NGX_CONF_UNSET;
 
@@ -432,6 +433,11 @@ char *ngx_iap_jwt_verify_init_main_conf(ngx_conf_t *cf, void *conf) {
   main_conf->last_iap_state_check = 0;
   main_conf->last_key_map_update = 0;
   main_conf->last_key_map_update_attempt = 0;
+
+  if (main_conf->logs_only == NGX_CONF_UNSET) {
+    // Default to logs_only being "off".
+    main_conf->logs_only = 0;
+  }
 
   if (main_conf->iap_state_cache_time_sec == NGX_CONF_UNSET) {
     main_conf->iap_state_cache_time_sec = MAX_STATE_CACHE_TIME_SEC;
@@ -528,7 +534,7 @@ ngx_command_t ngx_iap_jwt_verify_commands[] = {
     NGX_CONF_TAKE1 | NGX_HTTP_MAIN_CONF,
     // function to convert command info to values in the module configuration
     ngx_conf_set_str_slot,
-    // which config location to save this command into,
+    // which config location to save this command into
     NGX_HTTP_MAIN_CONF_OFFSET,
     // offset in configuration struct
     0,
@@ -542,7 +548,7 @@ ngx_command_t ngx_iap_jwt_verify_commands[] = {
     NGX_CONF_TAKE1 | NGX_HTTP_MAIN_CONF,
     // function to convert command info to values in the module configuration
     ngx_conf_set_str_slot,
-    // which config location to save this command into,
+    // which config location to save this command into
     NGX_HTTP_MAIN_CONF_OFFSET,
     // offset in configuration struct
     sizeof(ngx_str_t),
@@ -556,7 +562,7 @@ ngx_command_t ngx_iap_jwt_verify_commands[] = {
     NGX_CONF_TAKE1 | NGX_HTTP_MAIN_CONF,
     // function to convert command info to values in the module configuration
     ngx_conf_set_str_slot,
-    // which config location to save this command into,
+    // which config location to save this command into
     NGX_HTTP_MAIN_CONF_OFFSET,
     // offset in configuration struct
     2 * sizeof(ngx_str_t),
@@ -570,7 +576,7 @@ ngx_command_t ngx_iap_jwt_verify_commands[] = {
     NGX_CONF_TAKE1 | NGX_HTTP_MAIN_CONF,
     // function to convert command info to values in the module configuration
     ngx_conf_set_str_slot,
-    // which config location to save this command into,
+    // which config location to save this command into
     NGX_HTTP_MAIN_CONF_OFFSET,
     // offset in configuration struct
     3 * sizeof(ngx_str_t),
@@ -584,7 +590,7 @@ ngx_command_t ngx_iap_jwt_verify_commands[] = {
     NGX_CONF_TAKE1 | NGX_HTTP_MAIN_CONF,
     // function to convert command info to values in the module configuration
     ngx_conf_set_num_slot,
-    // which config location to save this command into,
+    // which config location to save this command into
     NGX_HTTP_MAIN_CONF_OFFSET,
     // offset in configuration struct
     4 * sizeof(ngx_str_t),
@@ -598,10 +604,24 @@ ngx_command_t ngx_iap_jwt_verify_commands[] = {
     NGX_CONF_TAKE1 | NGX_HTTP_MAIN_CONF,
     // function to convert command info to values in the module configuration
     ngx_conf_set_num_slot,
-    // which config location to save this command into,
+    // which config location to save this command into
     NGX_HTTP_MAIN_CONF_OFFSET,
     // offset in configuration struct
     4 * sizeof(ngx_str_t) + sizeof(ngx_int_t),
+    // void *post
+    nullptr
+  },
+  {
+    // name
+    ngx_string("iap_jwt_verify_logs_only"),
+    // type
+    NGX_CONF_TAKE1 | NGX_HTTP_MAIN_CONF,
+    // function to convert command info to values in the module configuration
+    ngx_conf_set_flag_slot,
+    // which config location to save this command into
+    NGX_HTTP_MAIN_CONF_OFFSET,
+    // offset in configuration struct
+    4 * sizeof(ngx_str_t) + 2 * sizeof(ngx_int_t),
     // void *post
     nullptr
   },

@@ -74,6 +74,10 @@ typedef struct {
   // Maximum value: half a day. Default value: half a day.
   ngx_int_t key_cache_time_sec;
 
+  // If "on", all requests are approved but log statements are written as if
+  // decisions were being made.
+  ngx_flag_t logs_only;
+
   // Indicates whether IAP JWT verfication is enabled at all--if false at the
   // postconfiguration step, we don't even bother to insert the handler.
   bool module_in_use;
