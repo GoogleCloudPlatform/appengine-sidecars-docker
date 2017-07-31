@@ -40,6 +40,7 @@ import unittest
 APP_RESPONSE = 'SUCCESS_WOOHOO'
 HEALTHCHECK_RESPONSE = 'healthy'
 KEY_FILE_NAME = 'keys.jwk'
+IAP_STATE_FILE_NAME = 'iap_state'
 NGX_CONF_PREAMBLE = """
 daemon on;
 worker_processes 1;
@@ -61,7 +62,7 @@ NGX_CONF_IAP_PARAMS_TEMPLATE = """
   iap_jwt_verify_project_number 1234;
   iap_jwt_verify_app_id some-app-id;
   iap_jwt_verify_key_file """ + KEY_FILE_NAME + """;
-  iap_jwt_verify_iap_state_file {iap_state_file_name};
+  iap_jwt_verify_iap_state_file """ + IAP_STATE_FILE_NAME + """;
   iap_jwt_verify_state_cache_time_sec {state_cache_time_sec};
   iap_jwt_verify_key_cache_time_sec {key_cache_time_sec};
 """
@@ -85,7 +86,6 @@ NGX_CONF_POSTAMBLE = """
 } # http
 """
 CONF_FILE_NAME = 'nginx.conf'
-IAP_STATE_FILE_NAME = 'iap_state'
 FIVE_MINUTES_IN_SECONDS = 300
 TWELVE_HOURS_IN_SECONDS = 43200
 NGX_PORT = 9127
@@ -154,7 +154,6 @@ class NginxTest(unittest.TestCase):
       if iap_on_main != None:
         f.write(self.createIapJwtVerifyDirective(iap_on_main))
       f.write(NGX_CONF_IAP_PARAMS_TEMPLATE.format(
-                 iap_state_file_name=IAP_STATE_FILE_NAME,
                  state_cache_time_sec=state_cache_time_sec,
                  key_cache_time_sec=key_cache_time_sec))
     f.write(NGX_CONF_SRV_BLOCK_OPEN_TEMPLATE.format(ngx_port=NGX_PORT))
@@ -377,7 +376,7 @@ class NginxTest(unittest.TestCase):
   def test_key_refresh(self):
     """The key file should be reloaded after a length of time equal to the
     key_cache_time."""
-    key_cache_time = 3  # seconds
+    key_cache_time = 60  # seconds, should be >= 60
     self.createConfFileSimple(
         True, FIVE_MINUTES_IN_SECONDS, key_cache_time)
     self.createIapStateFile()
@@ -492,14 +491,15 @@ class NginxTest(unittest.TestCase):
     self.startNginx()
     self.makeAndEvaluateStandardRequests(True)
 
-    # After this sleep, the state file should be stale and thus we should be in
-    # a "fail open" state.
-    time.sleep(120)
+    # if the state file is 'older' than two minutes, we should be put into a
+    # fail-open state
+    two_min_ago = time.time() - 120
+    os.utime(IAP_STATE_FILE_NAME, (two_min_ago, two_min_ago))
     self.makeAndEvaluateStandardRequests(False)
 
     # Since we set the state checking interval to zero in the config file,
     # expect the update to the state file to be picked up instantly.
-    self.createIapStateFile()
+    os.utime(IAP_STATE_FILE_NAME, None)
     self.makeAndEvaluateStandardRequests(True)
 
     # We expect three fail open events in the error log, since
@@ -512,6 +512,46 @@ class NginxTest(unittest.TestCase):
         fail_open_count += 1
     self.assertEqual(3, fail_open_count)
 
+  def test_fail_open_because_keys_are_stale(self):
+    """Verifies the failsafe mechanism that causes all requests to be passed
+    through if the key file has gone too long without being updated. The
+    hardcoded limit for this is 1 day, the maximum theoretically safe key
+    caching duration."""
+    # Make sure error logs written by previous tests don't mess us up.
+    try:
+      os.remove("error.log")
+    except:
+      pass
+
+    self.createConfFileSimple(True, FIVE_MINUTES_IN_SECONDS, 30)
+    self.createIapStateFile()
+    self.startNginx()
+    self.makeAndEvaluateStandardRequests(True)
+
+    # update the key file's modification time to be a day in the past
+    one_day_ago = time.time() - 86400
+    os.utime(KEY_FILE_NAME, (one_day_ago, one_day_ago))
+
+    # make sure the minimum key update attempt interval has passed
+    time.sleep(60)
+    self.makeAndEvaluateStandardRequests(False)
+
+    # update the key file's modification time to be now
+    os.utime(KEY_FILE_NAME, None)
+
+    # make sure the minimum key update attempt interval has passed
+    time.sleep(60)
+    self.makeAndEvaluateStandardRequests(True)
+
+    # We expect three fail open events in the error log, since
+    # makeAndEvaluateStandardRequests makes three calls to enforced locations.
+    error_log = open('error.log', 'r')
+    lines = error_log.readlines()
+    fail_open_count = 0
+    for line in lines:
+      if "iap_jwt_fail_open:cause=keys_stale" in line:
+        fail_open_count += 1
+    self.assertEqual(3, fail_open_count)
 
 if __name__ == '__main__':
   unittest.main()

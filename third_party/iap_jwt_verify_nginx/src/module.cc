@@ -38,14 +38,23 @@ namespace iap {
 // Only trust IAP state for a maximum of five minutes.
 constexpr unsigned int MAX_STATE_CACHE_TIME_SEC = 300;  // 5 minutes
 
-// While the theoretically time to cache the JWT verification keys is 1 day,
-// refresh every 12 hours to be on the safe side.
+// While the theoretically safe time to cache the JWT verification keys is 1
+// day, refresh every 12 hours to be on the safe side.
 constexpr unsigned int MAX_KEY_CACHE_TIME_SEC = 43200;  // 12 hours
+
+// To avoid excessive contention on key_mutex and the key file, limit attempts
+// to update the keys to at most one per minute.
+constexpr unsigned int MIN_KEY_UPDATE_INTERVAL_SEC = 60;  // 1 minute
 
 // Used for fail open logic--if the mtime of the IAP state file is more than
 // this many seconds in the past, then we assume that metadata fetching is
 // not working and fail open preemptively.
 constexpr unsigned int MAX_STATE_STALENESS_SEC = 120;
+
+// If the key file hasn't been written to in at least this length of time (which
+// corresponds to the longest safe duration for which keys may be cached), then
+// fail-open logic is triggered.
+constexpr unsigned int MAX_KEY_STALENESS_SEC = 86400; // 1 day
 
 // nginx lowercases headers prior to hashing, so using a lowercase value here
 constexpr char IAP_JWT_HEADER_NAME[] = "x-goog-iap-jwt-assertion";
@@ -173,10 +182,7 @@ ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
           main_conf->fail_open_because_state_stale =
               now >= mtime + MAX_STATE_STALENESS_SEC;
 
-          if (ngx_close_file(fd) == NGX_FILE_ERROR) {
-            // TODO: log the error for diagnostics.
-            // Preferably without danger of excessive log spam.
-          }
+          ngx_close_file(fd);
         } else {
           main_conf->iap_on = false;
         }
@@ -207,7 +213,7 @@ ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
     // variable as a way to determine if we've already hit the fail-open logic
     // for the current request. This prevents multiple log lines being written,
     // ensuring accuracy of the fail-open metric.
-    if (action_var_val->valid == 1) {
+    if (action_var_val->valid == 0) {
       ngx_log_error(
           NGX_LOG_ERR, r->connection->log, 0, "iap_jwt_fail_open:cause=state");
     }
@@ -218,52 +224,67 @@ ngx_int_t ngx_http_iap_jwt_verification_handler(ngx_http_request_t *r) {
 
   std::unique_lock<std::mutex> lock(key_mutex);
   std::shared_ptr<iap_key_map_t> key_map = main_conf->key_map;
-  if (now >= main_conf->last_key_map_update + main_conf->key_cache_time_sec) {
-    std::shared_ptr<iap_key_map_t> new_key_map =
-        load_keys(reinterpret_cast<const char *>(main_conf->key_file.data),
-                  main_conf->key_file.len);
-    if (new_key_map == nullptr) {
-      // We failed to update the keys. Thus, we update neither key_map nor
-      // the time of last update. This means that the next thread to get the
-      // lock will attempt to do the update, and so on, until success is
-      // achieved.
-      //
-      // TODO: log this failure.
-      // TODO: is this a performance concern?
-    } else {
-      // Success; update time of last update and shared_ptr to the key map.
-      main_conf->last_key_map_update = now;
-      main_conf->key_map = new_key_map;
-      key_map = new_key_map;
+  if ((now >= main_conf->last_key_map_update + main_conf->key_cache_time_sec
+       // If we're failing open, we want to be more aggressive about trying to
+       // get updated keys.
+       || main_conf->fail_open_because_keys_stale)
+      && now >= main_conf->last_key_map_update_attempt
+          + MIN_KEY_UPDATE_INTERVAL_SEC) {
+    main_conf->last_key_map_update_attempt = now;
+
+    // Check for staleness of the key file
+    ngx_fd_t fd = ngx_open_file(
+        main_conf->key_file.data, NGX_FILE_RDONLY, NGX_FILE_OPEN, 0);
+    if (fd != NGX_INVALID_FILE) {
+      ngx_file_info_t info;
+      ngx_fd_info(fd, &info);
+      time_t mtime = ngx_file_mtime(&info);
+      main_conf->fail_open_because_keys_stale =
+          now >= mtime + MAX_KEY_STALENESS_SEC;
+      ngx_close_file(fd);
+    }
+
+    if (!main_conf->fail_open_because_keys_stale) {
+      std::shared_ptr<iap_key_map_t> new_key_map =
+          load_keys(reinterpret_cast<const char *>(main_conf->key_file.data),
+                    main_conf->key_file.len);
+      if (new_key_map != nullptr) {
+        // Success; update time of last update and shared_ptr to the key map.
+        main_conf->last_key_map_update = now;
+        main_conf->key_map = new_key_map;
+        key_map = new_key_map;
+      }
     }
   }
 
   lock.unlock();
 
-  if (key_map == nullptr) {
-    // This likely means the process just began to take traffic, and another
-    // thread has taken over the work of loading the keys. We have three
-    // choices:
-    //
-    // 1) deny the request
-    // 2) authorize the request
-    // 3) block
-    //
-    // The choice made here is #2 for 30 seconds, thereafter #1. Justification:
-    // the security risk of allowing requests through for 30 seconds is
-    // negligible, especially since we potentially tolerate up to 5 minutes of
-    // no enforcement after an IAP enable. Also, loading the keys into memory
-    // should take much fewer than 30 seconds, so the real gap should be even
-    // smaller. Continuing to allow requests through indefinitely would not be
-    // acceptable (this would ignore potential issues with key fetching), so
-    // after 30 seconds, requests will be denied if key_map remains nullptr.
-    if (now > main_conf->last_key_map_update + 30) {
-      set_action_value(action_var_val, ACTION_ALLOW);
-      return NGX_OK;
-    } else {
-      set_action_value(action_var_val, ACTION_DENY);
-      return NGX_HTTP_FORBIDDEN;
+  if (main_conf->fail_open_because_keys_stale) {
+    if (action_var_val->valid == 0) {
+      ngx_log_error(NGX_LOG_ERR,
+                    r->connection->log,
+                    0,
+                    "iap_jwt_fail_open:cause=keys_stale");
     }
+
+    set_action_value(action_var_val, ACTION_ALLOW);
+    return NGX_OK;
+  }
+
+  if (key_map == nullptr) {
+    // For now, just fail open. Eventually the behavior should probably be "fail
+    // open for a short time period, then fail closed" to accommodate potential
+    // start-up race conditions.
+
+    if (action_var_val->valid == 0) {
+      ngx_log_error(NGX_LOG_ERR,
+                    r->connection->log,
+                    0,
+                    "iap_jwt_fail_open:cause=keys_null");
+    }
+
+    set_action_value(action_var_val, ACTION_ALLOW);
+    return NGX_OK;
   }
 
   ngx_str_t *jwt_value = extract_iap_jwt_header(r);
@@ -402,11 +423,13 @@ char *ngx_iap_jwt_verify_init_main_conf(ngx_conf_t *cf, void *conf) {
 
   // Make sure we are not failing open to start with.
   main_conf->fail_open_because_state_stale = false;
+  main_conf->fail_open_because_keys_stale = false;
 
   // These should be zero due to the use of ngx_pcalloc above, but since having
   // their initial values be zero is important for correctness, take no chances.
   main_conf->last_iap_state_check = 0;
   main_conf->last_key_map_update = 0;
+  main_conf->last_key_map_update_attempt = 0;
 
   if (main_conf->iap_state_cache_time_sec == NGX_CONF_UNSET) {
     main_conf->iap_state_cache_time_sec = MAX_STATE_CACHE_TIME_SEC;
