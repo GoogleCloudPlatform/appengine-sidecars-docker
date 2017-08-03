@@ -32,7 +32,7 @@ workspace(name = "iap_jwt_verify_nginx")
 
 git_repository(
     name = "nginx",
-    commit = "e57578e5937577e224844358793db42e0f51a343", # nginx-1.13.1
+    commit = "aae5c50a7669bfee3b904fe87a5ce0bc2f8fecb6", # nginx-1.13.3
     remote = "https://nginx.googlesource.com/nginx",
 )
 
