@@ -16,20 +16,16 @@
 """An agent for handling app container updates."""
 
 import argparse
-from functools import partial
 import json
 import logging
 import os
-import signal
+import time
 
 from google_compute_engine import metadata_watcher
 
+DEFAULT_POLLING_INTERVAL_SEC = 10
 
-def _ExitWithExceptionHandle(signum, frame):
-  logging.error('Timeout when retrieving metadata. Retrying...')
-
-
-def UpdateStateFileFromMetadataHandler(value, output_file):
+def UpdateStateFileFromMetadata(value, output_file):
   """Writes out to the state file on updates.
 
   Args:
@@ -59,22 +55,25 @@ def Main(argv, watcher=None, loop_watcher=True):
   logger = logging.getLogger()
   logger.setLevel(logging.INFO)
 
-  timeout = argv.timeout or 600
-  signal.signal(signal.SIGALRM, _ExitWithExceptionHandle)
-  signal.alarm(timeout)
+  polling_interval = argv.polling_interval
+
+  # Currently, failsafe logic in the nginx module will start failing open if the
+  # state file's modification time is more than two mintues in the past, so
+  # we enforce that the polling interval is updated sensibly.
+  if (polling_interval < 1 or polling_interval > 119):
+    polling_interval = DEFAULT_POLLING_INTERVAL_SEC
 
   watcher = watcher or metadata_watcher.MetadataWatcher()
 
   while True:
-    watcher.WatchMetadata(
-      partial(
-        UpdateStateFileFromMetadataHandler,
-        output_file=argv.output_state_file),
-      metadata_key='instance/attributes/%s' % argv.iap_metadata_key,
-      recursive=False,
-      timeout=timeout)
-    if loop_watcher:
+    value = watcher.GetMetadata(
+        metadata_key='instance/attributes/%s' % argv.iap_metadata_key,
+        recursive=False,
+        timeout=1)
+    UpdateStateFileFromMetadata(value, argv.output_state_file)
+    if not loop_watcher:
       break
+    time.sleep(polling_interval)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Watches for IAP state changes.')
@@ -82,7 +81,8 @@ if __name__ == '__main__':
                       help='Metadata key to be watched for IAP state.')
   parser.add_argument('--output_state_file', type=str, required=True,
                       help='Where to output the state object to.')
-  parser.add_argument('--timeout', type=int, required=False,
-                      help='Number of seconds to watch.')
+  parser.add_argument('--polling_interval', type=int, required=False,
+                      help='Seconds between metadata fetch attempts.',
+                      default=DEFAULT_POLLING_INTERVAL_SEC)
   args = parser.parse_args()
   Main(args)
