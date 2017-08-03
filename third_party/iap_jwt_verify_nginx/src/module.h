@@ -74,6 +74,10 @@ typedef struct {
   // Maximum value: half a day. Default value: half a day.
   ngx_int_t key_cache_time_sec;
 
+  // If "on", all requests are approved but log statements are written as if
+  // decisions were being made.
+  ngx_flag_t logs_only;
+
   // Indicates whether IAP JWT verfication is enabled at all--if false at the
   // postconfiguration step, we don't even bother to insert the handler.
   bool module_in_use;
@@ -82,6 +86,10 @@ typedef struct {
   // This value is not stored in configuration; rather, it is deduced at
   // runtime from the presence/absence of of the iap_state_file.
   volatile bool iap_on;
+
+  // Used to mark whether we are in a fail-open regime on account of the state
+  // file not having been modified recently enough.
+  volatile bool fail_open_because_state_stale;
 
   // Time (in seconds since epoch start) that the IAP state was last checked.
   std::atomic<time_t> last_iap_state_check;
@@ -94,8 +102,15 @@ typedef struct {
   // Access to this object is synchronized; see implementation.
   std::shared_ptr<iap_key_map_t> key_map;
 
-  // Time at which the key map was last updated.
+  // Time at which the key map was last successfully updated.
   volatile time_t last_key_map_update;
+
+  // Time at which the last key map update was attempted.
+  volatile time_t last_key_map_update_attempt;
+
+  // Used to mark whether we are in a fail-open regime on account of the key
+  // file not having been modified recently enough.
+  volatile bool fail_open_because_keys_stale;
 } ngx_iap_jwt_verify_main_conf_t;
 
 }  // namespace iap

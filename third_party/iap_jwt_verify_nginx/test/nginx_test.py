@@ -40,24 +40,32 @@ import unittest
 APP_RESPONSE = 'SUCCESS_WOOHOO'
 HEALTHCHECK_RESPONSE = 'healthy'
 KEY_FILE_NAME = 'keys.jwk'
+IAP_STATE_FILE_NAME = 'iap_state'
 NGX_CONF_PREAMBLE = """
 daemon on;
 worker_processes 1;
-error_log stderr error;
+error_log error.log error;
 pid nginx.pid;
 events {
   worker_connections 32;
 }
 """
 NGX_CONF_HTTP_BLOCK_OPEN = """
-http {
-  access_log off;
+http {{
+  log_format custom '$remote_addr [$time_local] "$request" $status '
+  '$body_bytes_sent "$http_user_agent" '
+  'iap_jwt_action=$iap_jwt_action';
+
+  access_log {path}/access.log custom;
+"""
+NGX_CONF_LOGS_ONLY_ON = """
+  iap_jwt_verify_logs_only on;
 """
 NGX_CONF_IAP_PARAMS_TEMPLATE = """
   iap_jwt_verify_project_number 1234;
   iap_jwt_verify_app_id some-app-id;
   iap_jwt_verify_key_file """ + KEY_FILE_NAME + """;
-  iap_jwt_verify_iap_state_file {iap_state_file_name};
+  iap_jwt_verify_iap_state_file """ + IAP_STATE_FILE_NAME + """;
   iap_jwt_verify_state_cache_time_sec {state_cache_time_sec};
   iap_jwt_verify_key_cache_time_sec {key_cache_time_sec};
 """
@@ -81,7 +89,6 @@ NGX_CONF_POSTAMBLE = """
 } # http
 """
 CONF_FILE_NAME = 'nginx.conf'
-IAP_STATE_FILE_NAME = 'iap_state'
 FIVE_MINUTES_IN_SECONDS = 300
 TWELVE_HOURS_IN_SECONDS = 43200
 NGX_PORT = 9127
@@ -111,6 +118,16 @@ class NginxTest(unittest.TestCase):
     # Some tests modify the key file.
     # Make sure we always start with a clean copy.
     shutil.copyfile('test/keys.jwk', KEY_FILE_NAME)
+
+    # clear logs
+    try:
+      os.remove("error.log")
+    except:
+      pass
+    try:
+      os.remove("access.log")
+    except:
+      pass
 
   def tearDown(self):
     self.stopNginx()
@@ -142,15 +159,17 @@ class NginxTest(unittest.TestCase):
                      iap_on_loc,
                      state_cache_time_sec,
                      key_cache_time_sec,
-                     omit_all_iap_directives=False):
+                     omit_all_iap_directives=False,
+                     logs_only=False):
     f = open(CONF_FILE_NAME, 'w')
     f.write(NGX_CONF_PREAMBLE)
-    f.write(NGX_CONF_HTTP_BLOCK_OPEN);
+    f.write(NGX_CONF_HTTP_BLOCK_OPEN.format(path=self.cur_dir))
     if not omit_all_iap_directives:
+      if logs_only:
+        f.write(NGX_CONF_LOGS_ONLY_ON);
       if iap_on_main != None:
         f.write(self.createIapJwtVerifyDirective(iap_on_main))
       f.write(NGX_CONF_IAP_PARAMS_TEMPLATE.format(
-                 iap_state_file_name=IAP_STATE_FILE_NAME,
                  state_cache_time_sec=state_cache_time_sec,
                  key_cache_time_sec=key_cache_time_sec))
     f.write(NGX_CONF_SRV_BLOCK_OPEN_TEMPLATE.format(ngx_port=NGX_PORT))
@@ -373,7 +392,7 @@ class NginxTest(unittest.TestCase):
   def test_key_refresh(self):
     """The key file should be reloaded after a length of time equal to the
     key_cache_time."""
-    key_cache_time = 3  # seconds
+    key_cache_time = 60  # seconds, should be >= 60
     self.createConfFileSimple(
         True, FIVE_MINUTES_IN_SECONDS, key_cache_time)
     self.createIapStateFile()
@@ -411,7 +430,7 @@ class NginxTest(unittest.TestCase):
 
   def test_no_iap_jwt_verify_directives(self):
     """nginx should start up just fine and requests should not be blocked if no
-    iap_jwt_verify* directives (including value setters) are present in the
+    iap_jwt_verify.* directives (including value setters) are present in the
     config"""
     # Create a config file with NO IAP directives.
     self.createConfFile(None, None, None, None, None, True)
@@ -419,6 +438,160 @@ class NginxTest(unittest.TestCase):
     self.startNginx()
     self.makeAndEvaluateStandardRequests(False)
 
+  def test_iap_jwt_action_setting(self):
+    """The iap_jwt_action variable is set by the IAP JWT access handler. Its
+    intended purpose is to be written to the access log for metric generation.
+    This test ensures that it is set properly and writing it to the access log
+    succeeds as expected."""
+    self.createConfFileSimple(True, 0, TWELVE_HOURS_IN_SECONDS)
+    self.deleteIapStateFile()
+    self.startNginx()
+    conn = httplib.HTTPConnection('localhost', NGX_PORT)
+
+    conn.request('GET', 'http://localhost/healthcheck')
+    conn.getresponse().read()  # Must do this prior to making another request
+
+    conn = httplib.HTTPConnection('localhost', NGX_PORT)
+    conn.request('GET', 'http://localhost/')
+    conn.getresponse().read()
+
+    self.createIapStateFile()
+    conn.request('GET', 'http://localhost/')
+    conn.getresponse().read()
+    conn.request('GET',
+                 'http://localhost/',
+                 headers = { IAP_JWT_HEADER_NAME: VALID_JWT })
+    conn.getresponse().read()
+    conn.request('GET',
+                 'http://localhost/',
+                 headers = { IAP_JWT_HEADER_NAME: INVALID_JWT })
+    conn.getresponse().read()
+
+    # If the access handler doesn't get inserted because the IAP JWT module is
+    # not in use anywhere, we still expect a "noop_off" action value.
+    self.stopNginx()
+    self.createConfFileSimple(False, 0, TWELVE_HOURS_IN_SECONDS)
+    self.startNginx()
+    conn = httplib.HTTPConnection('localhost', NGX_PORT)
+    conn.request('GET', 'http://localhost/')
+    conn.getresponse().read()
+
+    access_log = open('access.log', 'r')
+    lines = access_log.readlines()
+    self.assertEqual(len(lines), 6)
+    self.assertIn('iap_jwt_action=noop_off', lines[0])
+    self.assertIn('iap_jwt_action=noop_iap_off', lines[1])
+    self.assertIn('iap_jwt_action=deny', lines[2])
+    self.assertIn('iap_jwt_action=allow', lines[3])
+    self.assertIn('iap_jwt_action=deny', lines[4])
+    self.assertIn('iap_jwt_action=noop_off', lines[0])
+
+  def test_fail_open_because_state_is_stale(self):
+    """Verifies the failsafe mechanism that causes all requests to be passed
+    through if the IAP state file has gone too long without being updated. The
+    current hardcoded "maximum time since last modification" is 120 seconds."""
+    self.createConfFileSimple(True, 0, TWELVE_HOURS_IN_SECONDS)
+    self.createIapStateFile()
+    self.startNginx()
+    self.makeAndEvaluateStandardRequests(True)
+
+    # if the state file is 'older' than two minutes, we should be put into a
+    # fail-open state
+    two_min_ago = time.time() - 120
+    os.utime(IAP_STATE_FILE_NAME, (two_min_ago, two_min_ago))
+    self.makeAndEvaluateStandardRequests(False)
+
+    # Since we set the state checking interval to zero in the config file,
+    # expect the update to the state file to be picked up instantly.
+    os.utime(IAP_STATE_FILE_NAME, None)
+    self.makeAndEvaluateStandardRequests(True)
+
+    # We expect three fail open events in the error log, since
+    # makeAndEvaluateStandardRequests makes three calls to enforced locations.
+    error_log = open('error.log', 'r')
+    lines = error_log.readlines()
+    fail_open_count = 0
+    for line in lines:
+      if "iap_jwt_fail_open:cause=state" in line:
+        fail_open_count += 1
+    self.assertEqual(3, fail_open_count)
+
+  def test_fail_open_because_keys_are_stale(self):
+    """Verifies the failsafe mechanism that causes all requests to be passed
+    through if the key file has gone too long without being updated. The
+    hardcoded limit for this is 1 day, the maximum theoretically safe key
+    caching duration."""
+    self.createConfFileSimple(True, FIVE_MINUTES_IN_SECONDS, 30)
+    self.createIapStateFile()
+    self.startNginx()
+    self.makeAndEvaluateStandardRequests(True)
+
+    # update the key file's modification time to be a day in the past
+    one_day_ago = time.time() - 86400
+    os.utime(KEY_FILE_NAME, (one_day_ago, one_day_ago))
+
+    # make sure the minimum key update attempt interval has passed
+    time.sleep(60)
+    self.makeAndEvaluateStandardRequests(False)
+
+    # update the key file's modification time to be now
+    os.utime(KEY_FILE_NAME, None)
+
+    # make sure the minimum key update attempt interval has passed
+    time.sleep(60)
+    self.makeAndEvaluateStandardRequests(True)
+
+    # We expect three fail open events in the error log, since
+    # makeAndEvaluateStandardRequests makes three calls to enforced locations.
+    error_log = open('error.log', 'r')
+    lines = error_log.readlines()
+    fail_open_count = 0
+    for line in lines:
+      if "iap_jwt_fail_open:cause=keys_stale" in line:
+        fail_open_count += 1
+    self.assertEqual(3, fail_open_count)
+
+  def test_fail_open_because_keys_are_null(self):
+    """Verifies that if a valid key map can't be loaded, then all requests are
+    passed through to the application. Also verify the ability to recover from
+    this state."""
+    os.remove(KEY_FILE_NAME)
+    self.createConfFileSimple(True, FIVE_MINUTES_IN_SECONDS, 0)
+    self.createIapStateFile()
+    self.startNginx()
+    self.makeAndEvaluateStandardRequests(False)
+
+    shutil.copyfile('test/keys.jwk', KEY_FILE_NAME)
+
+    # wait for minimum interval before another key update will be attempted
+    time.sleep(60)
+    self.makeAndEvaluateStandardRequests(True)
+
+    # We expect three fail open events in the error log, since
+    # makeAndEvaluateStandardRequests makes three calls to enforced locations.
+    error_log = open('error.log', 'r')
+    lines = error_log.readlines()
+    fail_open_count = 0
+    for line in lines:
+      if "iap_jwt_fail_open:cause=keys_null" in line:
+        fail_open_count += 1
+    self.assertEqual(3, fail_open_count)
+
+  def test_logs_only(self):
+    """Ensure that all request are passed-through in logs-only mode, but
+    appropriate access logs are still written with the actions that would have
+    been taken."""
+    self.createConfFile(False, False, True, 60, 300, False, True)
+    self.createIapStateFile()
+    self.startNginx()
+    self.makeAndEvaluateStandardRequests(False)
+    access_log = open('access.log', 'r')
+    lines = access_log.readlines()
+    self.assertEqual(len(lines), 4)
+    self.assertIn('iap_jwt_action=deny', lines[0])
+    self.assertIn('iap_jwt_action=allow', lines[1])
+    self.assertIn('iap_jwt_action=deny', lines[2])
+    self.assertIn('iap_jwt_action=noop_off', lines[3])
 
 if __name__ == '__main__':
   unittest.main()
