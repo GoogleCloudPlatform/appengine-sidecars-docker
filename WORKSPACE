@@ -30,11 +30,9 @@
 
 workspace(name = "iap_jwt_verify_nginx")
 
-git_repository(
-    name = "nginx",
-    commit = "aae5c50a7669bfee3b904fe87a5ce0bc2f8fecb6", # nginx-1.13.3
-    remote = "https://nginx.googlesource.com/nginx",
-)
+load(":iap_jwt_verify_nginx.bzl", "iap_jwt_verify_nginx_repositories")
+
+iap_jwt_verify_nginx_repositories(False)
 
 load("@nginx//:build.bzl", "nginx_repositories")
 
@@ -48,11 +46,4 @@ new_http_archive(
     url = "https://github.com/google/googletest/archive/release-1.8.0.zip",
     sha256 = "f3ed3b58511efd272eb074a3a6d6fb79d7c2e6a0e374323d1e6bcbcc1ef141bf",
     build_file = "third_party/iap_jwt_verify_nginx/gtest.BUILD",
-)
-
-new_http_archive(
-    name = "jsoncpp",
-    url = "https://github.com/open-source-parsers/jsoncpp/archive/1.8.0.zip",
-    sha256 = "4dd616d24ce537dfbc22b4dd81bf6ff8d80577a6bbb47cda9afb8445e4661f9b",
-    build_file = "third_party/iap_jwt_verify_nginx/jsoncpp.BUILD",
 )
