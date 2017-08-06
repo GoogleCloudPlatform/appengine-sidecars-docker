@@ -25,7 +25,7 @@
 // SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "src/base64_util.h"
+#include "third_party/iap_jwt_verify_nginx/src/base64_util.h"
 
 #include <string>
 

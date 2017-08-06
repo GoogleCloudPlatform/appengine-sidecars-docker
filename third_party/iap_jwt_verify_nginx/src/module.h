@@ -30,7 +30,7 @@
 
 #include <atomic>
 
-#include "src/types.h"
+#include "third_party/iap_jwt_verify_nginx/src/types.h"
 
 extern "C" {
 #include "src/http/ngx_http.h"

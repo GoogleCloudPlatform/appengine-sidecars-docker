@@ -28,6 +28,8 @@
 #
 # Used to build the JsonCpp library.
 
+licenses(["notice"])  # BSD license
+
 cc_library(
     name = "lib_json",
     srcs = glob(

@@ -25,7 +25,7 @@
 // SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "src/iap_jwt_verification.h"
+#include "third_party/iap_jwt_verify_nginx/src/iap_jwt_verification.h"
 
 #include <fstream>
 #include <memory>
@@ -36,8 +36,8 @@
 #include "openssl/bytestring.h"
 #include "openssl/ecdsa.h"
 #include "openssl/sha.h"
-#include "src/jwt.h"
-#include "src/key_util.h"
+#include "third_party/iap_jwt_verify_nginx/src/jwt.h"
+#include "third_party/iap_jwt_verify_nginx/src/key_util.h"
 
 namespace google {
 namespace cloud {

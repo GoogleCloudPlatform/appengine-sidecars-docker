@@ -25,7 +25,7 @@
 // SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "iap_jwt_verification.h"
+#include "third_party/iap_jwt_verify_nginx/src/iap_jwt_verification.h"
 
 #include <string>
 
@@ -54,7 +54,7 @@ constexpr uint64_t VALID_TIME = 1100;
 constexpr char AUD[] = "/projects/1234/apps/some-app-id";
 constexpr size_t AUD_LEN = strlen(AUD);
 
-constexpr char KEY_FILE_NAME[] = "test/keys.jwk";
+constexpr char KEY_FILE_NAME[] = "third_party/iap_jwt_verify_nginx/test/keys.jwk";
 
 std::shared_ptr<iap_key_map_t> get_keys() {
   return load_keys(KEY_FILE_NAME, strlen(KEY_FILE_NAME));

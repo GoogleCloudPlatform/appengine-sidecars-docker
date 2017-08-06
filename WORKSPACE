@@ -47,12 +47,12 @@ new_http_archive(
     name = "gtest",
     url = "https://github.com/google/googletest/archive/release-1.8.0.zip",
     sha256 = "f3ed3b58511efd272eb074a3a6d6fb79d7c2e6a0e374323d1e6bcbcc1ef141bf",
-    build_file = "gtest.BUILD",
+    build_file = "third_party/iap_jwt_verify_nginx/gtest.BUILD",
 )
 
 new_http_archive(
     name = "jsoncpp",
     url = "https://github.com/open-source-parsers/jsoncpp/archive/1.8.0.zip",
     sha256 = "4dd616d24ce537dfbc22b4dd81bf6ff8d80577a6bbb47cda9afb8445e4661f9b",
-    build_file = "jsoncpp.BUILD",
+    build_file = "third_party/iap_jwt_verify_nginx/jsoncpp.BUILD",
 )

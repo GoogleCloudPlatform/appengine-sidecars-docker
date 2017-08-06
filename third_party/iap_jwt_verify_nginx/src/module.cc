@@ -25,11 +25,11 @@
 // SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "src/module.h"
+#include "third_party/iap_jwt_verify_nginx/src/module.h"
 
 #include <mutex>
 
-#include "src/iap_jwt_verification.h"
+#include "third_party/iap_jwt_verify_nginx/src/iap_jwt_verification.h"
 
 namespace google {
 namespace cloud {

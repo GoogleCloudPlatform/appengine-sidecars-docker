@@ -25,13 +25,13 @@
 // SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "src/key_util.h"
+#include "third_party/iap_jwt_verify_nginx/src/key_util.h"
 
 #include "openssl/bn.h"
 #include "openssl/ec_key.h"
 #include "openssl/obj_mac.h"
-#include "src/base64_util.h"
-#include "src/jwt.h"
+#include "third_party/iap_jwt_verify_nginx/src/base64_util.h"
+#include "third_party/iap_jwt_verify_nginx/src/jwt.h"
 
 namespace google {
 namespace cloud {

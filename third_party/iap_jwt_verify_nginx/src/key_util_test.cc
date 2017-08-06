@@ -31,8 +31,8 @@
 
 #include "openssl/bn.h"
 #include "gtest/gtest.h"
-#include "test/b64_encode.h"
-#include "test/key_generation.h"
+#include "third_party/iap_jwt_verify_nginx/test/b64_encode.h"
+#include "third_party/iap_jwt_verify_nginx/test/key_generation.h"
 
 namespace google {
 namespace cloud {

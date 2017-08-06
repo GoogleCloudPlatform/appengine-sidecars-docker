@@ -25,7 +25,7 @@
 // SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "test/jwt_generation.h"
+#include "third_party/iap_jwt_verify_nginx/test/jwt_generation.h"
 
 #include <fstream>
 #include <memory>
@@ -37,8 +37,8 @@
 #include "openssl/ec_key.h"
 #include "openssl/ecdsa.h"
 #include "openssl/sha.h"
-#include "src/key_util.h"
-#include "test/b64_encode.h"
+#include "third_party/iap_jwt_verify_nginx/src/key_util.h"
+#include "third_party/iap_jwt_verify_nginx/test/b64_encode.h"
 
 namespace google {
 namespace cloud {
@@ -75,8 +75,9 @@ string generate_iap_jwt(Json::Value &header, Json::Value &payload) {
 string sign_iap_jwt(string header_dot_payload, string kid) {
   Json::Value jwks;
   Json::Value private_keys;
-  std::fstream("test/keys.jwk") >> jwks;
-  std::fstream("test/keys.priv") >> private_keys;
+  std::fstream("third_party/iap_jwt_verify_nginx/test/keys.jwk") >> jwks;
+  std::fstream("third_party/iap_jwt_verify_nginx/test/keys.priv")
+      >> private_keys;
   std::string encoded_priv_key = private_keys[kid].asString();
   Json::Value jwk_list = jwks["keys"];
   Json::Value jwk;

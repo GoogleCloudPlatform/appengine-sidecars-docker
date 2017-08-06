@@ -28,8 +28,8 @@
 #ifndef NGINX_IAP_JWT_VERIFY_IAP_JWT_VERIFICATION_H
 #define NGINX_IAP_JWT_VERIFY_IAP_JWT_VERIFICATION_H
 
-#include "src/jwt.h"
-#include "src/types.h"
+#include "third_party/iap_jwt_verify_nginx/src/jwt.h"
+#include "third_party/iap_jwt_verify_nginx/src/types.h"
 
 namespace google {
 namespace cloud {

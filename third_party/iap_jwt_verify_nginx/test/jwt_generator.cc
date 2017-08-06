@@ -28,7 +28,7 @@
 #include <iostream>
 #include <string>
 
-#include "test/jwt_generation.h"
+#include "third_party/iap_jwt_verify_nginx/test/jwt_generation.h"
 
 using ::google::cloud::iap::test::generate_iap_jwt;
 using ::std::cout;
