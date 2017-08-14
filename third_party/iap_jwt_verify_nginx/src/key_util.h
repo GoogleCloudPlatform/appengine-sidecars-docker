@@ -29,7 +29,7 @@
 #define NGINX_IAP_JWT_VERIFY_KEY_UTIL_H
 
 #include "json/json.h"
-#include "src/types.h"
+#include "third_party/iap_jwt_verify_nginx/src/types.h"
 
 namespace google {
 namespace cloud {

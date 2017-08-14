@@ -25,10 +25,10 @@
 // SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "src/jwt.h"
+#include "third_party/iap_jwt_verify_nginx/src/jwt.h"
 
 #include "gtest/gtest.h"
-#include "test/b64_encode.h"
+#include "third_party/iap_jwt_verify_nginx/test/b64_encode.h"
 
 namespace google {
 namespace cloud {

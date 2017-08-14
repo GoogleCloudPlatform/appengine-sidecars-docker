@@ -25,7 +25,7 @@
 // SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "b64_encode.h"
+#include "third_party/iap_jwt_verify_nginx/test/b64_encode.h"
 
 #include "openssl/base64.h"
 

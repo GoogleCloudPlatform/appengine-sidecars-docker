@@ -117,7 +117,7 @@ class NginxTest(unittest.TestCase):
 
     # Some tests modify the key file.
     # Make sure we always start with a clean copy.
-    shutil.copyfile('test/keys.jwk', KEY_FILE_NAME)
+    shutil.copyfile('third_party/iap_jwt_verify_nginx/test/keys.jwk', KEY_FILE_NAME)
 
     # clear logs
     try:
@@ -199,7 +199,8 @@ class NginxTest(unittest.TestCase):
       pass
 
   def exec_nginx(self, signal=''):
-    command = 'test/nginx-iap -c ' + CONF_FILE_NAME + ' -p ' + self.cur_dir
+    command = ('third_party/iap_jwt_verify_nginx/test/nginx-iap -c '
+               + CONF_FILE_NAME + ' -p ' + self.cur_dir)
     if signal:
       command += ' -s ' + signal
     subprocess.check_call(shlex.split(command))
@@ -561,7 +562,7 @@ class NginxTest(unittest.TestCase):
     self.startNginx()
     self.makeAndEvaluateStandardRequests(False)
 
-    shutil.copyfile('test/keys.jwk', KEY_FILE_NAME)
+    shutil.copyfile('third_party/iap_jwt_verify_nginx/test/keys.jwk', KEY_FILE_NAME)
 
     # wait for minimum interval before another key update will be attempted
     time.sleep(60)

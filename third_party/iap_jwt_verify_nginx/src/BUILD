@@ -26,6 +26,8 @@
 #
 ################################################################################
 
+licenses(["notice"])  # BSD license
+
 GTEST_INCLUDE_COPT = (
     "-Iexternal/gtest/googletest-release-1.8.0/googletest/include")
 
@@ -67,7 +69,7 @@ cc_library(
         "key_util.cc",
     ],
     visibility = [
-        "//test:__pkg__",
+        "//third_party/iap_jwt_verify_nginx/test:__pkg__",
     ],
     hdrs = [
         "base64_util.h",
@@ -104,7 +106,7 @@ cc_test(
         "iap_jwt_verification_test.cc",
     ],
     data = [
-        "//test:keys",
+        "//third_party/iap_jwt_verify_nginx/test:keys",
     ],
     deps = [
         ":iap_jwt_verification",
@@ -121,7 +123,7 @@ cc_test(
     ],
     deps = [
         ":iap_jwt_verification",
-        "//test:iap_jwt_generation",
+        "//third_party/iap_jwt_verify_nginx/test:iap_jwt_generation",
         "@gtest//:main",
     ],
     copts = JSONCPP_COPTS_FLAGS + [
@@ -138,7 +140,7 @@ cc_test(
     ],
     deps = [
         ":iap_jwt_verification",
-        "//test:iap_jwt_generation",
+        "//third_party/iap_jwt_verify_nginx/test:iap_jwt_generation",
         "@boringssl//:crypto",
         "@gtest//:main",
         "@jsoncpp//:lib_json",

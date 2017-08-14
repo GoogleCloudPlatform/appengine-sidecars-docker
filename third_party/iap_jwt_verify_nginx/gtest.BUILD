@@ -28,6 +28,8 @@
 #
 # Used to build the GoogleTest library.
 
+licenses(["notice"])  # BSD license
+
 cc_library(
     name = "main",
     srcs = glob(

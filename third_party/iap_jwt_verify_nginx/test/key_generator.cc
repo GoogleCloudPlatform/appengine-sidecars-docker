@@ -25,7 +25,7 @@
 // SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "test/key_generation.h"
+#include "third_party/iap_jwt_verify_nginx/test/key_generation.h"
 
 using ::google::cloud::iap::test::create_key_files;
 

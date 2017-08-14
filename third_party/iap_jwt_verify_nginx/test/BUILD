@@ -26,6 +26,8 @@
 #
 ################################################################################
 
+licenses(["notice"])  # BSD license
+
 JSONCPP_COPTS_FLAGS = [
     "-Iexternal/boringssl/include",
     "-Iexternal/jsoncpp/jsoncpp-1.8.0/include",
@@ -51,7 +53,7 @@ cc_binary(
     ],
     linkstatic = 1,
     deps = [
-        "//src:ngx_iap_jwt_verify",
+        "//third_party/iap_jwt_verify_nginx/src:ngx_iap_jwt_verify",
         "@nginx//:http",
         "@nginx//:http_access",
         "@nginx//:http_addition",
@@ -136,13 +138,13 @@ cc_library(
         "key_generation.h",
     ],
     deps = [
-        "//src:iap_jwt_verification",
+        "//third_party/iap_jwt_verify_nginx/src:iap_jwt_verification",
         "@boringssl//:crypto",
         "@jsoncpp//:lib_json",
     ],
     copts = JSONCPP_COPTS_FLAGS + [BSSL_INCLUDE_COPT],
     visibility = [
-        "//src:__pkg__",
+        "//third_party/iap_jwt_verify_nginx/src:__pkg__",
     ],
 )
 
@@ -153,6 +155,6 @@ filegroup(
         "keys.priv",
     ],
     visibility = [
-        "//src:__pkg__",
+        "//third_party/iap_jwt_verify_nginx/src:__pkg__",
     ],
 )
