@@ -1,2 +1,5 @@
 memcache_proxy/memcachep
 cloud_sql_proxy/cloud_sql_proxy
+third_party/iap_jwt_verify_nginx/bazel-*
+bazel-*
+*.pyc

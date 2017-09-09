@@ -22,8 +22,8 @@ mkdir -p $GOPATH/src $GOPATH/pkg
 DEST=$GOPATH/src/github.com/GoogleCloudPlatform/cloudsql-proxy
 git clone https://github.com/GoogleCloudPlatform/cloudsql-proxy $DEST
 # Pin the version of the proxy. Bump this to get a new version.
-git -C $DEST checkout 1274cd3d89ac8826e1882355d60ffb2a0cdff116
-go get github.com/GoogleCloudPlatform/cloudsql-proxy/...
+git -C $DEST checkout 571947b0f240c8b2fa4d163065e5b155920ddfa9
+go get -d github.com/GoogleCloudPlatform/cloudsql-proxy/...
 echo "Building in $DEST"
 
 CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o cloud_sql_proxy github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy/
