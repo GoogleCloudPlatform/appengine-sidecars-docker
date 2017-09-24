@@ -44,7 +44,7 @@ def UpdateStateFileFromMetadata(value, output_file):
     logging.info('Retry due to empty value.')
 
 
-def Main(argv, watcher=None, loop_watcher=True):
+def Main(argv, watcher=None, loop_watcher=True, fetch_keys=False):
   """Runs the watcher.
 
   Args:
@@ -54,6 +54,11 @@ def Main(argv, watcher=None, loop_watcher=True):
   """
   logger = logging.getLogger()
   logger.setLevel(logging.INFO)
+
+  # This ensures we have fresh keys at container start.
+  if (fetch_keys):
+    os.system('curl "https://www.gstatic.com/iap/verify/public_key-jwk" > '
+              '/iap_watcher/iap_verify_keys.txt')
 
   polling_interval = argv.polling_interval
 
