@@ -59,7 +59,7 @@ def Main(argv, watcher=None, loop_watcher=True):
   # Docker doesn't support multiple CMD/ENTRYPOINT statements in Dockerfiles.
   if (argv.fetch_keys):
     os.system('curl "https://www.gstatic.com/iap/verify/public_key-jwk" > '
-              '/iap_watcher/iap_verify_keys.txt')
+              + argv.output_key_file)
 
   polling_interval = argv.polling_interval
 
@@ -93,5 +93,7 @@ if __name__ == '__main__':
   parser.add_argument('--fetch_keys', type=bool, required=False,
                       help='Whether to fetch the keys at start up',
                       default=False)
+  parser.add_argument('--output_key_file', type=str, required=False,
+                      help='Where to output the state object to.')
   args = parser.parse_args()
   Main(args)
