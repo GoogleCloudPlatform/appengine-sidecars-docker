@@ -34,6 +34,7 @@ class TestIapVerifier(unittest.TestCase):
         'iap_metadata_key': 'AEF_IAP_state',
         'output_state_file': path,
         'polling_interval': 1,
+        'fetch_keys': False,
       }),
       watcher=self.metadata_watcher_,
       loop_watcher=False)
@@ -47,6 +48,7 @@ class TestIapVerifier(unittest.TestCase):
         'iap_metadata_key': 'AEF_IAP_state',
         'output_state_file': path,
         'polling_interval': 1,
+        'fetch_keys': False,
       }),
       watcher=self.metadata_watcher_,
       loop_watcher=False)
@@ -60,6 +62,7 @@ class TestIapVerifier(unittest.TestCase):
         'iap_metadata_key': 'AEF_IAP_state',
         'output_state_file': path,
         'polling_interval': 1,
+        'fetch_keys': False,
       }),
       watcher=self.metadata_watcher_,
       loop_watcher=False)
@@ -70,6 +73,7 @@ class TestIapVerifier(unittest.TestCase):
         'iap_metadata_key': 'AEF_IAP_state',
         'output_state_file': path,
         'polling_interval': 1,
+        'fetch_keys': False,
       }),
       watcher=self.metadata_watcher_,
       loop_watcher=False)
@@ -83,6 +87,7 @@ class TestIapVerifier(unittest.TestCase):
         'iap_metadata_key': 'AEF_IAP_state',
         'output_state_file': path,
         'polling_interval': 1,
+        'fetch_keys': False,
       }),
       watcher=self.metadata_watcher_,
       loop_watcher=False)
@@ -93,6 +98,7 @@ class TestIapVerifier(unittest.TestCase):
         'iap_metadata_key': 'AEF_IAP_state',
         'output_state_file': path,
         'polling_interval': 1,
+        'fetch_keys': False,
       }),
       watcher=self.metadata_watcher_,
       loop_watcher=False)
@@ -103,6 +109,7 @@ class TestIapVerifier(unittest.TestCase):
         'iap_metadata_key': 'AEF_IAP_state',
         'output_state_file': path,
         'polling_interval': 1,
+        'fetch_keys': False,
       }),
       watcher=self.metadata_watcher_,
       loop_watcher=False)

@@ -44,7 +44,7 @@ def UpdateStateFileFromMetadata(value, output_file):
     logging.info('Retry due to empty value.')
 
 
-def Main(argv, watcher=None, loop_watcher=True, fetch_keys=False):
+def Main(argv, watcher=None, loop_watcher=True):
   """Runs the watcher.
 
   Args:
@@ -55,8 +55,9 @@ def Main(argv, watcher=None, loop_watcher=True, fetch_keys=False):
   logger = logging.getLogger()
   logger.setLevel(logging.INFO)
 
-  # This ensures we have fresh keys at container start.
-  if (fetch_keys):
+  # This ensures we have fresh keys at container start. Doing it here because
+  # Docker doesn't support multiple CMD/ENTRYPOINT statements in Dockerfiles.
+  if (argv.fetch_keys):
     os.system('curl "https://www.gstatic.com/iap/verify/public_key-jwk" > '
               '/iap_watcher/iap_verify_keys.txt')
 
@@ -89,5 +90,8 @@ if __name__ == '__main__':
   parser.add_argument('--polling_interval', type=int, required=False,
                       help='Seconds between metadata fetch attempts.',
                       default=DEFAULT_POLLING_INTERVAL_SEC)
+  parser.add_argument('--fetch_keys', type=bool, required=False,
+                      help='Whether to fetch the keys at start up',
+                      default=False)
   args = parser.parse_args()
   Main(args)
