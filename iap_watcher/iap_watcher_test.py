@@ -121,6 +121,10 @@ class TestIapVerifier(unittest.TestCase):
     state_path = '%s/tmp' % self.pathname_
     key_path = '%s/keys' % self.pathname_
     self.metadata_watcher_.SetGetMetadataResult('{"enabled": true}')
+    class OsMock:
+      def system(self, cmd):
+        self.cmd = cmd
+    os_mock = OsMock()
     iap_watcher.Main(Object({
         'iap_metadata_key': 'AEF_IAP_state',
         'output_state_file': state_path,
@@ -129,14 +133,12 @@ class TestIapVerifier(unittest.TestCase):
         'output_key_file': key_path,
       }),
       watcher=self.metadata_watcher_,
-      loop_watcher=False)
-    self.assertTrue(os.path.isfile(key_path))
-    conn = httplib.HTTPSConnection('www.gstatic.com')
-    conn.request('GET', '/iap/verify/public_key-jwk')
-    keys_expected = conn.getresponse().read()
-    key_file = open(key_path)
-    keys_actual = key_file.read()
-    self.assertEqual(keys_expected, keys_actual)
+      loop_watcher=False,
+      os_system=os_mock.system)
+    self.assertEqual(
+        os_mock.cmd,
+        'curl "https://www.gstatic.com/iap/verify/public_key-jwk" > '
+            + key_path)
 
 
 if __name__ == '__main__':
