@@ -73,7 +73,7 @@ def Main(argv, watcher=None, loop_watcher=True, os_system=os.system):
 
   while True:
     value = watcher.GetMetadata(
-        metadata_key='instance/attributes/%s' % argv.iap_metadata_key,
+        metadata_key='project/attributes/%s' % argv.iap_metadata_key,
         recursive=False,
         timeout=1)
     UpdateStateFileFromMetadata(value, argv.output_state_file)
