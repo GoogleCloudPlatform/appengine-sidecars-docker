@@ -25,6 +25,10 @@ from google_compute_engine import metadata_watcher
 
 DEFAULT_POLLING_INTERVAL_SEC = 10
 
+def DisableVerification(output_file):
+  if os.path.isfile(output_file):
+    os.remove(output_file)
+
 def UpdateStateFileFromMetadata(value, output_file):
   """Writes out to the state file on updates.
 
@@ -34,15 +38,21 @@ def UpdateStateFileFromMetadata(value, output_file):
   """
   if value:
     logging.info('The latest value is %s.', value)
-    metadata = json.loads(value)
-    if metadata['enabled']:
-      with open(output_file, 'w') as file:
-        pass
-    elif os.path.isfile(output_file):
-      os.remove(output_file)
+    try:
+      metadata = json.loads(value)
+      if 'enabled' in metadata and metadata['enabled']:
+        with open(output_file, 'w') as file:
+          pass
+      else:
+        DisableVerification(output_file)
+    except ValueError as vErr:
+      # if we can't parse the metadata, treat this as "IAP off"
+      logging.info('Error decoding metadata.')
+      DisableVerification(output_file)
   else:
-    logging.info('Retry due to empty value.')
-
+    # Empty value? Assume off.
+    logging.info('Empty metadata value.')
+    DisableVerification(output_file)
 
 def Main(argv, watcher=None, loop_watcher=True, os_system=os.system):
   """Runs the watcher.

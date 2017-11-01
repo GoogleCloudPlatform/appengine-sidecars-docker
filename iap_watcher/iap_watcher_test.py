@@ -30,6 +30,8 @@ class TestIapVerifier(unittest.TestCase):
   def testEnable(self):
     """Tests for the state file exists on metadata enable."""
     path = '%s/tmp' % self.pathname_
+    if os.path.isfile(path):
+      os.remove(path)
     self.metadata_watcher_.SetGetMetadataResult('{"enabled": true}')
     iap_watcher.Main(Object({
         'iap_metadata_key': 'AEF_IAP_state',
@@ -44,6 +46,8 @@ class TestIapVerifier(unittest.TestCase):
   def testDisable(self):
     """Tests for the state file does not exist on metadata disabled."""
     path = '%s/tmp' % self.pathname_
+    if os.path.isfile(path):
+      os.remove(path)
     self.metadata_watcher_.SetGetMetadataResult('{"enabled": false}')
     iap_watcher.Main(Object({
         'iap_metadata_key': 'AEF_IAP_state',
@@ -58,6 +62,8 @@ class TestIapVerifier(unittest.TestCase):
   def testEnableDisable(self):
     """Tests for the state file upon switching to enabled."""
     path = '%s/tmp' % self.pathname_
+    if os.path.isfile(path):
+      os.remove(path)
     self.metadata_watcher_.SetGetMetadataResult('{"enabled": true}')
     iap_watcher.Main(Object({
         'iap_metadata_key': 'AEF_IAP_state',
@@ -83,6 +89,8 @@ class TestIapVerifier(unittest.TestCase):
   def testDisableEnable(self):
     """Tests for the state file upon switching to disabled."""
     path = '%s/tmp' % self.pathname_
+    if os.path.isfile(path):
+      os.remove(path)
     self.metadata_watcher_.SetGetMetadataResult('{"enabled": true}')
     iap_watcher.Main(Object({
         'iap_metadata_key': 'AEF_IAP_state',
@@ -115,6 +123,55 @@ class TestIapVerifier(unittest.TestCase):
       watcher=self.metadata_watcher_,
       loop_watcher=False)
     self.assertTrue(os.path.isfile(path))
+
+  def testEmptyMetadata(self):
+    """Tests that the state file does not exist if the metadata is empty."""
+    path = '%s/tmp' % self.pathname_
+    if os.path.isfile(path):
+      os.remove(path)
+    self.metadata_watcher_.SetGetMetadataResult('')
+    iap_watcher.Main(Object({
+        'iap_metadata_key': 'AEF_IAP_state',
+        'output_state_file': path,
+        'polling_interval': 1,
+        'fetch_keys': False,
+      }),
+      watcher=self.metadata_watcher_,
+      loop_watcher=False)
+    self.assertFalse(os.path.isfile(path))
+
+  def testUnparseableMetadata(self):
+    """Tests for the state file does not exist on metadata unparseable."""
+    path = '%s/tmp' % self.pathname_
+    if os.path.isfile(path):
+      os.remove(path)
+    self.metadata_watcher_.SetGetMetadataResult('"enabled": true')
+    iap_watcher.Main(Object({
+        'iap_metadata_key': 'AEF_IAP_state',
+        'output_state_file': path,
+        'polling_interval': 1,
+        'fetch_keys': False,
+      }),
+     watcher=self.metadata_watcher_,
+      loop_watcher=False)
+    self.assertFalse(os.path.isfile(path))
+
+  def testEnabledKeyNotPresentInParsedMetadata(self):
+    """Tests that absence of the key 'enabled' in the parsed metadata results in
+    verification being disabled."""
+    path = '%s/tmp' % self.pathname_
+    if os.path.isfile(path):
+      os.remove(path)
+    self.metadata_watcher_.SetGetMetadataResult('{"asdf": true}')
+    iap_watcher.Main(Object({
+        'iap_metadata_key': 'AEF_IAP_state',
+        'output_state_file': path,
+        'polling_interval': 1,
+        'fetch_keys': False,
+      }),
+     watcher=self.metadata_watcher_,
+      loop_watcher=False)
+    self.assertFalse(os.path.isfile(path))
 
   def testFetchKeys(self):
     """Tests that keys are fetched when the fetch_keys argument is True."""
