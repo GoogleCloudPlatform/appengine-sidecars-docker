@@ -20,6 +20,7 @@ CRT_FILE=${CERT_DIR}/lb.crt
 
 ENDPOINTS_SERVICE_NAME=''
 ENDPOINTS_SERVICE_VERSION=''
+ENDPOINTS_ROLLOUT_STRATEGY=''
 
 usage () {
   cat << END_USAGE
@@ -39,18 +40,23 @@ Options:
         Required. The name of the Endpoints Service.
         e.g. my-service.my-project-id.appspot.com
     -v ENDPOINTS_SERVICE_VERSION
-        Required. The version of the Endpoints Service which is assigned
+        Optional. The version of the Endpoints Service which is assigned
         when deploying the service API specification.
         e.g. 2016-04-20R662
+    -r ROLLOUT_STRATEGY
+        Optional. The Endpoints Service API specification rollout strategy.
+        Possible options are fixed or managed. The default value is "fixed"
+        e.g. fixed
     -
 END_USAGE
   exit 1
 }
-while getopts 'ha:n:N:p:S:s:v:' arg; do
+while getopts 'ha:n:N:p:S:s:v:r:' arg; do
   case ${arg} in
     h) usage;;
     n) ENDPOINTS_SERVICE_NAME="${OPTARG}";;
     v) ENDPOINTS_SERVICE_VERSION="${OPTARG}";;
+    r) ENDPOINTS_ROLLOUT_STRATEGY="${OPTARG}";;
     ?) usage;;
   esac
 done
@@ -79,12 +85,16 @@ if [[ -f "${CONF_FILE}" ]]; then
   cp "${CONF_FILE}" /etc/nginx/nginx.conf
 fi
 
-# fetch Service Configuration from Service Management if the service name and
-# service version are provided.
-if [[ -n "${ENDPOINTS_SERVICE_NAME}" && \
-      -n "${ENDPOINTS_SERVICE_VERSION}" ]]; then
-  /usr/sbin/fetch_service_config.sh \
-    -s "${ENDPOINTS_SERVICE_NAME}" -v "${ENDPOINTS_SERVICE_VERSION}" || exit $?
+# Building nginx startup command
+cmd="/usr/sbin/start_esp"
+cmd+=" -n /etc/nginx/nginx.conf"
+cmd+=" -s \"${ENDPOINTS_SERVICE_NAME}\""
+if [[ "${ENDPOINTS_SERVICE_VERSION}" ]]; then
+  cmd+=" -v \"${ENDPOINTS_SERVICE_VERSION}\""
+fi
+if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" ]]; then
+  cmd+=" --rollout_strategy \"${ENDPOINTS_ROLLOUT_STRATEGY}\""
 fi
 
-/usr/sbin/nginx -p /usr -c /etc/nginx/nginx.conf
+# Start nginx
+eval $cmd
