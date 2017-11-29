@@ -32,8 +32,10 @@ configuration is already provided on disk:
 $(command basename $0)
 (2) Starts nginx with a custom Endpoints service name and service version, and
 have nginx obtain the service configuration:
-$(command basename $0) -n ENDPOINTS_SERVICE_NAME \
--v ENDPOINTS_SERVICE_VERSION -r ROLLOUT_STRATEGY
+$(command basename $0) -n ENDPOINTS_SERVICE_NAME -v ENDPOINTS_SERVICE_VERSION
+(3) Starts nginx with a custom Endpoints service name and managed rollout
+strategy
+$(command basename $0) -n ENDPOINTS_SERVICE_NAME -r managed
 Options:
     -h
         Shows this message.
@@ -66,6 +68,13 @@ while getopts 'ha:n:N:p:S:s:v:r:' arg; do
     ?) usage;;
   esac
 done
+
+if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}"  && \
+      "${ENDPOINTS_ROLLOUT_STRATEGY}" != "fixed" && \
+      "${ENDPOINTS_ROLLOUT_STRATEGY}" != "managed" ]]; then
+  echo "Error: rollout strategy option should be either fixed or managed"
+  usage
+fi
 
 if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" == "managed" && \
       "${ENDPOINTS_SERVICE_VERSION}" ]]; then
