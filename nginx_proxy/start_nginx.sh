@@ -47,7 +47,7 @@ Options:
         e.g. 2016-04-20R662
     -r ROLLOUT_STRATEGY
         Optional. Specify how ESP will update its service config. The value
-        should be either “fixed” or "manage". If it is "fixed", the ESP will
+        should be either "fixed" or "manage". If it is "fixed", the ESP will
         keep using the service config when it starts.  If it is "managed",
         ESP will constantly check the latest rollout, use the service configs
         specified in the latest rollout. If it is not specified, "fixed"
@@ -69,7 +69,7 @@ done
 
 if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" == "managed" && \
       "${ENDPOINTS_SERVICE_VERSION}" ]]; then
-  echo "Error: service version should not be specified for managed rollout strategy"
+  echo "Error: version should not be specified for managed rollout strategy"
   usage
 fi
 
