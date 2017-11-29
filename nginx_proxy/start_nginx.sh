@@ -32,7 +32,8 @@ configuration is already provided on disk:
 $(command basename $0)
 (2) Starts nginx with a custom Endpoints service name and service version, and
 have nginx obtain the service configuration:
-$(command basename $0) -n ENDPOINTS_SERVICE_NAME -v ENDPOINTS_SERVICE_VERSION
+$(command basename $0) -n ENDPOINTS_SERVICE_NAME \
+-v ENDPOINTS_SERVICE_VERSION -r ROLLOUT_STRATEGY
 Options:
     -h
         Shows this message.
@@ -40,12 +41,17 @@ Options:
         Required. The name of the Endpoints Service.
         e.g. my-service.my-project-id.appspot.com
     -v ENDPOINTS_SERVICE_VERSION
-        Optional. The version of the Endpoints Service which is assigned
-        when deploying the service API specification.
+        Optional. Required when rollout_strategy is "fixed". Specify the service
+        config to use when ESP starts.  ESP will download the service config
+        with the config id. Forbidden when rollout_strategy is "managed".
         e.g. 2016-04-20R662
     -r ROLLOUT_STRATEGY
-        Optional. The Endpoints Service API specification rollout strategy.
-        Possible options are fixed or managed. The default value is "fixed"
+        Optional. Specify how ESP will update its service config. The value
+        should be either “fixed” or "manage". If it is "fixed", the ESP will
+        keep using the service config when it starts.  If it is "managed",
+        ESP will constantly check the latest rollout, use the service configs
+        specified in the latest rollout. If it is not specified, "fixed"
+        would be chosen by default.
         e.g. fixed
     -
 END_USAGE
@@ -60,6 +66,12 @@ while getopts 'ha:n:N:p:S:s:v:r:' arg; do
     ?) usage;;
   esac
 done
+
+if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" == "managed" && \
+      "${ENDPOINTS_SERVICE_VERSION}" ]]; then
+  echo "Error: service version should not be specified for managed rollout strategy"
+  usage
+fi
 
 mkdir -p ${CERT_DIR}
 if [[ ! -f "${KEY_FILE}" ]]; then
