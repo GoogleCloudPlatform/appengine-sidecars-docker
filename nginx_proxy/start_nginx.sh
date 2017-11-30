@@ -76,8 +76,7 @@ if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}"  && \
   usage
 fi
 
-if [[ ( "${ENDPOINTS_ROLLOUT_STRATEGY}" || \
-        "${ENDPOINTS_ROLLOUT_STRATEGY}" == "fixed" ) && \
+if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" != "managed" && \
       "${ENDPOINTS_SERVICE_VERSION}" == "" ]]; then
   echo "Error: version must be specified for fixed rollout strategy"
   usage
