@@ -4,6 +4,8 @@ branches:
   only:
     - master
 
+dist: precise
+
 matrix:
   include:
   - env: GO_VERSION=1.6.3

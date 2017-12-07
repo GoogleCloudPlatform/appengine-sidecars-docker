@@ -22,7 +22,7 @@ mkdir -p $GOPATH/src $GOPATH/pkg
 DEST=$GOPATH/src/github.com/GoogleCloudPlatform/cloudsql-proxy
 git clone https://github.com/GoogleCloudPlatform/cloudsql-proxy $DEST
 # Pin the version of the proxy. Bump this to get a new version.
-git -C $DEST checkout 2e269df091b60330e96d48f857a652ff13ed2994
+git -C $DEST checkout 571947b0f240c8b2fa4d163065e5b155920ddfa9
 go get -d github.com/GoogleCloudPlatform/cloudsql-proxy/...
 echo "Building in $DEST"
 
