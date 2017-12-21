@@ -10,12 +10,6 @@ import (
 )
 
 func sbEnabledError(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusBadRequest)
-	w.Write([]byte("App Engine APIs over the Service Bridge are disabled.\n" +
-		"If they are required, enable them by setting the following to your app.yaml:\n" +
-		"\n" +
-		"beta_settings:\n" +
-		"  enable_app_engine_apis: true\n"))
 }
 
 func makeHandler() http.Handler {
