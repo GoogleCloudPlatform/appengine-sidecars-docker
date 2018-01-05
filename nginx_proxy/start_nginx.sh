@@ -94,9 +94,7 @@ if [[ -f "${CONF_FILE}" ]]; then
 fi
 
 # Start nginx
-if [[ -z "${ENDPOINTS_SERVICE_NAME}" && \
-      -z "${ENDPOINTS_ROLLOUT_STRATEGY}" && \
-      -z "${ENDPOINTS_SERVICE_VERSION}" ]]; then
+if [[ -z "${ENDPOINTS_SERVICE_NAME}" ]]; then
   /usr/sbin/nginx -p /usr -c /etc/nginx/nginx.conf
 else
   if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}"  && \
