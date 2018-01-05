@@ -40,7 +40,7 @@ Options:
     -h
         Shows this message.
     -n ENDPOINTS_SERVICE_NAME
-        Required. The name of the Endpoints Service.
+        Optional. The name of the Endpoints Service.
         e.g. my-service.my-project-id.appspot.com
     -v ENDPOINTS_SERVICE_VERSION
         Optional. Required when rollout_strategy is "fixed". Specify the service
