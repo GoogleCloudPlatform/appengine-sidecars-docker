@@ -20,7 +20,7 @@ CRT_FILE=${CERT_DIR}/lb.crt
 
 ENDPOINTS_SERVICE_NAME=''
 ENDPOINTS_SERVICE_VERSION=''
-ENDPOINTS_ROLLOUT_STRATEGY=''
+ENDPOINTS_ROLLOUT_STRATEGY='fixed'
 
 usage () {
   cat << END_USAGE
@@ -110,7 +110,7 @@ if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}"  && \
   usage
 fi
 
-if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" != 'managed' && \
+if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" == 'fixed' && \
       "${ENDPOINTS_SERVICE_VERSION}" == '' ]]; then
   echo 'Error: version must be specified for the fixed rollout strategy'
   usage
