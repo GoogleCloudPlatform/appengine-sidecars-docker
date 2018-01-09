@@ -74,7 +74,7 @@ std::unique_ptr<Jwt> Jwt::parse_from_string(const std::string &jwt_str) {
   std::unique_ptr<const uint8_t[]>
       signature_bytes = url_safe_base64_decode(parts[2], &signature_length);
   if (signature_bytes == nullptr) {
-    return false;
+    return nullptr;
   }
 
   return std::unique_ptr<Jwt>(new (std::nothrow) Jwt(
