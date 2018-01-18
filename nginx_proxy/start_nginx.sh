@@ -122,6 +122,9 @@ if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" == 'managed' && \
   usage
 fi
 
+# Unset following env variable used in start_esp.py to read credential file
+unset GOOGLE_APPLICATION_CREDENTIALS
+
 # Building nginx startup command
 cmd='/usr/sbin/start_esp'
 cmd+=' -n /etc/nginx/nginx.conf'
