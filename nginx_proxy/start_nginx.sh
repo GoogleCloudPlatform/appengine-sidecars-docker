@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-CERT_DIR=/etc/ssl/localcerts
-KEY_FILE=${CERT_DIR}/lb.key
-CSR_FILE=${CERT_DIR}/lb.csr
-CRT_FILE=${CERT_DIR}/lb.crt
+readonly CERT_DIR=/etc/ssl/localcerts
+readonly KEY_FILE=${CERT_DIR}/lb.key
+readonly CSR_FILE=${CERT_DIR}/lb.csr
+readonly CRT_FILE=${CERT_DIR}/lb.crt
 
 ENDPOINTS_SERVICE_NAME=''
 ENDPOINTS_SERVICE_VERSION=''
