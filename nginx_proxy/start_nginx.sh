@@ -13,13 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-CERT_DIR=/etc/ssl/localcerts
-KEY_FILE=${CERT_DIR}/lb.key
-CSR_FILE=${CERT_DIR}/lb.csr
-CRT_FILE=${CERT_DIR}/lb.crt
+readonly CERT_DIR=/etc/ssl/localcerts
+readonly KEY_FILE=${CERT_DIR}/lb.key
+readonly CSR_FILE=${CERT_DIR}/lb.csr
+readonly CRT_FILE=${CERT_DIR}/lb.crt
 
 ENDPOINTS_SERVICE_NAME=''
 ENDPOINTS_SERVICE_VERSION=''
+ENDPOINTS_ROLLOUT_STRATEGY='fixed'
 
 usage () {
   cat << END_USAGE
@@ -32,25 +33,39 @@ $(command basename $0)
 (2) Starts nginx with a custom Endpoints service name and service version, and
 have nginx obtain the service configuration:
 $(command basename $0) -n ENDPOINTS_SERVICE_NAME -v ENDPOINTS_SERVICE_VERSION
+(3) Starts nginx with a custom Endpoints service name and managed rollout
+strategy:
+$(command basename $0) -n ENDPOINTS_SERVICE_NAME -r managed
 Options:
     -h
         Shows this message.
     -n ENDPOINTS_SERVICE_NAME
-        Required. The name of the Endpoints Service.
+        Optional. The name of the Endpoints Service. If the service name is not
+        specified, service_version and rollout_strategy arguments will be ignored.
         e.g. my-service.my-project-id.appspot.com
     -v ENDPOINTS_SERVICE_VERSION
-        Required. The version of the Endpoints Service which is assigned
-        when deploying the service API specification.
+        Optional. Required when rollout_strategy is "fixed". Specify the service
+        config to use when ESP starts.  ESP will download the service config
+        with the config id. Forbidden when rollout_strategy is "managed".
         e.g. 2016-04-20R662
+    -r ROLLOUT_STRATEGY
+        Optional. Specify how ESP will update its service config. The value
+        should be either "fixed" or "managed". If it is "fixed", the ESP will
+        keep using the service config when it starts.  If it is "managed",
+        ESP will constantly check the latest rollout, use the service configs
+        specified in the latest rollout. If it is not specified, "fixed"
+        would be chosen by default.
+        e.g. fixed
     -
 END_USAGE
   exit 1
 }
-while getopts 'ha:n:N:p:S:s:v:' arg; do
+while getopts 'ha:n:N:p:S:s:v:r:' arg; do
   case ${arg} in
     h) usage;;
     n) ENDPOINTS_SERVICE_NAME="${OPTARG}";;
     v) ENDPOINTS_SERVICE_VERSION="${OPTARG}";;
+    r) ENDPOINTS_ROLLOUT_STRATEGY="${OPTARG}";;
     ?) usage;;
   esac
 done
@@ -79,12 +94,44 @@ if [[ -f "${CONF_FILE}" ]]; then
   cp "${CONF_FILE}" /etc/nginx/nginx.conf
 fi
 
-# fetch Service Configuration from Service Management if the service name and
-# service version are provided.
-if [[ -n "${ENDPOINTS_SERVICE_NAME}" && \
-      -n "${ENDPOINTS_SERVICE_VERSION}" ]]; then
-  /usr/sbin/fetch_service_config.sh \
-    -s "${ENDPOINTS_SERVICE_NAME}" -v "${ENDPOINTS_SERVICE_VERSION}" || exit $?
+# If endpoint service name is specified, custom startup script will start
+# the nginx with the specified version or version from rollout information.
+# Otherwise, nginx will be started without the endpoint configuration.
+
+if [[ -z "${ENDPOINTS_SERVICE_NAME}" ]]; then
+  /usr/sbin/nginx -p /usr -c /etc/nginx/nginx.conf
+  exit $?
 fi
 
-/usr/sbin/nginx -p /usr -c /etc/nginx/nginx.conf
+if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}"  && \
+      "${ENDPOINTS_ROLLOUT_STRATEGY}" != 'fixed' && \
+      "${ENDPOINTS_ROLLOUT_STRATEGY}" != 'managed' ]]; then
+  echo 'Error: rollout strategy option should be either fixed or managed'
+  usage
+fi
+
+if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" == 'fixed' && \
+      "${ENDPOINTS_SERVICE_VERSION}" == '' ]]; then
+  echo 'Error: version must be specified for the fixed rollout strategy'
+  usage
+fi
+
+if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" == 'managed' && \
+      "${ENDPOINTS_SERVICE_VERSION}" ]]; then
+  echo 'Error: version should not be specified for the managed rollout strategy'
+  usage
+fi
+
+# Building nginx startup command
+cmd='/usr/sbin/start_esp'
+cmd+=' -n /etc/nginx/nginx.conf'
+cmd+=" -s \"${ENDPOINTS_SERVICE_NAME}\""
+if [[ "${ENDPOINTS_SERVICE_VERSION}" ]]; then
+  cmd+=" -v \"${ENDPOINTS_SERVICE_VERSION}\""
+fi
+if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" ]]; then
+  cmd+=" --rollout_strategy \"${ENDPOINTS_ROLLOUT_STRATEGY}\""
+fi
+
+# Start nginx
+eval $cmd || exit $?
