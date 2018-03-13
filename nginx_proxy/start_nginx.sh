@@ -132,6 +132,8 @@ fi
 if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" ]]; then
   cmd+=" --rollout_strategy \"${ENDPOINTS_ROLLOUT_STRATEGY}\""
 fi
+cmd+=" --client_ip_header \"X-Forwarded-For\""
+cmd+=" --client_ip_position -2"
 
 # Start nginx
 eval $cmd || exit $?
