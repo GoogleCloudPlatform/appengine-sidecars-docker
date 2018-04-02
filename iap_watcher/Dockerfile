@@ -1,7 +1,8 @@
 # Dockerfile extending the debian8 image to run iap_watcher.py to auto
 # update IAP state and verifier keys.
 
-FROM gcr.io/google_appengine/debian8
+ARG BASE_IMAGE_TAG=latest
+FROM gcr.io/google_appengine/debian8:${BASE_IMAGE_TAG}
 
 RUN apt-get update && \
     apt-get upgrade -y && \
