@@ -16,7 +16,7 @@
 set -e
 
 echo "Preparing build ..."
-export GOPATH=$(mktemp --directory)
+export GOPATH=$(mktemp -d)
 mkdir -p $GOPATH/src $GOPATH/pkg
 
 go get google.golang.org/appengine/internal
