@@ -32,9 +32,9 @@ steps:
     ]
     dir: 'gopath/src/github.com/GoogleCloudPlatform/cloudsql-proxy'
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/${PROJECT_ID}/cloudsql-proxy:latest', '.']
+    args: ['build', '-t', 'gcr.io/${PROJECT_ID}/cloud-sql-proxy:latest', '.']
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/${PROJECT_ID}/cloudsql-proxy:${_RC_NAME}', '.']
+    args: ['build', '-t', 'gcr.io/${PROJECT_ID}/cloud-sql-proxy:${_RC_NAME}', '.']
 images:
-  - 'gcr.io/$PROJECT_ID/cloudsql-proxy:latest'
-  - 'gcr.io/$PROJECT_ID/cloudsql-proxy:${_RC_NAME}'
+  - 'gcr.io/$PROJECT_ID/cloud-sql-proxy:latest'
+  - 'gcr.io/$PROJECT_ID/cloud-sql-proxy:${_RC_NAME}'
