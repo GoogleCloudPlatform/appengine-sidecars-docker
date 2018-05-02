@@ -2,7 +2,7 @@
 # update IAP state and verifier keys.
 
 ARG BASE_IMAGE_TAG=latest
-FROM gcr.io/google_appengine/debian8:${BASE_IMAGE_TAG}
+FROM gcr.io/google-appengine/debian8:${BASE_IMAGE_TAG}
 
 RUN apt-get update && \
     apt-get upgrade -y && \

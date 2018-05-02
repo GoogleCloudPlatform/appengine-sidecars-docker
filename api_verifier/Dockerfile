@@ -8,7 +8,7 @@
 #                 metadata.
 
 ARG BASE_IMAGE_TAG=latest
-FROM gcr.io/google_appengine/python-compat:${BASE_IMAGE_TAG}
+FROM gcr.io/google-appengine/python-compat:${BASE_IMAGE_TAG}
 ADD . /home/vmagent/api_verifier
 WORKDIR /home/vmagent/api_verifier
 ENTRYPOINT ["./api_verifier.py"]
