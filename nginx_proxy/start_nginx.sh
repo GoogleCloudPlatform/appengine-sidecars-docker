@@ -21,6 +21,7 @@ readonly CRT_FILE=${CERT_DIR}/lb.crt
 ENDPOINTS_SERVICE_NAME=''
 ENDPOINTS_SERVICE_VERSION=''
 ENDPOINTS_ROLLOUT_STRATEGY='fixed'
+ENDPOINTS_CLOUD_TRACE_FLAG='true'
 
 usage () {
   cat << END_USAGE
@@ -56,16 +57,19 @@ Options:
         specified in the latest rollout. If it is not specified, "fixed"
         would be chosen by default.
         e.g. fixed
-    -
+    -t ENDPOINTS_CLOUD_TRACE_FLAG
+        Optional. Enable or disable cloud trace. The value should be either
+        "true" or "false". The default value is "true".
 END_USAGE
   exit 1
 }
-while getopts 'ha:n:N:p:S:s:v:r:' arg; do
+while getopts 'ha:n:N:p:S:s:v:r:t:' arg; do
   case ${arg} in
     h) usage;;
     n) ENDPOINTS_SERVICE_NAME="${OPTARG}";;
     v) ENDPOINTS_SERVICE_VERSION="${OPTARG}";;
     r) ENDPOINTS_ROLLOUT_STRATEGY="${OPTARG}";;
+    t) ENDPOINTS_CLOUD_TRACE_FLAG="${OPTARG}";;
     ?) usage;;
   esac
 done
@@ -122,6 +126,12 @@ if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" == 'managed' && \
   usage
 fi
 
+if [[ "${ENDPOINTS_CLOUD_TRACE_FLAG}" != 'true' && \
+      "${ENDPOINTS_CLOUD_TRACE_FLAG}" != 'false' ]]; then
+  echo 'Error: invalid value for cloud trace flag'
+  usage
+fi
+
 # Building nginx startup command
 cmd='/usr/sbin/start_esp'
 cmd+=' -n /etc/nginx/nginx.conf'
@@ -131,6 +141,9 @@ if [[ "${ENDPOINTS_SERVICE_VERSION}" ]]; then
 fi
 if [[ "${ENDPOINTS_ROLLOUT_STRATEGY}" ]]; then
   cmd+=" --rollout_strategy \"${ENDPOINTS_ROLLOUT_STRATEGY}\""
+fi
+if [[ "${ENDPOINTS_CLOUD_TRACE_FLAG}" == 'false' ]]; then
+  cmd+=" --disable_cloud_trace_sampling"
 fi
 cmd+=" --client_ip_header \"X-Forwarded-For\""
 cmd+=" --client_ip_position -2"
