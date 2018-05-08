@@ -128,7 +128,7 @@ fi
 
 if [[ "${ENDPOINTS_CLOUD_TRACE_AUTO_SAMPLING_FLAG}" != 'true' && \
       "${ENDPOINTS_CLOUD_TRACE_AUTO_SAMPLING_FLAG}" != 'false' ]]; then
-  echo 'Error: invalid value for cloud trace flag'
+  echo 'Error: invalid value for cloud trace auto sampling flag'
   usage
 fi
 
