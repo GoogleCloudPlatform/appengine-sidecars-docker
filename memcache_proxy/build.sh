@@ -16,7 +16,7 @@
 set -e
 
 echo "Preparing build ..."
-export GOPATH=$(mktemp -d)
+readonly GOPATH="${GOPATH:-$(mktemp -d)}"
 mkdir -p $GOPATH/src $GOPATH/pkg
 
 go get google.golang.org/appengine/internal
@@ -24,7 +24,7 @@ cp -R $GOPATH/src/google.golang.org/appengine/internal $GOPATH/src/google.golang
 sed -i 's|instance/attributes/gae_minor_version|instance/attributes/gae_backend_minor_version|g' $GOPATH/src/google.golang.org/appengine/notreallyinternal/identity_vm.go
 sed -i 's|"google\.golang\.org/appengine/internal"|internal "google\.golang\.org/appengine/notreallyinternal"|g' $GOPATH/src/google.golang.org/appengine/notreallyinternal/aetesting/fake.go
 
-DEST=$GOPATH/src
+readonly DEST=$GOPATH/src
 
 echo "Building in $DEST"
 
@@ -39,4 +39,3 @@ echo "Testing in $DEST"
 go test $DEST/dtog/dtog.go $DEST/dtog/dtog_test.go
 
 echo "Done, your binary is here ./memcachep"
-
