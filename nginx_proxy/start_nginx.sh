@@ -58,7 +58,7 @@ Options:
         would be chosen by default.
         e.g. fixed
     -t ENDPOINTS_CLOUD_TRACE_AUTO_SAMPLING_FLAG
-        Optional. Disable cloud trace auto sampling. By default, 1 request
+        Optional. Enables cloud trace auto sampling. By default, 1 request
         out of every 1000 or 1 request out of every 10 seconds is enabled with
         cloud trace. Set this flag to "false" to disable such auto sampling.
         Cloud trace can still be enabled from request HTTP headers with trace
