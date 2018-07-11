@@ -1,4 +1,4 @@
-FROM gcr.io/google_appengine/base
+FROM gcr.io/google-appengine/base
 
 COPY memcachep /home/memcache/
 WORKDIR /home/memcache
