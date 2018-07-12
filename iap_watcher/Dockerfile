@@ -26,4 +26,5 @@ ENTRYPOINT [ \
 
 RUN echo "15 */1 * * * curl 'https://www.gstatic.com/iap/verify/public_key-jwk' > ${OUTPUT_KEY_FILE}" >> .tmp_cron
 RUN crontab .tmp_cron
+RUN service cron start
 RUN rm .tmp_cron
