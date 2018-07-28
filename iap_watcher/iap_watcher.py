@@ -78,7 +78,7 @@ def Main(argv, watcher=None, loop_watcher=True):
     # 1) Ensure key fetching time is different on a per-VM basis
     # 2) Makes ENTRYPOINT statement in Dockerfile cleaner
     command = ('/bin/bash -c "echo \\"\$((\$RANDOM%60)) * * * * curl '
-               + '\'' + KEYS_ENDPOINT + '\' > + argv.output_key_file
+               + '\'' + KEYS_ENDPOINT + '\'' > + argv.output_key_file
                + '\\" > .tmp_cron"')
     subprocess.check_call(command, shell=True)
     subprocess.check_call(shlex.split('crontab .tmp_cron'))
