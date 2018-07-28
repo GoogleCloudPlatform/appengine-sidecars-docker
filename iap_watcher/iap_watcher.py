@@ -19,11 +19,14 @@ import argparse
 import json
 import logging
 import os
+import shlex
+import subprocess
 import time
 
 from google_compute_engine import metadata_watcher
 
 DEFAULT_POLLING_INTERVAL_SEC = 10
+KEYS_ENDPOINT = 'https://www.gstatic.com/iap/verify/public_key-jwk'
 
 def DisableVerification(output_file):
   if os.path.isfile(output_file):
@@ -54,7 +57,7 @@ def UpdateStateFileFromMetadata(value, output_file):
     logging.info('Empty metadata value.')
     DisableVerification(output_file)
 
-def Main(argv, watcher=None, loop_watcher=True, os_system=os.system):
+def Main(argv, watcher=None, loop_watcher=True):
   """Runs the watcher.
 
   Args:
@@ -68,8 +71,19 @@ def Main(argv, watcher=None, loop_watcher=True, os_system=os.system):
   # This ensures we have fresh keys at container start. Doing it here because
   # Docker doesn't support multiple CMD/ENTRYPOINT statements in Dockerfiles.
   if (argv.fetch_keys):
-    os_system('curl "https://www.gstatic.com/iap/verify/public_key-jwk" > '
-              + argv.output_key_file)
+    subprocess.check_call(
+        'curl "' + KEYS_ENDPOINT + '" > '+ argv.output_key_file, shell=True)
+
+    # Set up cronjob here instead of Dockerfile. Two reasons:
+    # 1) Ensure key fetching time is different on a per-VM basis
+    # 2) Makes ENTRYPOINT statement in Dockerfile cleaner
+    command = ('/bin/bash -c "echo \\"\$((\$RANDOM%60)) * * * * curl '
+               + '\'' + KEYS_ENDPOINT + '\' > + argv.output_key_file
+               + '\\" > .tmp_cron"')
+    subprocess.check_call(command, shell=True)
+    subprocess.check_call(shlex.split('crontab .tmp_cron'))
+    subprocess.call(shlex.split('rm .tmp_cron'))
+    subprocess.check_call(shlex.split('service cron start'))
 
   polling_interval = argv.polling_interval
 
