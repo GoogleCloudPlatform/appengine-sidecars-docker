@@ -16,6 +16,7 @@ VOLUME /iap_watcher
 RUN mkdir -p /home/vmagent/iap_watcher
 WORKDIR /home/vmagent/iap_watcher
 ADD startup_script.sh .
+RUN chmod +x ./startup_script.sh
 ADD iap_watcher.py .
 ENTRYPOINT ["./startup_script.sh"]
 
