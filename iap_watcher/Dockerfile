@@ -15,12 +15,7 @@ VOLUME /iap_watcher
 
 RUN mkdir -p /home/vmagent/iap_watcher
 WORKDIR /home/vmagent/iap_watcher
+ADD startup_script.sh .
 ADD iap_watcher.py .
-ENV OUTPUT_KEY_FILE /iap_watcher/iap_verify_keys.txt
-ENTRYPOINT [ \
-    "./iap_watcher.py", \
-    "--iap_metadata_key=AEF_IAP_state", \
-    "--output_state_file=/iap_watcher/iap_state", \
-    "--fetch_keys=True", \
-    "--output_key_file=${OUTPUT_KEY_FILE}"]
-    
+ENTRYPOINT ["./startup_script.sh"]
+
