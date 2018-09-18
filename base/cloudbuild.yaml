@@ -1,0 +1,17 @@
+# Config for building with Google Cloud Build
+#
+# This produces a container with two tags, "latest" and _RC_NAME, which must be
+# specified via a command-line flag.
+#
+# Run with:
+#   gcloud build submit --config cloudbuild.yaml . \
+#     --substitutions=_RC_NAME=20180101-RC00
+
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/${PROJECT_ID}/base:latest', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/${PROJECT_ID}/base:${_RC_NAME}', '.']
+images:
+  - 'gcr.io/$PROJECT_ID/base:latest'
+  - 'gcr.io/$PROJECT_ID/base:${_RC_NAME}'

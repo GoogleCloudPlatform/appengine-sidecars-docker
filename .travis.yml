@@ -4,10 +4,11 @@ branches:
   only:
     - master
 
+dist: precise
+
 matrix:
   include:
-  - env: GO_VERSION=1.6.3
-  - env: GO_VERSION=1.7rc3
+  - env: GO_VERSION=1.9.7
 
 before_install:
 - pwd
