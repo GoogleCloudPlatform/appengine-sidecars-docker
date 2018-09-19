@@ -10,7 +10,7 @@ RUN apt-get -q update && \
 
 RUN curl -s https://storage.googleapis.com/signals-agents/logging/google-fluentd-install.sh | DO_NOT_INSTALL_CATCH_ALL_CONFIG=1 bash
 
-RUN /usr/sbin/google-fluentd-gem install --conservative fluent-plugin-google-cloud:0.6.13
+RUN /usr/sbin/google-fluentd-gem install --conservative fluent-plugin-google-cloud:0.6.25.1
 RUN /usr/sbin/google-fluentd-gem install --conservative fluent-plugin-detect-exceptions:0.0.8
 
 # Add cloud agent driver
