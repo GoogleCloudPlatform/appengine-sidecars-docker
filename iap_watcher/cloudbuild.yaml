@@ -4,7 +4,7 @@
 # specified via a command-line flag.
 #
 # Run with:
-#   gcloud build submit --config cloudbuild.yaml . \
+#   gcloud builds submit --config cloudbuild.yaml . \
 #     --substitutions=_RC_NAME=20180101-RC00
 
 steps:
