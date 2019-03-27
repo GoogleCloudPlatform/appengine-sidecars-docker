@@ -28,9 +28,8 @@ module Fluent
     def emit(tag, chunk, next_chain)
       chunk.each do |time_sec,record|
         time = Time.at(time_sec)
-        timestamp = {'seconds' => time.tv_sec, 'nanos' => time.tv_nsec}
         message = record['log']
-        new_record = {'timestamp' => timestamp, 'message' => message}
+        new_record = {'time' => time.iso8601, 'message' => message}
         new_tag = stdout_tag
         if record['stream'] == 'stderr'
           new_tag = stderr_tag
