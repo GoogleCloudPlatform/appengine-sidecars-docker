@@ -1,7 +1,7 @@
 # Nginx Proxy that forwards requests into the appengine application.
 
 ARG BASE_IMAGE_TAG=latest
-FROM gcr.io/google-appengine/base:${BASE_IMAGE_TAG}
+FROM gcr.io/google-appengine/debian9:${BASE_IMAGE_TAG}
 
 # Add the Cloud SDK distribution URI as a package source
 # Import the Google Cloud public key
@@ -9,7 +9,7 @@ FROM gcr.io/google-appengine/base:${BASE_IMAGE_TAG}
 
 RUN apt-get -q update && \
     apt-get -y -q upgrade && \
-    apt-get install -y -q curl && \
+    apt-get install -y -q curl gnupg2 && \
     echo "deb http://packages.cloud.google.com/apt google-cloud-endpoints-jessie main" \
         | tee /etc/apt/sources.list.d/google-cloud-endpoints.list && \
     curl --silent https://packages.cloud.google.com/apt/doc/apt-key.gpg \
