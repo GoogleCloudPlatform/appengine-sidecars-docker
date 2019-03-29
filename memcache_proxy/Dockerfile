@@ -1,4 +1,5 @@
-FROM gcr.io/google-appengine/base
+ARG BASE_IMAGE_TAG=latest
+FROM gcr.io/google-appengine/debian9:${BASE_IMAGE_TAG}
 
 COPY memcachep /home/memcache/
 WORKDIR /home/memcache
