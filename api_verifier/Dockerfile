@@ -8,14 +8,7 @@
 #                 metadata.
 
 ARG BASE_IMAGE_TAG=latest
-FROM gcr.io/google-appengine/debian9:${BASE_IMAGE_TAG}
-
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends python python-pip python-setuptools && \
-    apt-get clean
-RUN pip install google-api-python-client
-
+FROM gcr.io/google-appengine/python-compat:${BASE_IMAGE_TAG}
 ADD . /home/vmagent/api_verifier
 WORKDIR /home/vmagent/api_verifier
 ENTRYPOINT ["./api_verifier.py"]
