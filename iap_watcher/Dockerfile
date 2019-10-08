@@ -2,11 +2,11 @@
 # update IAP state and verifier keys.
 
 ARG BASE_IMAGE_TAG=latest
-FROM gcr.io/google-appengine/debian8:${BASE_IMAGE_TAG}
+FROM gcr.io/google-appengine/debian9:${BASE_IMAGE_TAG}
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends cron curl python python-pip && \
+    apt-get install -y --no-install-recommends cron curl python python-pip python-setuptools && \
     apt-get clean
 RUN pip install google-compute-engine
 
