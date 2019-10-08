@@ -1,4 +1,4 @@
-# Dockerfile extending the debian8 image to run iap_watcher.py to auto
+# Dockerfile extending the debian9 image to run iap_watcher.py to auto
 # update IAP state and verifier keys.
 
 ARG BASE_IMAGE_TAG=latest
