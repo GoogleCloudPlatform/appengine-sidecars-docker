@@ -1,4 +1,7 @@
-FROM gcr.io/google-appengine/debian9:latest
+# Stackdriver monitoring agent that collects metrics and send to Stackdriver.
+
+ARG BASE_IMAGE_TAG=latest
+FROM gcr.io/google-appengine/debian9:${BASE_IMAGE_TAG}
 
 # From https://cloud.google.com/monitoring/agent/install-agent
 ADD https://dl.google.com/cloudagents/install-monitoring-agent.sh /install-monitoring-agent.sh
