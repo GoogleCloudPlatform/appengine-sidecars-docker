@@ -8,7 +8,7 @@ import (
 	//"google3/third_party/golang/opencensus/stats/view/view"
 	//"google3/third_party/golang/opencensus_stackdriver/stackdriver"
 	"contrib.go.opencensus.io/exporter/stackdriver"
-	"contrib.go.opencensus.io/exporter/stackdriver/monitoredresource"
+	//"contrib.go.opencensus.io/exporter/stackdriver/monitoredresource"
 )
 
 type GaeInstance struct {
@@ -39,21 +39,21 @@ func SetupExporter() *stackdriver.Exporter {
 	//	Location: "australia-southeast1",
 	//}
 	
-	gce := &monitoredresource.GCEInstance{
-		ProjectID: "imccarten-flex-test",
-		InstanceID: "aef-default-test-20191118t095526-nlcl",
-		Zone: "australia-southeast1",
-	}
+	//gce := &monitoredresource.GCEInstance{
+	//	ProjectID: "imccarten-flex-test",
+	//	InstanceID: "aef-default-test-20191118t095526-nlcl",
+	//	Zone: "australia-southeast1",
+	//}
 
 	labels := &stackdriver.Labels{}
-	labels.Set("module_id", "default", "The service/module name")
-	labels.Set("version_id", "20191118t095526", "The version name")
+	//labels.Set("module_id", "default", "The service/module name")
+	//labels.Set("version_id", "20191118t095526", "The version name")
 
 	sdExporter, err := stackdriver.NewExporter(stackdriver.Options{
 		ProjectID:         "imccarten-flex-test",
 		MetricPrefix:      "flex/local",
 		ReportingInterval: 60 * time.Second,
-		MonitoredResource: gce,
+		//MonitoredResource: gce,
 		DefaultMonitoringLabels: labels,
 	})
 	if err != nil {
