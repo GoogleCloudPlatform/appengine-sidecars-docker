@@ -1,0 +1,16 @@
+receivers:
+  filemetrics:
+    metric_name: local/opentelemetry_metric2
+    metric_value: 1
+
+exporters:
+  stackdriver/test_exporter:
+    project: imccarten-flex-test
+    metric_prefix: flex/opentelemetry
+
+service:
+  pipelines:
+    metrics:
+      receivers: [filemetrics]
+      processors: []
+      exporters: [stackdriver/test_exporter]
