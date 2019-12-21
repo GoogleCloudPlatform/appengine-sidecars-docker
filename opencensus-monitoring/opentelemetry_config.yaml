@@ -2,6 +2,7 @@ receivers:
   filemetrics:
     metric_name: local/opentelemetry_metric2
     metric_value: 1
+    build_date: @BUILD_DATE@
 
 exporters:
   stackdriver/test_exporter:

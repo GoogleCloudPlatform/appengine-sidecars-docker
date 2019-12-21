@@ -41,8 +41,6 @@ func main() {
 	}
 
 	svc, err := service.New(factories, info)
-	log.Printf("Running with filereceiver")
-	fmt.Printf("Running wtih filereceiver 2")
 	handleErr(err)
 
 	err = svc.Start()
