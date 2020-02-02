@@ -22,7 +22,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector/receiver"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/stackdriverexporter"
-        "github.com/googlecloudplatform/appengine-sidecars-docker/opencensus-monitoring/receiver/filereceiver"
+        "github.com/googlecloudplatform/appengine-sidecars-docker/opencensus-monitoring/receiver/vmimageagereceiver"
 )
 
 func components() (config.Factories, error) {
@@ -33,7 +33,7 @@ func components() (config.Factories, error) {
 	}
 
 	receivers := []receiver.Factory{
-		&filereceiver.Factory{},
+		&vmimageagereceiver.Factory{},
 	}
 	for _, rcv := range factories.Receivers {
 		receivers = append(receivers, rcv)

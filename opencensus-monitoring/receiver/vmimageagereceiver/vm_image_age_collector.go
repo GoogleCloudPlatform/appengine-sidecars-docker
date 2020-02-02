@@ -23,10 +23,12 @@ type VmImageAgeCollector struct {
 	exportInterval time.Duration
 	buildDate      string
 	done           chan struct{}
+	vmImageName    string
 
 	parsedBuildDate time.Time
 	buildDateError  bool
 	bucketOptions   *metricspb.DistributionValue_BucketOptions
+	labelValues     []*metricspb.LabelValue
 }
 
 const (
@@ -35,7 +37,7 @@ const (
 
 var rsc *resourcepb.Resource
 
-func NewVmImageAgeCollector(exportInterval time.Duration, buildDate string, consumer consumer.MetricsConsumer) *VmImageAgeCollector {
+func NewVmImageAgeCollector(exportInterval time.Duration, buildDate, vmImageName string, consumer consumer.MetricsConsumer) *VmImageAgeCollector {
 	if exportInterval <= 0 {
 		exportInterval = defaultExportInterval
 	}
@@ -44,6 +46,7 @@ func NewVmImageAgeCollector(exportInterval time.Duration, buildDate string, cons
 		consumer:       consumer,
 		startTime:      time.Now(),
 		buildDate:      buildDate,
+		vmImageName:    vmImageName,
 		exportInterval: exportInterval,
 		done:           make(chan struct{}),
 	}
@@ -70,8 +73,8 @@ func (collector *VmImageAgeCollector) parseBuildDate() {
 	collector.buildDateError = err != nil
 }
 
-func calculateImageAge(buildDate time.Time) (float64, error) {
-	imageAge := time.Now().Sub(buildDate)
+func calculateImageAge(buildDate time.Time, now time.Time) (float64, error) {
+	imageAge := now.Sub(buildDate)
 	imageAgeDays := imageAge.Hours() / 24
 	if imageAgeDays < 0 {
 		return 0, errors.New("The vm build date is more recent than the current time")
@@ -81,8 +84,7 @@ func calculateImageAge(buildDate time.Time) (float64, error) {
 
 func (collector *VmImageAgeCollector) StartCollection() {
 	detectResource()
-	collector.parseBuildDate()
-	collector.bucketOptions = metricgenerator.MakeExponentialBucketOptions(boundsBase, numBounds)
+	collector.setupCollection()
 
 	go func() {
 		ticker := time.NewTicker(collector.exportInterval)
@@ -97,38 +99,47 @@ func (collector *VmImageAgeCollector) StartCollection() {
 	}()
 }
 
+func (collector *VmImageAgeCollector) setupCollection() {
+	collector.parseBuildDate()
+	collector.bucketOptions = metricgenerator.MakeExponentialBucketOptions(boundsBase, numBounds)
+	collector.labelValues = []*metricspb.LabelValue{metricgenerator.MakeLabelValue(collector.vmImageName)}
+}
+
 func (collector *VmImageAgeCollector) StopCollection() {
 	close(collector.done)
 }
 
 func (collector *VmImageAgeCollector) makeErrorMetrics() *metricspb.Metric {
+	timeseries := metricgenerator.MakeInt64TimeSeries(1, collector.startTime, time.Now(), collector.labelValues)
 	return &metricspb.Metric{
-                                MetricDescriptor: vmImageErrorMetric,
-                                Resource:         rsc,
-                                Timeseries:       []*metricspb.TimeSeries{metricgenerator.MakeInt64TimeSeries(1, collector.startTime)},
-                        }
+		MetricDescriptor: vmImageErrorMetric,
+		Resource:         rsc,
+		Timeseries:       []*metricspb.TimeSeries{timeseries},
+	}
 
 }
 
 func (collector *VmImageAgeCollector) scrapeAndExport() {
 	metrics := make([]*metricspb.Metric, 0, 1)
 
-	if collector.buildDateError{
+	if collector.buildDateError {
 		metrics = append(metrics, collector.makeErrorMetrics())
 	} else {
-		imageAge, err := calculateImageAge(collector.parsedBuildDate)
+		imageAge, err := calculateImageAge(collector.parsedBuildDate, time.Now())
 		if err != nil {
 			metrics = append(metrics, collector.makeErrorMetrics())
-		} else{
-		metrics = append(
-			metrics,
-			&metricspb.Metric{
-				MetricDescriptor: vmImageAgeMetric,
-				Resource:         rsc,
-				Timeseries:       []*metricspb.TimeSeries{metricgenerator.MakeSingleValueDistributionTimeSeries(imageAge, collector.startTime, collector.bucketOptions)},
-			},
-		)
-	}
+		} else {
+			timeseries := metricgenerator.MakeSingleValueDistributionTimeSeries(
+				imageAge, collector.startTime, time.Now(), collector.bucketOptions, collector.labelValues)
+			metrics = append(
+				metrics,
+				&metricspb.Metric{
+					MetricDescriptor: vmImageAgeMetric,
+					Resource:         rsc,
+					Timeseries:       []*metricspb.TimeSeries{timeseries},
+				},
+			)
+		}
 	}
 
 	ctx := context.Background()

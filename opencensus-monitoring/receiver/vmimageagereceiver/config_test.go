@@ -25,11 +25,11 @@ func TestLoadConfig(t *testing.T) {
 
 	assert.Equal(t, len(cfg.Receivers), 2)
 
-	r0 := cfg.Receivers["vmimageage"]
-	assert.Equal(t, r0, factory.CreateDefaultConfig())
+	defaultReceiver := cfg.Receivers["vmimageage"]
+	assert.Equal(t, defaultReceiver, factory.CreateDefaultConfig())
 
-	r1 := cfg.Receivers["vmimageage/customname"].(*Config)
-	assert.Equal(t, r1,
+	customReceiver := cfg.Receivers["vmimageage/customname"].(*Config)
+	assert.Equal(t, customReceiver,
 		&Config{
 			ReceiverSettings: configmodels.ReceiverSettings{
 				TypeVal: typeStr,
@@ -37,5 +37,6 @@ func TestLoadConfig(t *testing.T) {
 			},
 			ExportInterval: 10 * time.Minute,
 			BuildDate:      "2006-01-02T15:04:05Z07:00",
+			VmImageName:    "test_vm_image_name",
 		})
 }

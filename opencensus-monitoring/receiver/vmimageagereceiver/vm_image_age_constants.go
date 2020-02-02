@@ -4,12 +4,17 @@ import (
 	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
 )
 
+var vmImageNameLabel = &metricspb.LabelKey{
+	Key:         "vm_image_name",
+	Description: "The name of the VM image",
+}
+
 var vmImageAgeMetric = &metricspb.MetricDescriptor{
 	Name:        "vm_image_ages",
 	Description: "The VM image age for the VM instance",
 	Unit:        "Days",
 	Type:        metricspb.MetricDescriptor_GAUGE_DISTRIBUTION,
-	LabelKeys:   nil,
+	LabelKeys:   []*metricspb.LabelKey{vmImageNameLabel},
 }
 
 var vmImageErrorMetric = &metricspb.MetricDescriptor{
@@ -17,7 +22,7 @@ var vmImageErrorMetric = &metricspb.MetricDescriptor{
 	Description: "The current number of VM instances with errors exporting the VM image age.",
 	Unit:        "Count",
 	Type:        metricspb.MetricDescriptor_GAUGE_INT64,
-	LabelKeys:   nil,
+	LabelKeys:   []*metricspb.LabelKey{vmImageNameLabel},
 }
 
 var (

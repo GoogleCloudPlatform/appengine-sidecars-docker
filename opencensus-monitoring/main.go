@@ -18,7 +18,6 @@ package main
 
 import (
 	"log"
-	"fmt"
 
 	"github.com/open-telemetry/opentelemetry-collector/service"
 )
@@ -35,8 +34,8 @@ func main() {
 
 	info := service.ApplicationStartInfo{
 		ExeName:  "otelcontribcol",
-		LongName: "Modified OpenTelemetry Contrib Collector",
-		Version:  "0.0.0",
+		LongName: "AppEngine Flex OpenTelemetry Contrib Collector",
+		Version:  "latest",
 		GitHash:  "<NOT PROPERLY GENERATED>",
 	}
 

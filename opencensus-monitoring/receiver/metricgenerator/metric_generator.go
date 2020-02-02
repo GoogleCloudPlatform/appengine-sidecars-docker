@@ -1,8 +1,8 @@
 package metricgenerator
 
 import (
-	"time"
 	"math"
+	"time"
 
 	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
 
@@ -21,16 +21,17 @@ func TimeToTimestamp(t time.Time) *timestamp.Timestamp {
 	}
 }
 
-func MakeInt64TimeSeries(val int64, startTime time.Time) *metricspb.TimeSeries {
+func MakeInt64TimeSeries(val int64, startTime, now time.Time, labels []*metricspb.LabelValue) *metricspb.TimeSeries {
 	return &metricspb.TimeSeries{
 		StartTimestamp: TimeToTimestamp(startTime),
-		Points:         []*metricspb.Point{{Timestamp: TimeToTimestamp(time.Now()), Value: &metricspb.Point_Int64Value{Int64Value: val}}},
+		LabelValues:    labels,
+		Points:         []*metricspb.Point{{Timestamp: TimeToTimestamp(now), Value: &metricspb.Point_Int64Value{Int64Value: val}}},
 	}
 }
 
-func MakeExponentialBucketOptions(boundsBase, numBounds float64) *metricspb.DistributionValue_BucketOptions {
-	bounds := make([]float64, 0, int(numBounds))
-	for i := float64(0); i <= numBounds; i++ {
+func MakeExponentialBucketOptions(boundsBase, maxExponent float64) *metricspb.DistributionValue_BucketOptions {
+	bounds := make([]float64, 0, int(maxExponent))
+	for i := float64(0); i <= maxExponent; i++ {
 		bounds = append(bounds, math.Pow(boundsBase, i))
 	}
 	return &metricspb.DistributionValue_BucketOptions{
@@ -44,7 +45,7 @@ func MakeExponentialBucketOptions(boundsBase, numBounds float64) *metricspb.Dist
 
 func MakeBuckets(values, bounds []float64) []*metricspb.DistributionValue_Bucket {
 	buckets := make([]*metricspb.DistributionValue_Bucket, len(bounds)+1, len(bounds)+1)
-	for i := 0; i <= len(bounds)+1; i++ {
+	for i := 0; i <= len(bounds); i++ {
 		buckets[i] = &metricspb.DistributionValue_Bucket{}
 	}
 	for _, val := range values {
@@ -66,7 +67,19 @@ func GetBucketIndex(val float64, bounds []float64) int {
 	return len(bounds)
 }
 
-func MakeSingleValueDistributionTimeSeries(val float64, startTime time.Time, bucketOptions *metricspb.DistributionValue_BucketOptions) *metricspb.TimeSeries {
+func MakeLabelValue(value string) *metricspb.LabelValue {
+	return &metricspb.LabelValue{
+		Value:    value,
+		HasValue: true,
+	}
+}
+
+func MakeSingleValueDistributionTimeSeries(
+	val float64,
+	startTime, currentTime time.Time,
+	bucketOptions *metricspb.DistributionValue_BucketOptions,
+	labels []*metricspb.LabelValue) *metricspb.TimeSeries {
+
 	bounds := bucketOptions.GetExplicit().Bounds
 	distribution := metricspb.DistributionValue{
 		Count:                 1,
@@ -77,12 +90,13 @@ func MakeSingleValueDistributionTimeSeries(val float64, startTime time.Time, buc
 	}
 
 	point := metricspb.Point{
-		Timestamp: TimeToTimestamp(time.Now()),
+		Timestamp: TimeToTimestamp(currentTime),
 		Value:     &metricspb.Point_DistributionValue{DistributionValue: &distribution},
 	}
 
 	return &metricspb.TimeSeries{
 		StartTimestamp: TimeToTimestamp(startTime),
+		LabelValues:    labels,
 		Points:         []*metricspb.Point{&point},
 	}
 }

@@ -9,5 +9,6 @@ import (
 type Config struct {
 	configmodels.ReceiverSettings `mapstructure:",squash"`
 	ExportInterval                time.Duration `mapstructure:"export_interval"`
-	BuildDate                     string         `mapstructure:"build_date"`
+	BuildDate                     string        `mapstructure:"build_date"`
+	VmImageName                   string        `mapstructure:"vm_image_name"`
 }
