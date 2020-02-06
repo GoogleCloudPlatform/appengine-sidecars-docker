@@ -1,7 +1,5 @@
 receivers:
-  filemetrics:
-    metric_name: local/opentelemetry_metric2
-    metric_value: 1
+  vmimageage:
     build_date: @BUILD_DATE@
     vm_image_name: @IMAGE_NAME@
 
@@ -13,6 +11,6 @@ exporters:
 service:
   pipelines:
     metrics:
-      receivers: [filemetrics]
+      receivers: [vmimageage]
       processors: []
       exporters: [stackdriver/test_exporter]
