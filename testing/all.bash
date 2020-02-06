@@ -36,7 +36,12 @@ which go
 go env
 # NOTE(cbro): skip memcache_proxy, it is not go-gettable.
 GO_PKGS=$(go list -v github.com/GoogleCloudPlatform/appengine-sidecars-docker/... | grep -v memcache_proxy)
-go test -v $GO_PKGS
+GO_PKGS_NO_MODULES=$(echo $GO_PKGS | grep -e api_proxy)
+GO_PKGS_WITH_MODULES=$(echo $GO_PKGS | grep -v api_proxy)
+
+go test -v $GO_PKGS_NO_MODULES
+
+env GO111MODULE=on go test -v $GO_PKGS_WITH_MODULES
 
 #### go vet, go fmt, etc.
 
