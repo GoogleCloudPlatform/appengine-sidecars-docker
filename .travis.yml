@@ -8,7 +8,7 @@ dist: precise
 
 matrix:
   include:
-  - env: GO_VERSION=1.11.13
+  - env: GO_VERSION=1.13.7
 
 before_install:
 - pwd
