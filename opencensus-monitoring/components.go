@@ -21,8 +21,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector/oterr"
 	"github.com/open-telemetry/opentelemetry-collector/receiver"
 
+	"github.com/googlecloudplatform/appengine-sidecars-docker/opencensus-monitoring/receiver/vmimageagereceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/stackdriverexporter"
-        "github.com/googlecloudplatform/appengine-sidecars-docker/opencensus-monitoring/receiver/vmimageagereceiver"
 )
 
 func components() (config.Factories, error) {
