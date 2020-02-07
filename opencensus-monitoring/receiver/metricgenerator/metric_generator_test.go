@@ -66,10 +66,10 @@ func Test_MakeBuckets(t *testing.T) {
 	buckets := MakeBuckets(values, bounds)
 
 	expectedBuckets := []*metricspb.DistributionValue_Bucket{
-		&metricspb.DistributionValue_Bucket{Count: 0},
-		&metricspb.DistributionValue_Bucket{Count: 1},
-		&metricspb.DistributionValue_Bucket{Count: 1},
-		&metricspb.DistributionValue_Bucket{Count: 0},
+		{Count: 0},
+		{Count: 1},
+		{Count: 1},
+		{Count: 0},
 	}
 	assert.Equal(t, buckets, expectedBuckets)
 }
@@ -80,10 +80,10 @@ func Test_MakeBucketsMultipleValueInOneBucket(t *testing.T) {
 	buckets := MakeBuckets(values, bounds)
 
 	expectedBuckets := []*metricspb.DistributionValue_Bucket{
-		&metricspb.DistributionValue_Bucket{Count: 0},
-		&metricspb.DistributionValue_Bucket{Count: 0},
-		&metricspb.DistributionValue_Bucket{Count: 2},
-		&metricspb.DistributionValue_Bucket{Count: 0},
+		{Count: 0},
+		{Count: 0},
+		{Count: 2},
+		{Count: 0},
 	}
 	assert.Equal(t, buckets, expectedBuckets)
 }
@@ -94,10 +94,10 @@ func Test_MakeBucketsWith0Value(t *testing.T) {
 	buckets := MakeBuckets(values, bounds)
 
 	expectedBuckets := []*metricspb.DistributionValue_Bucket{
-		&metricspb.DistributionValue_Bucket{Count: 1},
-		&metricspb.DistributionValue_Bucket{Count: 0},
-		&metricspb.DistributionValue_Bucket{Count: 1},
-		&metricspb.DistributionValue_Bucket{Count: 0},
+		{Count: 1},
+		{Count: 0},
+		{Count: 1},
+		{Count: 0},
 	}
 	assert.Equal(t, buckets, expectedBuckets)
 }
@@ -108,10 +108,10 @@ func Test_MakeBucketsWithValueOverHighestBound(t *testing.T) {
 	buckets := MakeBuckets(values, bounds)
 
 	expectedBuckets := []*metricspb.DistributionValue_Bucket{
-		&metricspb.DistributionValue_Bucket{Count: 0},
-		&metricspb.DistributionValue_Bucket{Count: 0},
-		&metricspb.DistributionValue_Bucket{Count: 1},
-		&metricspb.DistributionValue_Bucket{Count: 1},
+		{Count: 0},
+		{Count: 0},
+		{Count: 1},
+		{Count: 1},
 	}
 	assert.Equal(t, buckets, expectedBuckets)
 }
@@ -155,10 +155,10 @@ func Test_MakeSingleDistributionTimeSeries(t *testing.T) {
 	assert.Equal(t, distribution.GetBucketOptions(), bucketOptions)
 
 	expectedBuckets := []*metricspb.DistributionValue_Bucket{
-		&metricspb.DistributionValue_Bucket{Count: 0},
-		&metricspb.DistributionValue_Bucket{Count: 0},
-		&metricspb.DistributionValue_Bucket{Count: 1},
-		&metricspb.DistributionValue_Bucket{Count: 0},
+		{Count: 0},
+		{Count: 0},
+		{Count: 1},
+		{Count: 0},
 	}
 	assert.Equal(t, distribution.GetBuckets(), expectedBuckets)
 }

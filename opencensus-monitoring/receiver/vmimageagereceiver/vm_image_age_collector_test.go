@@ -41,7 +41,7 @@ func TestParseBuildDate(t *testing.T) {
 	collector.parseBuildDate()
 	assert.False(t, collector.buildDateError)
 	diff := collector.parsedBuildDate.Sub(time.Date(2006, time.January, 2, 15, 4, 5, 0, time.FixedZone("", 0)))
-	assert.Equal(t, diff, time.Second * 0)
+	assert.Equal(t, diff, time.Second*0)
 }
 
 func TestParseBuildDateError(t *testing.T) {
@@ -78,7 +78,7 @@ func TestScrapeAndExport(t *testing.T) {
 		Description: "The VM image age for the VM instance",
 		Unit:        "Days",
 		Type:        metricspb.MetricDescriptor_GAUGE_DISTRIBUTION,
-		LabelKeys: []*metricspb.LabelKey{&metricspb.LabelKey{
+		LabelKeys: []*metricspb.LabelKey{{
 			Key:         "vm_image_name",
 			Description: "The name of the VM image",
 		}},
@@ -90,7 +90,7 @@ func TestScrapeAndExport(t *testing.T) {
 		assert.Equal(t, expectedMetricDescriptor, actualMetric.MetricDescriptor)
 
 		if assert.Len(t, actualMetric.Timeseries, 1) {
-			expectedLabel := []*metricspb.LabelValue{&metricspb.LabelValue{Value: "test_image_name", HasValue: true}}
+			expectedLabel := []*metricspb.LabelValue{{Value: "test_image_name", HasValue: true}}
 			timeseries := actualMetric.Timeseries[0]
 			assert.Equal(t, expectedLabel, timeseries.LabelValues)
 
@@ -100,16 +100,16 @@ func TestScrapeAndExport(t *testing.T) {
 				assert.Equal(t, float64(0), point.SumOfSquaredDeviation)
 
 				expectedBuckets := []*metricspb.DistributionValue_Bucket{
-					&metricspb.DistributionValue_Bucket{Count: 0},
-					&metricspb.DistributionValue_Bucket{Count: 0},
-					&metricspb.DistributionValue_Bucket{Count: 0},
-					&metricspb.DistributionValue_Bucket{Count: 0},
-					&metricspb.DistributionValue_Bucket{Count: 0},
-					&metricspb.DistributionValue_Bucket{Count: 0},
-					&metricspb.DistributionValue_Bucket{Count: 0},
-					&metricspb.DistributionValue_Bucket{Count: 0},
-					&metricspb.DistributionValue_Bucket{Count: 0},
-					&metricspb.DistributionValue_Bucket{Count: 1},
+					{Count: 0},
+					{Count: 0},
+					{Count: 0},
+					{Count: 0},
+					{Count: 0},
+					{Count: 0},
+					{Count: 0},
+					{Count: 0},
+					{Count: 0},
+					{Count: 1},
 				}
 
 				assert.Equal(t, expectedBuckets, point.GetBuckets())
@@ -131,7 +131,7 @@ func TestScrapeAndExportWithError(t *testing.T) {
 		Description: "The current number of VM instances with errors exporting the VM image age.",
 		Unit:        "Count",
 		Type:        metricspb.MetricDescriptor_GAUGE_INT64,
-		LabelKeys: []*metricspb.LabelKey{&metricspb.LabelKey{
+		LabelKeys: []*metricspb.LabelKey{{
 			Key:         "vm_image_name",
 			Description: "The name of the VM image",
 		}},
@@ -143,7 +143,7 @@ func TestScrapeAndExportWithError(t *testing.T) {
 		assert.Equal(t, expectedMetricDescriptor, actualMetric.MetricDescriptor)
 
 		if assert.Len(t, actualMetric.Timeseries, 1) {
-			expectedLabel := []*metricspb.LabelValue{&metricspb.LabelValue{Value: "test_image_name", HasValue: true}}
+			expectedLabel := []*metricspb.LabelValue{{Value: "test_image_name", HasValue: true}}
 			timeseries := actualMetric.Timeseries[0]
 			assert.Equal(t, expectedLabel, timeseries.LabelValues)
 

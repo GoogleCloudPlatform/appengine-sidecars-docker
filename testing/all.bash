@@ -36,18 +36,19 @@ which go
 go env
 # NOTE(cbro): skip memcache_proxy, it is not go-gettable.
 
-cd opencensus-monitoring
-env GO111MODULE=on go test -v ./...
-cd ..
-
 cd api_proxy
 go test -v ./...
+go vet ./...
+cd ..
+
+cd opencensus-monitoring
+env GO111MODULE=on go test -v ./...
+env GO111MODULE=on go vet ./...
 cd ..
 
 #### go vet, go fmt, etc.
 
 # NOTE(cbro): vet has false positives. If a check fails, consider removing this or ignoring that check.
-go vet ./...
 diff -u <(echo -n) <(gofmt -d -s .)
 
 #### Build Cloud SQL
