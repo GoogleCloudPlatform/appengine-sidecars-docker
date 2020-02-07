@@ -35,12 +35,14 @@ set -e -x
 which go
 go env
 # NOTE(cbro): skip memcache_proxy, it is not go-gettable.
-GO_PKGS_NO_MODULES=$(go list -v github.com/GoogleCloudPlatform/appengine-sidecars-docker/... | grep -v memcache_proxy | grep -e api_proxy)
-GO_PKGS_WITH_MODULES=$(go list -v github.com/GoogleCloudPlatform/appengine-sidecars-docker/... | grep -v memcache_proxy | grep -v api_proxy)
 
-go test -v $GO_PKGS_NO_MODULES
+cd opencensus-monitoring
+env GO111MODULE=on go test -v ./...
+cd ..
 
-env GO111MODULE=on go test -v $GO_PKGS_WITH_MODULES
+cd api_proxy
+go test -v ./...
+cd ..
 
 #### go vet, go fmt, etc.
 
