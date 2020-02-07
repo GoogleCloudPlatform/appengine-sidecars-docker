@@ -38,7 +38,7 @@ go env
 GO_PKGS_NO_MODULES=$(go list -v github.com/GoogleCloudPlatform/appengine-sidecars-docker/... | grep -v memcache_proxy | grep -e api_proxy)
 GO_PKGS_WITH_MODULES=$(go list -v github.com/GoogleCloudPlatform/appengine-sidecars-docker/... | grep -v memcache_proxy | grep -v api_proxy)
 
-go test -v $GO_PKGS
+go test -v $GO_PKGS_NO_MODULES
 
 env GO111MODULE=on go test -v $GO_PKGS_WITH_MODULES
 
