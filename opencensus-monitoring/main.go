@@ -36,7 +36,6 @@ func main() {
 		ExeName:  "otelcontribcol",
 		LongName: "AppEngine Flex OpenTelemetry Contrib Collector",
 		Version:  "latest",
-		GitHash:  "<NOT PROPERLY GENERATED>",
 	}
 
 	svc, err := service.New(factories, info)
