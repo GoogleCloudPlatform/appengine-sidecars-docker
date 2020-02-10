@@ -4,13 +4,12 @@ receivers:
     vm_image_name: @IMAGE_NAME@
 
 exporters:
-  stackdriver/test_exporter:
-    project: imccarten-flex-test
-    metric_prefix: flex/opentelemetry
+  stackdriver:
+    metric_prefix: appengine.googleapis.com/flex/internal
 
 service:
   pipelines:
     metrics:
       receivers: [vmimageage]
       processors: []
-      exporters: [stackdriver/test_exporter]
+      exporters: [stackdriver]

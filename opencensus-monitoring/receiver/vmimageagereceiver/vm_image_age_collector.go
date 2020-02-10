@@ -32,7 +32,7 @@ type VmImageAgeCollector struct {
 }
 
 const (
-	defaultExportInterval = 1 * time.Minute
+	defaultExportInterval = 10 * time.Minute
 )
 
 var rsc *resourcepb.Resource
