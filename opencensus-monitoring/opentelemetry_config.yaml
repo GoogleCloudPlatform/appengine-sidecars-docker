@@ -1,0 +1,15 @@
+receivers:
+  vmimageage:
+    build_date: @BUILD_DATE@
+    vm_image_name: @IMAGE_NAME@
+
+exporters:
+  stackdriver:
+    metric_prefix: appengine.googleapis.com/flex/internal
+
+service:
+  pipelines:
+    metrics:
+      receivers: [vmimageage]
+      processors: []
+      exporters: [stackdriver]
