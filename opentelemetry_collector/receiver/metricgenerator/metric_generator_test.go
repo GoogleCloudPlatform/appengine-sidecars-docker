@@ -119,17 +119,17 @@ func Test_MakeBucketsWithValueOverHighestBound(t *testing.T) {
 func Test_GetBucketIndex(t *testing.T) {
 	bounds := []float64{1, 2, 4}
 
-	assert.Equal(t, GetBucketIndex(3, bounds), 2)
+	assert.Equal(t, getBucketIndex(3, bounds), 2)
 }
 
 func Test_GetBucketIndexWith0(t *testing.T) {
 	bounds := []float64{1, 2, 4}
-	assert.Equal(t, GetBucketIndex(0, bounds), 0)
+	assert.Equal(t, getBucketIndex(0, bounds), 0)
 }
 
 func Test_GetBucketIndexWithValueOverHighestBound(t *testing.T) {
 	bounds := []float64{1, 2, 4}
-	assert.Equal(t, GetBucketIndex(10, bounds), 3)
+	assert.Equal(t, getBucketIndex(10, bounds), 3)
 }
 
 func Test_MakeSingleDistributionTimeSeries(t *testing.T) {
