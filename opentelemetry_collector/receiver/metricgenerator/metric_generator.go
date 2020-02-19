@@ -31,12 +31,12 @@ func MakeInt64TimeSeries(val int64, startTime, now time.Time, labels []*metricsp
 }
 
 // MakeExponentialBucketOptions generates a proto representation of a config which,
-// defines a distribution's bounds. This defines maxExponent + 1 (= N) buckets. The boundaries for bucket
+// defines a distribution's bounds. This defines maxExponent + 2 buckets. The boundaries for bucket
 // index i are:
 //
 // [0, boundsBase ^ i) for i == 0
-// [boundsBase ^ (i - 1)], boundsBase ^ i) for 0 < i < N-1
-// [boundsBase ^ i, +infinity) for i == N-1 == maxExponent
+// [boundsBase ^ (i - 1)], boundsBase ^ i) for 0 < i <= maxExponent
+// [boundsBase ^ (i - 1), +infinity) for i == maxExponent + 1
 func MakeExponentialBucketOptions(boundsBase, maxExponent float64) *metricspb.DistributionValue_BucketOptions {
 	bounds := make([]float64, 0, int(maxExponent))
 	for i := float64(0); i <= maxExponent; i++ {
