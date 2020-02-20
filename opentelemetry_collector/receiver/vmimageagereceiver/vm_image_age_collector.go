@@ -3,12 +3,9 @@ package vmimageagereceiver
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
-	"contrib.go.opencensus.io/resource/auto"
 	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
-	resourcepb "github.com/census-instrumentation/opencensus-proto/gen-go/resource/v1"
 	"github.com/open-telemetry/opentelemetry-collector/consumer"
 	"github.com/open-telemetry/opentelemetry-collector/consumer/consumerdata"
 
@@ -37,8 +34,6 @@ const (
 	defaultExportInterval = 10 * time.Minute
 )
 
-var rsc *resourcepb.Resource
-
 // NewVMImageAgeCollector creates a new VMImageAgeCollector that generates metrics
 // based on the buildDate and vmImageName.
 func NewVMImageAgeCollector(exportInterval time.Duration, buildDate, vmImageName string, consumer consumer.MetricsConsumer) *VMImageAgeCollector {
@@ -58,19 +53,6 @@ func NewVMImageAgeCollector(exportInterval time.Duration, buildDate, vmImageName
 	return collector
 }
 
-func detectResource() {
-	autoRes, err := auto.Detect(context.Background())
-	if err != nil {
-		panic(fmt.Sprintf("Resource detection failed, err: %v", err))
-	}
-	if autoRes != nil {
-		rsc = &resourcepb.Resource{
-			Type:   autoRes.Type,
-			Labels: autoRes.Labels,
-		}
-	}
-}
-
 func (collector *VMImageAgeCollector) parseBuildDate() {
 	var err error
 	collector.parsedBuildDate, err = time.Parse(time.RFC3339, collector.buildDate)
@@ -88,7 +70,6 @@ func calculateImageAge(buildDate time.Time, now time.Time) (float64, error) {
 
 // StartCollection starts a go routine with a ticker that periodically generates and exports the metrics.
 func (collector *VMImageAgeCollector) StartCollection() {
-	detectResource()
 	collector.setupCollection()
 
 	go func() {
@@ -119,7 +100,6 @@ func (collector *VMImageAgeCollector) makeErrorMetrics() *metricspb.Metric {
 	timeseries := metricgenerator.MakeInt64TimeSeries(1, collector.startTime, time.Now(), collector.labelValues)
 	return &metricspb.Metric{
 		MetricDescriptor: vmImageErrorMetric,
-		Resource:         rsc,
 		Timeseries:       []*metricspb.TimeSeries{timeseries},
 	}
 
@@ -141,7 +121,6 @@ func (collector *VMImageAgeCollector) scrapeAndExport() {
 				metrics,
 				&metricspb.Metric{
 					MetricDescriptor: vmImageAgeMetric,
-					Resource:         rsc,
 					Timeseries:       []*metricspb.TimeSeries{timeseries},
 				},
 			)
