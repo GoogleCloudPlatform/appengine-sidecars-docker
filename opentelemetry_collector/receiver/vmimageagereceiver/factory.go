@@ -15,17 +15,21 @@ const (
 	typeStr = "vmimageage"
 )
 
+// Factory is the factory for the VM image age receiver.
 type Factory struct {
 }
 
+// Type gets the type of the Receiver config created by this factory.
 func (f *Factory) Type() string {
 	return typeStr
 }
 
+// Type gets the type of the Exporter config created by this factory.
 func (f *Factory) CustomUnmarshaler() receiver.CustomUnmarshaler {
 	return nil
 }
 
+// CreateDefaultConfig creates the default configuration for the receiver.
 func (f *Factory) CreateDefaultConfig() configmodels.Receiver {
 	return &Config{
 		ReceiverSettings: configmodels.ReceiverSettings{
@@ -35,6 +39,8 @@ func (f *Factory) CreateDefaultConfig() configmodels.Receiver {
 	}
 }
 
+// CreateTraceReceiver generates an error because this receiver does not
+// produce traces.
 func (f *Factory) CreateTraceReceiver(
 	ctx context.Context,
 	logger *zap.Logger,
@@ -44,6 +50,7 @@ func (f *Factory) CreateTraceReceiver(
 	return nil, configerror.ErrDataTypeIsNotSupported
 }
 
+// CreateMetricsReceiver creates a metrics receiver based on the provided config.
 func (f *Factory) CreateMetricsReceiver(
 	logger *zap.Logger,
 	config configmodels.Receiver,
@@ -51,7 +58,7 @@ func (f *Factory) CreateMetricsReceiver(
 ) (receiver.MetricsReceiver, error) {
 
 	cfg := config.(*Config)
-	collector := NewVmImageAgeCollector(cfg.ExportInterval, cfg.BuildDate, cfg.VmImageName, consumer)
+	collector := NewVMImageAgeCollector(cfg.ExportInterval, cfg.BuildDate, cfg.VMImageName, consumer)
 
 	receiver := &Receiver{
 		vmImageAgeCollector: collector,

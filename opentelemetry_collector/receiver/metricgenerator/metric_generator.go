@@ -21,6 +21,7 @@ func TimeToTimestamp(t time.Time) *timestamp.Timestamp {
 	}
 }
 
+// MakeInt64TimeSeries generates a proto representation of a timeseries containing a single point for an int64 metric.
 func MakeInt64TimeSeries(val int64, startTime, now time.Time, labels []*metricspb.LabelValue) *metricspb.TimeSeries {
 	return &metricspb.TimeSeries{
 		StartTimestamp: TimeToTimestamp(startTime),
@@ -29,6 +30,13 @@ func MakeInt64TimeSeries(val int64, startTime, now time.Time, labels []*metricsp
 	}
 }
 
+// MakeExponentialBucketOptions generates a proto representation of a config which,
+// defines a distribution's bounds. This defines maxExponent + 2 buckets. The boundaries for bucket
+// index i are:
+//
+// [0, boundsBase ^ i) for i == 0
+// [boundsBase ^ (i - 1)], boundsBase ^ i) for 0 < i <= maxExponent
+// [boundsBase ^ (i - 1), +infinity) for i == maxExponent + 1
 func MakeExponentialBucketOptions(boundsBase, maxExponent float64) *metricspb.DistributionValue_BucketOptions {
 	bounds := make([]float64, 0, int(maxExponent))
 	for i := float64(0); i <= maxExponent; i++ {
@@ -43,30 +51,33 @@ func MakeExponentialBucketOptions(boundsBase, maxExponent float64) *metricspb.Di
 	}
 }
 
+// MakeBuckets generates a proto representation of a distribution containing a single value.
+// bounds defines the bucket boundaries of the distribution.
 func MakeBuckets(values, bounds []float64) []*metricspb.DistributionValue_Bucket {
 	buckets := make([]*metricspb.DistributionValue_Bucket, len(bounds)+1, len(bounds)+1)
 	for i := 0; i <= len(bounds); i++ {
 		buckets[i] = &metricspb.DistributionValue_Bucket{}
 	}
 	for _, val := range values {
-		index := GetBucketIndex(val, bounds)
-		buckets[index].Count += 1
+		index := getBucketIndex(val, bounds)
+		buckets[index].Count++
 	}
 	return buckets
 }
 
-func GetBucketIndex(val float64, bounds []float64) int {
+func getBucketIndex(val float64, bounds []float64) int {
 	if val < bounds[0] {
 		return 0
 	}
-	for i, lower_bound := range bounds {
-		if i < len(bounds)-1 && val >= lower_bound && val < bounds[i+1] {
+	for i, lowerBound := range bounds {
+		if i < len(bounds)-1 && val >= lowerBound && val < bounds[i+1] {
 			return i + 1
 		}
 	}
 	return len(bounds)
 }
 
+// MakeLabelValue generates a proto representation of a metric label with value as its value.
 func MakeLabelValue(value string) *metricspb.LabelValue {
 	return &metricspb.LabelValue{
 		Value:    value,
@@ -74,6 +85,9 @@ func MakeLabelValue(value string) *metricspb.LabelValue {
 	}
 }
 
+// MakeSingleValueDistributionTimeSeries generates a proto representation of a timeseries
+// containing a single point consisting of a distribution containing a single value.
+// The distribution bucket bounds are defined by the bucketOptions argument.
 func MakeSingleValueDistributionTimeSeries(
 	val float64,
 	startTime, currentTime time.Time,
