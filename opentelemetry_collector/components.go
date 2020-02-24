@@ -19,9 +19,9 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector/config"
 	"github.com/open-telemetry/opentelemetry-collector/exporter"
 	"github.com/open-telemetry/opentelemetry-collector/oterr"
-	"github.com/open-telemetry/opentelemetry-collector/receiver"
 	"github.com/open-telemetry/opentelemetry-collector/processor"
 	"github.com/open-telemetry/opentelemetry-collector/processor/resourceprocessor"
+	"github.com/open-telemetry/opentelemetry-collector/receiver"
 
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/vmimageagereceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/stackdriverexporter"
@@ -52,9 +52,9 @@ func components() (config.Factories, error) {
 	}
 
 	factories := config.Factories{
-		Receivers: receivers,
+		Receivers:  receivers,
 		Processors: processors,
-		Exporters: exporters,
+		Exporters:  exporters,
 	}
 
 	return factories, oterr.CombineErrors(errs)

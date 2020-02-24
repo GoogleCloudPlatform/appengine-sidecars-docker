@@ -127,7 +127,7 @@ func TestScrapeAndExportWithError(t *testing.T) {
 	collector.scrapeAndExport()
 
 	expectedMetricDescriptor := &metricspb.MetricDescriptor{
-		Name:        "vm_image_age_error",
+		Name:        "vm_image_ages_error",
 		Description: "The current number of VM instances with errors exporting the VM image age.",
 		Unit:        "Count",
 		Type:        metricspb.MetricDescriptor_GAUGE_INT64,

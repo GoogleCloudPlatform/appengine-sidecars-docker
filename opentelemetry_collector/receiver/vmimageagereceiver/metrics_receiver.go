@@ -14,7 +14,7 @@ type Receiver struct {
 	startOnce sync.Once
 }
 
-// StartMetricsReception starts the underlying VM metrics generator.
+// Start starts the underlying VM metrics generator.
 func (receiver *Receiver) Start(host component.Host) error {
 	receiver.startOnce.Do(func() {
 		receiver.vmImageAgeCollector.StartCollection()
@@ -22,7 +22,7 @@ func (receiver *Receiver) Start(host component.Host) error {
 	return nil
 }
 
-// StopMetricsReception stops and cancels the underlying VM metrics generator.
+// Shutdown stops and cancels the underlying VM metrics generator.
 func (receiver *Receiver) Shutdown() error {
 	receiver.stopOnce.Do(func() {
 		receiver.vmImageAgeCollector.StopCollection()

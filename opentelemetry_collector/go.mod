@@ -9,5 +9,6 @@ require (
 	github.com/golang/protobuf v1.3.3
 	github.com/open-telemetry/opentelemetry-collector v0.2.6
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/stackdriverexporter v0.0.0-20200222201956-5253a327503b
+	github.com/stretchr/testify v1.4.0
 	go.uber.org/zap v1.14.0
 )

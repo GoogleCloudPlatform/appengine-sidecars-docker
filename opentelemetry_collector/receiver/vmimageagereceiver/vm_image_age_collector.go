@@ -12,7 +12,7 @@ import (
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/metricgenerator"
 )
 
-// VMImageAgeCollecgtor is a struct that generates metrics based on the
+// VMImageAgeCollector is a struct that generates metrics based on the
 // VM image age in the config.
 type VMImageAgeCollector struct {
 	consumer consumer.MetricsConsumer
