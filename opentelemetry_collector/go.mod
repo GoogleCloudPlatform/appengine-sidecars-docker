@@ -1,14 +1,13 @@
-module github.com/googlecloudplatform/appengine-sidecars-docker/opencensus-monitoring
+module github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector
 
-go 1.13
+replace contrib.go.opencensus.io/exporter/stackdriver => github.com/imccarten1/opencensus-go-exporter-stackdriver v0.13.1
+
+go 1.14
 
 require (
-	contrib.go.opencensus.io/resource v0.1.2
-	github.com/GoogleCloudPlatform/appengine-sidecars-docker v0.0.0-20191008180841-97c09a40bf9b // indirect
 	github.com/census-instrumentation/opencensus-proto v0.2.1
-	github.com/golang/protobuf v1.3.2
+	github.com/golang/protobuf v1.3.3
 	github.com/open-telemetry/opentelemetry-collector v0.2.6
-	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/stackdriverexporter v0.0.0-20191203223618-d7af801adf6e
-	github.com/stretchr/testify v1.4.0
-	go.uber.org/zap v1.13.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/stackdriverexporter v0.0.0-20200222201956-5253a327503b
+	go.uber.org/zap v1.14.0
 )

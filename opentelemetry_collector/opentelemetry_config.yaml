@@ -3,6 +3,16 @@ receivers:
     build_date: @BUILD_DATE@
     vm_image_name: @IMAGE_NAME@
 
+processors:
+  resource:
+    type: gae_instance
+    labels: {
+      "cloud.region": "@REGION@",
+      "appengine.service.id": "@SERVICE@",
+      "appengine.version.id": "@VERSION@",
+      "appengine.instance.id": "@INSTANCE@",
+  }
+
 exporters:
   stackdriver:
     metric_prefix: appengine.googleapis.com/flex/internal
@@ -11,5 +21,5 @@ service:
   pipelines:
     metrics:
       receivers: [vmimageage]
-      processors: []
+      processors: [resource]
       exporters: [stackdriver]

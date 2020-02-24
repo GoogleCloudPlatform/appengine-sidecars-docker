@@ -5,7 +5,7 @@ FROM gcr.io/google-appengine/debian9:${BASE_IMAGE_TAG}
 
 RUN apt-get update && apt-get install -y --no-install-recommends curl
 
-ADD opentelemetry-collector /opentelemetry-collector
+ADD opentelemetry_collector /opentelemetry_collector
 ADD opentelemetry_config.yaml /opentelemetry_config.yaml
 ADD run.sh /run.sh
 

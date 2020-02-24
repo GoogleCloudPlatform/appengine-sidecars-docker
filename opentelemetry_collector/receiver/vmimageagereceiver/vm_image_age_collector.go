@@ -9,7 +9,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector/consumer"
 	"github.com/open-telemetry/opentelemetry-collector/consumer/consumerdata"
 
-	"github.com/googlecloudplatform/appengine-sidecars-docker/opencensus-monitoring/receiver/metricgenerator"
+	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/metricgenerator"
 )
 
 // VMImageAgeCollecgtor is a struct that generates metrics based on the
