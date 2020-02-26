@@ -1,6 +1,5 @@
 #!/bin/bash
 
-BUILD_DATE_FILE=/config/build_date.txt
 OPENTELEMETRY_CONFIG_FILE=/opentelemetry_config.yaml
 
 set_metadata () {
@@ -14,12 +13,7 @@ set_metadata () {
   fi
 }
 
-if [[ -f "${BUILD_DATE_FILE}" ]]; then
-  sed -i "s/@BUILD_DATE@/$(cat ${BUILD_DATE_FILE})/" "${OPENTELEMETRY_CONFIG_FILE}"
-else
-  sed -i "s/@BUILD_DATE@/unknown/" "${OPENTELEMETRY_CONFIG_FILE}"
-fi
-
+set_metadata "${BUILD_DATE}" "BUILD_DATE"
 set_metadata "${IMAGE}" "IMAGE_NAME"
 set_metadata "${GAE_BACKEND_VERSION}" "VERSION"
 set_metadata "${GAE_BACKEND_NAME}" "SERVICE"
