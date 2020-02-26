@@ -24,7 +24,8 @@ func (f *Factory) Type() string {
 	return typeStr
 }
 
-// Type gets the type of the Exporter config created by this factory.
+// CustomUnmarshaler returns custom unmarshaler for this config.
+// Returning nil means that this receiver does not use one.
 func (f *Factory) CustomUnmarshaler() receiver.CustomUnmarshaler {
 	return nil
 }

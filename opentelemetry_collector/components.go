@@ -17,40 +17,44 @@ package main
 
 import (
 	"github.com/open-telemetry/opentelemetry-collector/config"
-	"github.com/open-telemetry/opentelemetry-collector/defaults"
 	"github.com/open-telemetry/opentelemetry-collector/exporter"
 	"github.com/open-telemetry/opentelemetry-collector/oterr"
+	"github.com/open-telemetry/opentelemetry-collector/processor"
+	"github.com/open-telemetry/opentelemetry-collector/processor/resourceprocessor"
 	"github.com/open-telemetry/opentelemetry-collector/receiver"
 
-	"github.com/googlecloudplatform/appengine-sidecars-docker/opencensus-monitoring/receiver/vmimageagereceiver"
+	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/vmimageagereceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/stackdriverexporter"
 )
 
 func components() (config.Factories, error) {
 	errs := []error{}
-	factories, err := defaults.Components()
-	if err != nil {
-		return config.Factories{}, err
-	}
 
-	receivers := []receiver.Factory{
+	receivers, err := receiver.Build(
 		&vmimageagereceiver.Factory{},
-	}
-	for _, rcv := range factories.Receivers {
-		receivers = append(receivers, rcv)
-	}
-	factories.Receivers, err = receiver.Build(receivers...)
+	)
 	if err != nil {
 		errs = append(errs, err)
 	}
 
-	exporters := []exporter.Factory{&stackdriverexporter.Factory{}}
-	for _, exp := range factories.Exporters {
-		exporters = append(exporters, exp)
-	}
-	factories.Exporters, err = exporter.Build(exporters...)
+	exporters, err := exporter.Build(
+		&stackdriverexporter.Factory{},
+	)
 	if err != nil {
 		errs = append(errs, err)
+	}
+
+	processors, err := processor.Build(
+		&resourceprocessor.Factory{},
+	)
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	factories := config.Factories{
+		Receivers:  receivers,
+		Processors: processors,
+		Exporters:  exporters,
 	}
 
 	return factories, oterr.CombineErrors(errs)
