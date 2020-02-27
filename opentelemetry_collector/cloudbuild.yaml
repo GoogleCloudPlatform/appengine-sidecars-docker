@@ -6,7 +6,7 @@ steps:
       'GOOS=linux',
       'GOARCH=amd64',
     ]
-    args: ['go', 'build', '-o', 'opentelemetry-collector', '.']
+    args: ['go', 'build', '-o', 'opentelemetry_collector', '.']
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'gcr.io/${PROJECT_ID}/opentelemetry-collector:latest', '.']
   - name: 'gcr.io/cloud-builders/docker'
