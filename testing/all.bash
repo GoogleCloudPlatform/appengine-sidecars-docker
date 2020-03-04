@@ -51,12 +51,6 @@ cd ..
 # NOTE(cbro): vet has false positives. If a check fails, consider removing this or ignoring that check.
 diff -u <(echo -n) <(gofmt -d -s .)
 
-#### Build Cloud SQL
-
-pushd cloud_sql_proxy
-./build.sh
-popd
-
 #### Build Memcache proxy
 
 pushd memcache_proxy
