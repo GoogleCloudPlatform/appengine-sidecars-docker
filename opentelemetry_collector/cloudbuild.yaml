@@ -1,0 +1,16 @@
+steps:
+  - name: 'mirror.gcr.io/library/golang'
+    env: [
+      'GO111MODULE=on',
+      'CGO_ENABLED=0',
+      'GOOS=linux',
+      'GOARCH=amd64',
+    ]
+    args: ['go', 'build', '-o', 'opentelemetry_collector', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/${PROJECT_ID}/opentelemetry-collector:latest', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/${PROJECT_ID}/opentelemetry-collector:${_RC_NAME}', '.']
+images:
+  - 'gcr.io/$PROJECT_ID/opentelemetry-collector:latest'
+  - 'gcr.io/$PROJECT_ID/opentelemetry-collector:${_RC_NAME}'

@@ -35,20 +35,21 @@ set -e -x
 which go
 go env
 # NOTE(cbro): skip memcache_proxy, it is not go-gettable.
-GO_PKGS=$(go list -v github.com/GoogleCloudPlatform/appengine-sidecars-docker/... | grep -v memcache_proxy)
-go test -v $GO_PKGS
+
+cd api_proxy
+go test -v ./...
+go vet ./...
+cd ..
+
+cd opentelemetry_collector
+env GO111MODULE=on go test -v ./...
+env GO111MODULE=on go vet ./...
+cd ..
 
 #### go vet, go fmt, etc.
 
 # NOTE(cbro): vet has false positives. If a check fails, consider removing this or ignoring that check.
-go vet ./...
 diff -u <(echo -n) <(gofmt -d -s .)
-
-#### Build Cloud SQL
-
-pushd cloud_sql_proxy
-./build.sh
-popd
 
 #### Build Memcache proxy
 
