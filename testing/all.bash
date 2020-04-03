@@ -16,8 +16,6 @@
 # run_docker.bash runs all tests.
 
 #### TODO: Add tests for:
-# api_proxy
-# api_verifier
 # fluentd_logger
 # nginx_proxy
 ####
@@ -34,12 +32,6 @@ set -e -x
 
 which go
 go env
-# NOTE(cbro): skip memcache_proxy, it is not go-gettable.
-
-cd api_proxy
-go test -v ./...
-go vet ./...
-cd ..
 
 cd opentelemetry_collector
 env GO111MODULE=on go test -v ./...
@@ -50,12 +42,6 @@ cd ..
 
 # NOTE(cbro): vet has false positives. If a check fails, consider removing this or ignoring that check.
 diff -u <(echo -n) <(gofmt -d -s .)
-
-#### Build Memcache proxy
-
-pushd memcache_proxy
-./build.sh
-popd
 
 #### Run tests for iap_watcher
 pushd iap_watcher
