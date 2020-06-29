@@ -8,6 +8,10 @@ typedef struct {
 
 typedef struct {
   ngx_shm_zone_t *shm_zone;
+  ngx_int_t base;
+  ngx_int_t scale_factor;
+  ngx_int_t max_exponent;
+  ngx_int_t *latency_bucket_bounds;
 } ngx_http_latency_main_conf_t;
 
 typedef struct {
@@ -15,7 +19,10 @@ typedef struct {
   ngx_atomic_t request_count;
   ngx_atomic_t upstream_latency_sum_ms;
   ngx_atomic_t upstream_request_count;
+  ngx_atomic_t *latency_distribution;
 } ngx_http_latency_shm_t;
+
+static ngx_int_t shm_max_exponent;
 
 /* server latency stats */
 static char *ngx_http_latency_stub_status(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
@@ -29,7 +36,6 @@ static ngx_int_t ngx_http_latency_init(ngx_conf_t *cf);
 /* init latency storage */
 static char *ngx_http_latency(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
 static void *ngx_http_latency_create_main_conf(ngx_conf_t *cf);
-static char *ngx_http_latency_init_main_conf(ngx_conf_t *cf, void *conf);
 static ngx_int_t ngx_http_latency_init_shm_zone(ngx_shm_zone_t *shm_zone, void *data);
 
 /* shared utils */
@@ -54,10 +60,10 @@ static ngx_command_t ngx_http_latency_stub_status_commands[] = {
   },
   {
     ngx_string("store_latency"),
-    NGX_HTTP_MAIN_CONF|NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE3,
     ngx_http_latency,
     NGX_HTTP_MAIN_CONF_OFFSET,
-    offsetof(ngx_http_latency_main_conf_t, shm_zone),
+    0,
     NULL
   },
   ngx_null_command
@@ -67,7 +73,7 @@ static ngx_http_module_t ngx_http_latency_stub_status_module_ctx = {
   NULL,  /* preconfiguration */
   ngx_http_latency_init,                                        /* postconfiguration */
   ngx_http_latency_create_main_conf,                                        /* create main configuration */
-  ngx_http_latency_init_main_conf,                                        /* init main configuration */
+  NULL,                                        /* init main configuration */
   NULL,                                        /* create server configuration */
   NULL,                                        /* merge server configuration */
   ngx_http_latency_create_loc_conf,                                        /* create location configuration */
@@ -124,20 +130,34 @@ static ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
     }
   }
 
-  output_size = sizeof("{\n")
-      + sizeof("  \"accepted_connections\": \"\",\n") + NGX_ATOMIC_T_LEN
-      + sizeof("  \"handled_connections\": \"\",\n") + NGX_ATOMIC_T_LEN
-      + sizeof("  \"active_connections\": \"\",\n") + NGX_ATOMIC_T_LEN
-      + sizeof("  \"requests\": \"\",\n") + NGX_ATOMIC_T_LEN
-      + sizeof("  \"reading_connections\": \"\",\n") + NGX_ATOMIC_T_LEN
-      + sizeof("  \"writing_connections\": \"\",\n") + NGX_ATOMIC_T_LEN
-      + sizeof("  \"waiting_connections\": \"\",\n") + NGX_ATOMIC_T_LEN
-      + sizeof("  \"latency_sum\": \"\",\n") + NGX_ATOMIC_T_LEN
-      + sizeof("  \"latency_requests\": \"\",\n") + NGX_ATOMIC_T_LEN
-      + sizeof("  \"upstream_latency_sum\": \"\",\n") + NGX_ATOMIC_T_LEN
-      + sizeof("  \"upstream_latency_requests\": \"\",\n") + NGX_ATOMIC_T_LEN
-      + sizeof("  \"version\": \"4\",\n") + NGX_ATOMIC_T_LEN
-      + sizeof("}\n");
+  u_char const json_start[] = "{\n";
+  u_char const json_end[] = "}\n";
+  u_char const json_var_start[] = "  \"";
+  u_char const json_var_transition[] = "\": \"";
+  u_char const json_var_end[] = "\",\n";
+  u_char const json_array_start[] = "\": [";
+  u_char const json_array_sep[] = ", ";
+  u_char const json_array_end[] = "],\n";
+
+  output_size = sizeof(json_start)
+      + sizeof("accepted_connections")
+      + sizeof("handled_connections")
+      + sizeof("active_connections")
+      + sizeof("requests")
+      + sizeof("reading_connections")
+      + sizeof("writing_connections")
+      + sizeof("waiting_connections")
+      + sizeof("latency_sum")
+      + sizeof("latency_requests")
+      + sizeof("upstream_latency_sum")
+      + sizeof("upstream_latency_requests")
+      + sizeof("version")
+      + sizeof(json_var_start) * 12 + sizeof(json_var_transition) * 12 + sizeof(json_var_end) * 12
+      + NGX_ATOMIC_T_LEN * 12
+      + sizeof("latency_distribution")
+      + sizeof(json_var_start) + sizeof(json_array_start) + sizeof(json_array_sep) * 19 + sizeof(json_array_end)
+      + NGX_ATOMIC_T_LEN * 20
+      + sizeof(json_end);
 
   buffer = ngx_create_temp_buf(r->pool, output_size);
   if (buffer == NULL) {
@@ -163,7 +183,9 @@ static ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
   upstream_latency_sum = latency_record->upstream_latency_sum_ms;
   upstream_latency_requests = latency_record->upstream_request_count;
 
-  buffer->last = ngx_cpymem(buffer->last, "{\n", sizeof("{\n") - 1);
+  //latency_distribution = latency_record->latency_distribution;
+
+  buffer->last = ngx_cpymem(buffer->last, json_start, sizeof(json_start) - 1);
   buffer->last = ngx_sprintf(buffer->last, "  \"accepted_connections\": \"%uA\",\n", accepted);
   buffer->last = ngx_sprintf(buffer->last, "  \"handled_connections\": \"%uA\",\n", handled);
   buffer->last = ngx_sprintf(buffer->last, "  \"active_connections\": \"%uA\",\n", active);
@@ -175,8 +197,15 @@ static ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
   buffer->last = ngx_sprintf(buffer->last, "  \"latency_requests\": \"%uA\",\n", latency_requests);
   buffer->last = ngx_sprintf(buffer->last, "  \"upstream_latency_sum\": \"%uA\",\n", upstream_latency_sum);
   buffer->last = ngx_sprintf(buffer->last, "  \"upstream_latency_requests\": \"%uA\",\n", upstream_latency_requests);
+
+  buffer->last = ngx_cpymem(buffer->last, "  \"latency_distribution\": [", sizeof("  \"latency_distribution\": [") -1);
+  for (int i = 0; i < 19; i++) {
+    buffer->last = ngx_sprintf(buffer->last, "%uA, ", latency_record->latency_distribution[i]);
+  }
+  buffer->last = ngx_sprintf(buffer->last, "%uA],\n", latency_record->latency_distribution[19]);
+
   buffer->last = ngx_sprintf(buffer->last, "  \"version\": \"4\",\n", waiting);
-  buffer->last = ngx_cpymem(buffer->last, "}\n", sizeof("}\n") - 1);
+  buffer->last = ngx_cpymem(buffer->last, json_end, sizeof(json_end) - 1);
 
   r->headers_out.status = NGX_HTTP_OK;
   r->headers_out.content_length_n = buffer->last - buffer->pos;
@@ -249,6 +278,20 @@ static ngx_int_t ngx_http_latency_header_filter(ngx_http_request_t *r)
 
   ngx_atomic_fetch_add(&(latency_record->request_count), 1);
   ngx_atomic_fetch_add(&(latency_record->latency_sum_ms), request_time);
+  ngx_int_t not_found = 1;
+  int i = 0;
+  while (not_found && i < 19) {
+    if (request_time < (i + 1) * 100) {
+      ngx_atomic_fetch_add(&(latency_record->latency_distribution[i]), 1);
+      not_found = 0;
+      ngx_log_stderr(0, "latency in bucket %d", i);
+    }
+    i++;
+  }
+  if (not_found) {
+    ngx_log_stderr(0, "latency in bucket 19");
+    ngx_atomic_fetch_add(&(latency_record->latency_distribution[19]), 1);
+  }
 
   if (r->upstream_states == NULL || r->upstream_states->nelts == 0) {
     return NGX_OK;
@@ -331,6 +374,7 @@ static ngx_int_t ngx_http_latency_init_shm_zone(ngx_shm_zone_t *shm_zone, void *
   ngx_http_latency_shm_t *latency_record;
 
   ngx_log_stderr(0, "reached shm init");
+  ngx_log_stderr(0, "shm_max_exponent %d", shm_max_exponent);
 
   if (data) {
     shm_zone->data = data;
@@ -342,13 +386,87 @@ static ngx_int_t ngx_http_latency_init_shm_zone(ngx_shm_zone_t *shm_zone, void *
   latency_record->latency_sum_ms = 0;
   latency_record->request_count = 0;
   latency_record->upstream_latency_sum_ms = 0;
-  latency_record->upstream_request_count;
+  latency_record->upstream_request_count = 0;
+
+  latency_record->latency_distribution = ngx_slab_calloc(shpool, sizeof(ngx_atomic_t) * (shm_max_exponent + 1));
+  if (latency_record->latency_distribution == NULL) {
+    ngx_log_stderr(0, "array alloc error");
+  }
+  for (int i = 0; i < shm_max_exponent + 1; i++) {
+    latency_record->latency_distribution[i] = 0;
+  }
+
   shm_zone->data = latency_record;
+  return NGX_OK;
+}
+
+static ngx_int_t ngx_parse_int(ngx_conf_t* cf, ngx_int_t arg_index, ngx_int_t* num) {
+  ngx_str_t *value;
+
+  value = cf->args->elts;
+  *num = ngx_atoi(value[arg_index].data, value[arg_index].len);;
+  if (*num == NGX_ERROR) {
+    return NGX_ERROR;
+  }
+
   return NGX_OK;
 }
 
 static char* ngx_http_latency(ngx_conf_t* cf, ngx_command_t* cmd, void* conf){
   ngx_log_stderr(0, "reached directive call");
+
+  ngx_http_latency_main_conf_t* main_conf;
+  ngx_int_t base, scale_factor, max_exponent;
+  ngx_int_t parse_result;
+
+  main_conf = (ngx_http_latency_main_conf_t*) conf;
+
+  parse_result = ngx_parse_int(cf, 1, &base);
+  if (parse_result != NGX_OK) {
+    return "invalid number for latency_status_stub: base";
+  }
+
+  parse_result = ngx_parse_int(cf, 2, &scale_factor);
+  if (parse_result != NGX_OK) {
+    return "invalid number for latency_status_stub: scaled factor";
+  }
+
+  parse_result = ngx_parse_int(cf, 3, &max_exponent);
+  if (parse_result != NGX_OK) {
+    return "invalid number for latency_status_stub: max value";
+  }
+
+  main_conf->base = base;
+  main_conf->scale_factor = scale_factor;
+  main_conf->max_exponent = max_exponent;
+  shm_max_exponent = max_exponent;
+
+  ngx_int_t* bucket_bounds;
+  ngx_int_t power = 1;
+  bucket_bounds = ngx_palloc(cf->pool, sizeof(ngx_int_t) * (max_exponent + 1));
+  if (bucket_bounds == NULL) {
+    return NGX_CONF_ERROR;
+  }
+  for (ngx_int_t i = 0; i <= max_exponent; i++) {
+    bucket_bounds[i] = base * power;
+    power *= scale_factor;
+  }
+
+  ngx_shm_zone_t *shm_zone;
+  ngx_str_t *shm_name;
+
+  shm_name = ngx_palloc(cf->pool, sizeof *shm_name);
+  shm_name->len = sizeof("latency_shared_memory") - 1;
+  shm_name->data = (unsigned char *) "shared_memory";
+  shm_zone = ngx_shared_memory_add(cf, shm_name, 8 * ngx_pagesize, &ngx_http_latency_stub_status_module);
+
+  if(shm_zone == NULL) {
+    return NGX_CONF_ERROR;
+  }
+
+  ngx_log_stderr(0, "page size %d", ngx_pagesize);
+  shm_zone->init = ngx_http_latency_init_shm_zone;
+  main_conf->shm_zone = shm_zone;
 
   return NGX_CONF_OK;
 }
@@ -364,26 +482,3 @@ static void *ngx_http_latency_create_main_conf(ngx_conf_t* cf){
   return conf;
 }
 
-static char *ngx_http_latency_init_main_conf(ngx_conf_t* cf, void* conf){
-  ngx_log_stderr(0, "reached init main config");
-
-  ngx_shm_zone_t *shm_zone;
-  ngx_str_t *shm_name;
-  ngx_http_latency_main_conf_t *result_conf;
-  result_conf = (ngx_http_latency_main_conf_t *)conf;
-
-  shm_name = ngx_palloc(cf->pool, sizeof *shm_name);
-  shm_name->len = sizeof("latency_shared_memory") - 1;
-  shm_name->data = (unsigned char *) "shared_memory";
-  shm_zone = ngx_shared_memory_add(cf, shm_name, 8 * ngx_pagesize, &ngx_http_latency_stub_status_module);
-
-  if(shm_zone == NULL) {
-    return NGX_CONF_ERROR;
-  }
-
-  ngx_log_stderr(0, "page size %d", ngx_pagesize);
-  shm_zone->init = ngx_http_latency_init_shm_zone;
-  result_conf->shm_zone = shm_zone;
-
-  return NGX_CONF_OK;
-}
