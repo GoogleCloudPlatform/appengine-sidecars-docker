@@ -3,7 +3,8 @@
 #include "ngx_http_latency_storage.h"
 #include "ngx_http_latency_stub_status_module.h"
 
-static ngx_int_t ngx_http_latency_header_filter(ngx_http_request_t *r);
+static ngx_int_t ngx_http_record_latency(ngx_http_request_t *r);
+static ngx_int_t get_latency_index(ngx_int_t max_exponent, ngx_int_t *latency_bucket_bounds, ngx_int_t latency);
 
 void *ngx_http_latency_create_loc_conf(ngx_conf_t *cf)
 {
@@ -42,17 +43,19 @@ ngx_int_t ngx_http_latency_init(ngx_conf_t *cf)
 
   core_main_config = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
   handler = ngx_array_push(&core_main_config->phases[NGX_HTTP_LOG_PHASE].handlers);
-  *handler = ngx_http_latency_header_filter;
+  *handler = ngx_http_record_latency;
 
   ngx_log_stderr(0, "reached end of latency filter init");
   return NGX_OK;
 }
 
-static ngx_int_t ngx_http_latency_header_filter(ngx_http_request_t *r)
+static ngx_int_t ngx_http_record_latency(ngx_http_request_t *r)
 {
   ngx_time_t *now;
   ngx_msec_int_t request_time;
   ngx_http_latency_conf_t *conf;
+  ngx_http_latency_main_conf_t *main_conf;
+  ngx_int_t distribution_index;
 
   ngx_log_stderr(0, "reached latency filter");
   ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "catch request body filter before enable check");
@@ -63,7 +66,16 @@ static ngx_int_t ngx_http_latency_header_filter(ngx_http_request_t *r)
     //return ngx_http_next_header_filter(r);
   }
 
+  main_conf = ngx_http_get_module_main_conf(r, ngx_http_latency_stub_status_module);
+  if (main_conf == NULL) {
+    ngx_log_stderr(0, "error: no main config");
+  }
+  if (main_conf->latency_bucket_bounds == NULL) {
+    ngx_log_stderr(0, "error no latency bounds");
+  }
   ngx_log_stderr(0, "reached latency filter after enabled check");
+  ngx_log_stderr(0, "max_exponent %d", main_conf->max_exponent);
+
   ngx_time_update();
   now = ngx_timeofday();
   request_time = (ngx_int_t)((now->sec - r->start_sec) * 1000 + now->msec - r->start_msec);
@@ -80,20 +92,10 @@ static ngx_int_t ngx_http_latency_header_filter(ngx_http_request_t *r)
 
   ngx_atomic_fetch_add(&(latency_record->request_count), 1);
   ngx_atomic_fetch_add(&(latency_record->latency_sum_ms), request_time);
-  ngx_int_t not_found = 1;
-  int i = 0;
-  while (not_found && i < 19) {
-    if (request_time < (i + 1) * 100) {
-      ngx_atomic_fetch_add(&(latency_record->latency_distribution[i]), 1);
-      not_found = 0;
-      ngx_log_stderr(0, "latency in bucket %d", i);
-    }
-    i++;
-  }
-  if (not_found) {
-    ngx_log_stderr(0, "latency in bucket 19");
-    ngx_atomic_fetch_add(&(latency_record->latency_distribution[19]), 1);
-  }
+
+  distribution_index = get_latency_index(main_conf->max_exponent, main_conf->latency_bucket_bounds, request_time);
+  ngx_log_stderr(0, "past get index");
+  ngx_atomic_fetch_add(&(latency_record->latency_distribution[distribution_index]), 1);
 
   if (r->upstream_states == NULL || r->upstream_states->nelts == 0) {
     return NGX_OK;
@@ -111,7 +113,22 @@ static ngx_int_t ngx_http_latency_header_filter(ngx_http_request_t *r)
   ngx_atomic_fetch_add(&(latency_record->upstream_request_count), 1);
   ngx_atomic_fetch_add(&(latency_record->upstream_latency_sum_ms), upstream_time);
 
+  distribution_index = get_latency_index(main_conf->max_exponent, main_conf->latency_bucket_bounds, upstream_time);
+  ngx_atomic_fetch_add(&(latency_record->upstream_latency_distribution[distribution_index]), 1);
+
   //return ngx_http_next_header_filter(r);
   return NGX_OK;
+}
+
+static ngx_int_t get_latency_index(ngx_int_t max_exponent, ngx_int_t *latency_bucket_bounds, ngx_int_t latency) {
+  for (ngx_int_t i = 0; i <= max_exponent; i++) {
+    ngx_log_stderr(0, "check exponent %d", i);
+    if (latency < latency_bucket_bounds[i]) {
+      return i;
+    }
+  }
+
+  // return the index for the overflow bucket.
+  return max_exponent + 1;
 }
 

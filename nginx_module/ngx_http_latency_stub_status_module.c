@@ -78,12 +78,14 @@ ngx_int_t ngx_http_latency_init_shm_zone(ngx_shm_zone_t *shm_zone, void *data){
   latency_record->upstream_latency_sum_ms = 0;
   latency_record->upstream_request_count = 0;
 
-  latency_record->latency_distribution = ngx_slab_calloc(shpool, sizeof(ngx_atomic_t) * (shm_max_exponent + 1));
+  latency_record->latency_distribution = ngx_slab_calloc(shpool, sizeof(ngx_atomic_t) * (shm_max_exponent + 2));
   if (latency_record->latency_distribution == NULL) {
     ngx_log_stderr(0, "array alloc error");
   }
-  for (int i = 0; i < shm_max_exponent + 1; i++) {
-    latency_record->latency_distribution[i] = 0;
+
+  latency_record->upstream_latency_distribution = ngx_slab_calloc(shpool, sizeof(ngx_atomic_t) * (shm_max_exponent + 2));
+  if (latency_record->latency_distribution == NULL) {
+    ngx_log_stderr(0, "array alloc error");
   }
 
   shm_zone->data = latency_record;
@@ -102,9 +104,9 @@ static ngx_int_t ngx_parse_int(ngx_conf_t* cf, ngx_int_t arg_index, ngx_int_t* n
   return NGX_OK;
 }
 
+
 char* ngx_http_latency(ngx_conf_t* cf, ngx_command_t* cmd, void* conf){
   ngx_log_stderr(0, "reached directive call");
-
   ngx_http_latency_main_conf_t* main_conf;
   ngx_int_t base, scale_factor, max_exponent;
   ngx_int_t parse_result;
@@ -141,6 +143,7 @@ char* ngx_http_latency(ngx_conf_t* cf, ngx_command_t* cmd, void* conf){
     bucket_bounds[i] = base * power;
     power *= scale_factor;
   }
+  main_conf->latency_bucket_bounds = bucket_bounds;
 
   ngx_shm_zone_t *shm_zone;
   ngx_str_t *shm_name;
@@ -161,6 +164,7 @@ char* ngx_http_latency(ngx_conf_t* cf, ngx_command_t* cmd, void* conf){
   return NGX_CONF_OK;
 }
 
+
 void *ngx_http_latency_create_main_conf(ngx_conf_t* cf){
   ngx_http_latency_main_conf_t* conf;
   ngx_log_stderr(0, "reached create main config");
@@ -169,6 +173,8 @@ void *ngx_http_latency_create_main_conf(ngx_conf_t* cf){
   if(conf == NULL) {
     return NGX_CONF_ERROR;
   }
+
+
   return conf;
 }
 

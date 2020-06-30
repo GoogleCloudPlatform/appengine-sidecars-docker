@@ -1,8 +1,10 @@
 
 #include "ngx_http_latency_status_handler.h"
 #include "ngx_http_latency_storage.h"
+#include "ngx_http_latency_stub_status_module.h"
 
 //static ngx_http_output_header_filter_pt ngx_http_next_header_filter;
+static void write_distribution_content(ngx_buf_t *buffer, char name[], ngx_int_t len_dist, ngx_atomic_t *latency_distribution);
 
 ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
 {
@@ -10,6 +12,8 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
   ngx_int_t request_result;
   ngx_buf_t *buffer;
   ngx_chain_t out;
+  ngx_http_latency_main_conf_t *main_conf;
+  ngx_int_t dist_len;
   ngx_atomic_int_t accepted, handled, active, requests, reading, writing, waiting;
   ngx_atomic_int_t latency_sum, latency_requests, upstream_latency_sum, upstream_latency_requests;
 
@@ -39,6 +43,9 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
     }
   }
 
+  main_conf = ngx_http_get_module_main_conf(r, ngx_http_latency_stub_status_module);
+  dist_len = main_conf->max_exponent + 2;
+
   u_char const json_start[] = "{\n";
   u_char const json_end[] = "}\n";
   u_char const json_var_start[] = "  \"";
@@ -64,8 +71,9 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
       + sizeof(json_var_start) * 12 + sizeof(json_var_transition) * 12 + sizeof(json_var_end) * 12
       + NGX_ATOMIC_T_LEN * 12
       + sizeof("latency_distribution")
-      + sizeof(json_var_start) + sizeof(json_array_start) + sizeof(json_array_sep) * 19 + sizeof(json_array_end)
-      + NGX_ATOMIC_T_LEN * 20
+      + sizeof("upstream_latency_distribution")
+      + 2 * (sizeof(json_var_start) + sizeof(json_array_start) + sizeof(json_array_sep) * (dist_len - 1) + sizeof(json_array_end))
+      + 2 * dist_len * NGX_ATOMIC_T_LEN
       + sizeof(json_end);
 
   buffer = ngx_create_temp_buf(r->pool, output_size);
@@ -107,11 +115,8 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
   buffer->last = ngx_sprintf(buffer->last, "  \"upstream_latency_sum\": \"%uA\",\n", upstream_latency_sum);
   buffer->last = ngx_sprintf(buffer->last, "  \"upstream_latency_requests\": \"%uA\",\n", upstream_latency_requests);
 
-  buffer->last = ngx_cpymem(buffer->last, "  \"latency_distribution\": [", sizeof("  \"latency_distribution\": [") -1);
-  for (int i = 0; i < 19; i++) {
-    buffer->last = ngx_sprintf(buffer->last, "%uA, ", latency_record->latency_distribution[i]);
-  }
-  buffer->last = ngx_sprintf(buffer->last, "%uA],\n", latency_record->latency_distribution[19]);
+  write_distribution_content(buffer, "latency_distribution", dist_len, latency_record->latency_distribution);
+  write_distribution_content(buffer, "upstream_latency_distribution", dist_len, latency_record->upstream_latency_distribution);
 
   buffer->last = ngx_sprintf(buffer->last, "  \"version\": \"4\",\n", waiting);
   buffer->last = ngx_cpymem(buffer->last, json_end, sizeof(json_end) - 1);
@@ -154,3 +159,11 @@ char* ngx_http_latency_stub_status(ngx_conf_t *cf, ngx_command_t *cmd, void *con
   return NGX_CONF_OK;
 }
 
+static void write_distribution_content(ngx_buf_t *buffer, char name[], ngx_int_t len_dist, ngx_atomic_t *latency_distribution) {
+
+  buffer->last = ngx_sprintf(buffer->last, "  \"%s\": [", name);
+  for (int i = 0; i < len_dist - 1; i++) {
+    buffer->last = ngx_sprintf(buffer->last, "%uA, ", latency_distribution[i]);
+  }
+  buffer->last = ngx_sprintf(buffer->last, "%uA],\n", latency_distribution[len_dist]);
+}

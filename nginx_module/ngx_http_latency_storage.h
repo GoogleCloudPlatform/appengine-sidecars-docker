@@ -20,6 +20,7 @@ typedef struct {
   ngx_atomic_t upstream_latency_sum_ms;
   ngx_atomic_t upstream_request_count;
   ngx_atomic_t *latency_distribution;
+  ngx_atomic_t *upstream_latency_distribution;
 } ngx_http_latency_shm_t;
 
 
