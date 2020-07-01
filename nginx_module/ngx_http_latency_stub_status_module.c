@@ -75,8 +75,10 @@ ngx_int_t ngx_http_latency_init_shm_zone(ngx_shm_zone_t *shm_zone, void *data){
   latency_record = ngx_slab_alloc(shpool, sizeof(ngx_http_latency_shm_t));
   latency_record->latency_sum_ms = 0;
   latency_record->request_count = 0;
+  latency_record->latency_sum_squares = 0;
   latency_record->upstream_latency_sum_ms = 0;
   latency_record->upstream_request_count = 0;
+  latency_record->upstream_latency_sum_squares = 0;
 
   latency_record->latency_distribution = ngx_slab_calloc(shpool, sizeof(ngx_atomic_t) * (shm_max_exponent + 2));
   if (latency_record->latency_distribution == NULL) {

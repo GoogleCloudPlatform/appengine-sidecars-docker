@@ -16,6 +16,7 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
   ngx_int_t dist_len;
   ngx_atomic_int_t accepted, handled, active, requests, reading, writing, waiting;
   ngx_atomic_int_t latency_sum, latency_requests, upstream_latency_sum, upstream_latency_requests;
+  ngx_atomic_int_t latency_sum_squares, upstream_latency_sum_squares;
 
   ngx_log_stderr(0, "reached latency status stub handler\n");
 
@@ -67,9 +68,11 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
       + sizeof("latency_requests")
       + sizeof("upstream_latency_sum")
       + sizeof("upstream_latency_requests")
+      + sizeof("latency_sum_squares")
+      + sizeof("upstream_latency_sum_squares")
       + sizeof("version")
-      + sizeof(json_var_start) * 12 + sizeof(json_var_transition) * 12 + sizeof(json_var_end) * 12
-      + NGX_ATOMIC_T_LEN * 12
+      + 14 + (sizeof(json_var_start) + sizeof(json_var_transition) + sizeof(json_var_end))
+      + NGX_ATOMIC_T_LEN * 14
       + sizeof("latency_distribution")
       + sizeof("upstream_latency_distribution")
       + 2 * (sizeof(json_var_start) + sizeof(json_array_start) + sizeof(json_array_sep) * (dist_len - 1) + sizeof(json_array_end))
@@ -99,6 +102,8 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
   latency_requests = latency_record->request_count;
   upstream_latency_sum = latency_record->upstream_latency_sum_ms;
   upstream_latency_requests = latency_record->upstream_request_count;
+  latency_sum_squares = latency_record->latency_sum_squares;
+  upstream_latency_sum_squares = latency_record->upstream_latency_sum_squares;
 
   //latency_distribution = latency_record->latency_distribution;
 
@@ -114,6 +119,8 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
   buffer->last = ngx_sprintf(buffer->last, "  \"latency_requests\": \"%uA\",\n", latency_requests);
   buffer->last = ngx_sprintf(buffer->last, "  \"upstream_latency_sum\": \"%uA\",\n", upstream_latency_sum);
   buffer->last = ngx_sprintf(buffer->last, "  \"upstream_latency_requests\": \"%uA\",\n", upstream_latency_requests);
+  buffer->last = ngx_sprintf(buffer->last, "  \"latency_sum_squares\": \"%uA\",\n", latency_sum_squares);
+  buffer->last = ngx_sprintf(buffer->last, "  \"upstream_latency_sum_squares\": \"%uA\",\n", upstream_latency_sum_squares);
 
   write_distribution_content(buffer, "latency_distribution", dist_len, latency_record->latency_distribution);
   write_distribution_content(buffer, "upstream_latency_distribution", dist_len, latency_record->upstream_latency_distribution);

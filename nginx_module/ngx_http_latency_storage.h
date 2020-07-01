@@ -21,6 +21,9 @@ typedef struct {
   ngx_atomic_t upstream_request_count;
   ngx_atomic_t *latency_distribution;
   ngx_atomic_t *upstream_latency_distribution;
+  // needed for calculating the variance
+  ngx_atomic_t latency_sum_squares;
+  ngx_atomic_t upstream_latency_sum_squares;
 } ngx_http_latency_shm_t;
 
 

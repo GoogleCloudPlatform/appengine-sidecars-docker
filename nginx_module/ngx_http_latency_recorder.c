@@ -92,9 +92,9 @@ static ngx_int_t ngx_http_record_latency(ngx_http_request_t *r)
 
   ngx_atomic_fetch_add(&(latency_record->request_count), 1);
   ngx_atomic_fetch_add(&(latency_record->latency_sum_ms), request_time);
+  ngx_atomic_fetch_add(&(latency_record->latency_sum_squares), request_time * request_time);
 
   distribution_index = get_latency_index(main_conf->max_exponent, main_conf->latency_bucket_bounds, request_time);
-  ngx_log_stderr(0, "past get index");
   ngx_atomic_fetch_add(&(latency_record->latency_distribution[distribution_index]), 1);
 
   if (r->upstream_states == NULL || r->upstream_states->nelts == 0) {
@@ -112,6 +112,7 @@ static ngx_int_t ngx_http_record_latency(ngx_http_request_t *r)
 
   ngx_atomic_fetch_add(&(latency_record->upstream_request_count), 1);
   ngx_atomic_fetch_add(&(latency_record->upstream_latency_sum_ms), upstream_time);
+  ngx_atomic_fetch_add(&(latency_record->upstream_latency_sum_squares), upstream_time * upstream_time);
 
   distribution_index = get_latency_index(main_conf->max_exponent, main_conf->latency_bucket_bounds, upstream_time);
   ngx_atomic_fetch_add(&(latency_record->upstream_latency_distribution[distribution_index]), 1);
@@ -122,7 +123,6 @@ static ngx_int_t ngx_http_record_latency(ngx_http_request_t *r)
 
 static ngx_int_t get_latency_index(ngx_int_t max_exponent, ngx_int_t *latency_bucket_bounds, ngx_int_t latency) {
   for (ngx_int_t i = 0; i <= max_exponent; i++) {
-    ngx_log_stderr(0, "check exponent %d", i);
     if (latency < latency_bucket_bounds[i]) {
       return i;
     }
