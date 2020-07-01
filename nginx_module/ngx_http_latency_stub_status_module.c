@@ -3,6 +3,8 @@
 #include "ngx_http_latency_storage.h"
 #include "ngx_http_latency_stub_status_module.h"
 
+static latency_stat *create_latency_record(ngx_slab_pool_t *shpool);
+
 static ngx_command_t ngx_http_latency_stub_status_commands[] = {
   {
     ngx_string("latency_stub_status"),
@@ -61,7 +63,7 @@ static ngx_int_t shm_max_exponent;
 
 ngx_int_t ngx_http_latency_init_shm_zone(ngx_shm_zone_t *shm_zone, void *data){
   ngx_slab_pool_t *shpool;
-  ngx_http_latency_shm_t *latency_record;
+  ngx_http_latency_shm_t *record_set;
 
   ngx_log_stderr(0, "reached shm init");
   ngx_log_stderr(0, "shm_max_exponent %d", shm_max_exponent);
@@ -72,28 +74,41 @@ ngx_int_t ngx_http_latency_init_shm_zone(ngx_shm_zone_t *shm_zone, void *data){
   }
 
   shpool = (ngx_slab_pool_t *)shm_zone->shm.addr;
-  latency_record = ngx_slab_alloc(shpool, sizeof(ngx_http_latency_shm_t));
-  latency_record->latency_sum_ms = 0;
-  latency_record->request_count = 0;
-  latency_record->latency_sum_squares = 0;
-  latency_record->upstream_latency_sum_ms = 0;
-  latency_record->upstream_request_count = 0;
-  latency_record->upstream_latency_sum_squares = 0;
+  record_set = ngx_slab_alloc(shpool, sizeof(ngx_http_latency_shm_t));
 
-  latency_record->latency_distribution = ngx_slab_calloc(shpool, sizeof(ngx_atomic_t) * (shm_max_exponent + 2));
-  if (latency_record->latency_distribution == NULL) {
-    ngx_log_stderr(0, "array alloc error");
+  record_set->request_latency = create_latency_record(shpool);
+  record_set->upstream_latency = create_latency_record(shpool);
+  record_set->websocket_latency = create_latency_record(shpool);
+
+  if (record_set->request_latency == NULL ||
+      record_set->upstream_latency == NULL ||
+      record_set->websocket_latency == NULL) {
+    return NGX_ERROR;
   }
 
-  latency_record->upstream_latency_distribution = ngx_slab_calloc(shpool, sizeof(ngx_atomic_t) * (shm_max_exponent + 2));
-  if (latency_record->latency_distribution == NULL) {
-    ngx_log_stderr(0, "array alloc error");
-  }
-
-  shm_zone->data = latency_record;
+  shm_zone->data = record_set;
   return NGX_OK;
 }
 
+static latency_stat *create_latency_record(ngx_slab_pool_t *shpool) {
+  latency_stat *record;
+
+  record = ngx_slab_alloc(shpool, sizeof(latency_stat));
+  if (record == NULL) {
+    return record;
+  }
+
+  record->request_count = 0;
+  record->sum = 0;
+  record->sum_squares = 0;
+
+  record->distribution = ngx_slab_calloc(shpool, sizeof(ngx_atomic_t) * (shm_max_exponent + 2));
+  if (record->distribution == NULL) {
+    return NULL;
+  }
+
+  return record;
+}
 static ngx_int_t ngx_parse_int(ngx_conf_t* cf, ngx_int_t arg_index, ngx_int_t* num) {
   ngx_str_t *value;
 

@@ -15,15 +15,17 @@ typedef struct {
 } ngx_http_latency_main_conf_t;
 
 typedef struct {
-  ngx_atomic_t latency_sum_ms;
   ngx_atomic_t request_count;
-  ngx_atomic_t upstream_latency_sum_ms;
-  ngx_atomic_t upstream_request_count;
-  ngx_atomic_t *latency_distribution;
-  ngx_atomic_t *upstream_latency_distribution;
+  ngx_atomic_t sum;
+  ngx_atomic_t *distribution;
   // needed for calculating the variance
-  ngx_atomic_t latency_sum_squares;
-  ngx_atomic_t upstream_latency_sum_squares;
+  ngx_atomic_t sum_squares;
+} latency_stat;
+
+typedef struct {
+  latency_stat *request_latency;
+  latency_stat *upstream_latency;
+  latency_stat *websocket_latency;
 } ngx_http_latency_shm_t;
 
 
