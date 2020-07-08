@@ -1,3 +1,30 @@
+// Copyright (C) 2002-2016 Igor Sysoev
+// Copyright (C) 2011-2016 Nginx, Inc.
+// Copyright (C) 2020 Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+// 1. Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+// 2. Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in the
+//    documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+// OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+// SUCH DAMAGE.
+////////////////////////////////////////////////////////////////////////////////
+
 #include "ngx_http_latency_recorder.h"
 #include "ngx_http_latency_status_handler.h"
 #include "ngx_http_latency_storage.h"
@@ -34,14 +61,14 @@ static ngx_command_t ngx_http_latency_stub_status_commands[] = {
 };
 
 static ngx_http_module_t ngx_http_latency_stub_status_module_ctx = {
-  NULL,  /* preconfiguration */
-  ngx_http_latency_init,                                        /* postconfiguration */
-  ngx_http_latency_create_main_conf,                                        /* create main configuration */
+  NULL,                                        /* preconfiguration */
+  ngx_http_latency_init,                       /* postconfiguration */
+  ngx_http_latency_create_main_conf,           /* create main configuration */
   NULL,                                        /* init main configuration */
   NULL,                                        /* create server configuration */
   NULL,                                        /* merge server configuration */
-  ngx_http_latency_create_loc_conf,                                        /* create location configuration */
-  ngx_http_latency_merge_loc_conf,                                        /* merge location configuration */
+  ngx_http_latency_create_loc_conf,            /* create location configuration */
+  ngx_http_latency_merge_loc_conf,             /* merge location configuration */
 };
 
 ngx_module_t ngx_http_latency_stub_status_module = {
@@ -64,9 +91,6 @@ static ngx_int_t shm_max_exponent;
 ngx_int_t ngx_http_latency_init_shm_zone(ngx_shm_zone_t *shm_zone, void *data){
   ngx_slab_pool_t *shpool;
   ngx_http_latency_shm_t *record_set;
-
-  ngx_log_stderr(0, "reached shm init");
-  ngx_log_stderr(0, "shm_max_exponent %d", shm_max_exponent);
 
   if (data) {
     shm_zone->data = data;
@@ -123,7 +147,6 @@ static ngx_int_t ngx_parse_int(ngx_conf_t* cf, ngx_int_t arg_index, ngx_int_t* n
 
 
 char* ngx_http_latency(ngx_conf_t* cf, ngx_command_t* cmd, void* conf){
-  ngx_log_stderr(0, "reached directive call");
   ngx_http_latency_main_conf_t* main_conf;
   ngx_int_t base, scale_factor, max_exponent;
   ngx_int_t parse_result;
@@ -174,7 +197,6 @@ char* ngx_http_latency(ngx_conf_t* cf, ngx_command_t* cmd, void* conf){
     return NGX_CONF_ERROR;
   }
 
-  ngx_log_stderr(0, "page size %d", ngx_pagesize);
   shm_zone->init = ngx_http_latency_init_shm_zone;
   main_conf->shm_zone = shm_zone;
 
@@ -184,7 +206,6 @@ char* ngx_http_latency(ngx_conf_t* cf, ngx_command_t* cmd, void* conf){
 
 void *ngx_http_latency_create_main_conf(ngx_conf_t* cf){
   ngx_http_latency_main_conf_t* conf;
-  ngx_log_stderr(0, "reached create main config");
 
   conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_latency_main_conf_t));
   if(conf == NULL) {

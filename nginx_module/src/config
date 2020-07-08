@@ -1,3 +1,4 @@
+
 ngx_addon_name=ngx_http_latency_stub_status_module
 
 HTTP_LATENCY_SRCS=" \

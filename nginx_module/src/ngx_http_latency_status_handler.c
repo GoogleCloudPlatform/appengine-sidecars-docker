@@ -1,3 +1,29 @@
+// Copyright (C) 2002-2016 Igor Sysoev
+// Copyright (C) 2011-2016 Nginx, Inc.
+// Copyright (C) 2020 Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+// 1. Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+// 2. Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in the
+//    documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+// OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+// SUCH DAMAGE.
+////////////////////////////////////////////////////////////////////////////////
 
 #include "ngx_http_latency_status_handler.h"
 #include "ngx_http_latency_storage.h"
@@ -15,8 +41,6 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
   ngx_http_latency_main_conf_t *main_conf;
   ngx_int_t dist_len;
   ngx_atomic_int_t accepted, handled, active, requests, reading, writing, waiting;
-
-  ngx_log_stderr(0, "reached latency status stub handler\n");
 
   if (!(r->method & (NGX_HTTP_GET|NGX_HTTP_HEAD))) {
     return NGX_HTTP_NOT_ALLOWED;
@@ -129,24 +153,11 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
     return request_result;
   }
 
-  ngx_time_t *start;
-  ngx_time_t *now;
-  ngx_int_t request_time;
-  start = ngx_timeofday();
-  ngx_msleep(1000);
-
-  now = ngx_timeofday();
-  request_time = (ngx_int_t)((now->sec - start->sec) * 1000 + now->msec - start->msec);
-  request_time = ngx_max(request_time, 0);
-  ngx_log_stderr(0, "handler request time: %d %d %d", request_time, now->sec, start->sec);
-
   return ngx_http_output_filter(r, &out);
 }
 
 char* ngx_http_latency_stub_status(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
-  ngx_log_stderr(0, "reached latency status stub init");
-
   ngx_http_core_loc_conf_t *core_loc_config;
 
   core_loc_config = ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module);
