@@ -32,14 +32,25 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 
+
+// The config struct for the location config.
 typedef struct {
-  ngx_shm_zone_t *shm_zone;
+  ngx_flag_t receiver_enabled;
+  ngx_flag_t status_page_enabled;
+} ngx_http_latency_conf_t;
+
+// A struct to store the main confg.
+typedef struct {
+  ngx_flag_t enabled;
+  ngx_shm_zone_t *shm_zone;  // a pointer to the shared memory containing the latency stats
+  // These values define the bucket boundaries used by the latency distribution.
   ngx_int_t base;
   ngx_int_t scale_factor;
   ngx_int_t max_exponent;
   ngx_int_t *latency_bucket_bounds;
 } ngx_http_latency_main_conf_t;
 
+// A struct for storing all the stats for a single latency record.
 typedef struct {
   ngx_atomic_t request_count;
   ngx_atomic_t sum;
@@ -48,6 +59,7 @@ typedef struct {
   ngx_atomic_t sum_squares;
 } latency_stat;
 
+// A struct containing all the latency records to be stored in shared memory
 typedef struct {
   latency_stat *request_latency;
   latency_stat *upstream_latency;
@@ -55,7 +67,7 @@ typedef struct {
 } ngx_http_latency_shm_t;
 
 
-/* shared utils */
+// Get the latency stats stored in shared memory.
 ngx_http_latency_shm_t *get_latency_record(ngx_http_request_t *r);
 
 #endif

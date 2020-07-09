@@ -32,13 +32,7 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 
-typedef struct { 
-  ngx_flag_t enable;
-} ngx_http_latency_conf_t;
-
-/* record latency */
-void *ngx_http_latency_create_loc_conf(ngx_conf_t *cf);
-char *ngx_http_latency_merge_loc_conf(ngx_conf_t *cf, void *parent, void* child);
+// Set the handler callback for the record_latency directive.
 ngx_int_t ngx_http_latency_init(ngx_conf_t *cf);
 
 #endif
