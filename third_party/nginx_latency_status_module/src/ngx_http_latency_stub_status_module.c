@@ -168,7 +168,7 @@ char* ngx_http_latency(ngx_conf_t* cf, ngx_command_t* cmd, void* conf){
   ngx_shm_zone_t *shm_zone;
   ngx_str_t *shm_name;
 
-  shm_name = ngx_palloc(cf->pool, sizeof *shm_name);
+  shm_name = ngx_palloc(cf->pool, sizeof ngx_str_t);
   shm_name->len = sizeof("latency_shared_memory") - 1;
   shm_name->data = (unsigned char *) "latency_shared_memory";
   shm_zone = ngx_shared_memory_add(cf, shm_name, 8 * ngx_pagesize, &ngx_http_latency_stub_status_module);

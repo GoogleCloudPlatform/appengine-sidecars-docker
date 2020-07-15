@@ -137,6 +137,7 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
   out.buf = buffer;
   out.next = NULL;
 
+#if (NGX_STAT_STUB)
   accepted = *ngx_stat_accepted;
   handled = *ngx_stat_handled;
   active = *ngx_stat_active;
@@ -144,6 +145,15 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
   reading = *ngx_stat_reading;
   writing = *ngx_stat_writing;
   waiting = *ngx_stat_waiting;
+#else
+  accepted = 0;
+  handled = 0;
+  active = 0;
+  requests = 0;
+  reading = 0;
+  writing = 0;
+  waiting = 0;
+#endif
 
   ngx_http_latency_shm_t *latency_record;
   latency_record = get_latency_record(r);
