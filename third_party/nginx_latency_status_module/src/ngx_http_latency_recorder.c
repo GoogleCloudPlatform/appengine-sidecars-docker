@@ -73,10 +73,6 @@ ngx_int_t ngx_http_record_latency(ngx_http_request_t *r)
 
   main_conf = ngx_http_get_module_main_conf(r, ngx_http_latency_stub_status_module);
 
-  // Update the cached current time value.
-  // This increases the accuracy of the latency measurment, but may slow down
-  // nginx. It may be removed after load testing.
-  ngx_time_update();
   now = ngx_timeofday();
   request_time = (ngx_int_t)((now->sec - r->start_sec) * 1000 + now->msec - r->start_msec);
   request_time = ngx_max(request_time, 0);
