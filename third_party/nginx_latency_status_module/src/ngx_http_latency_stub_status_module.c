@@ -50,6 +50,7 @@ latency_stat *create_latency_record(ngx_slab_pool_t *shpool) {
 
   record->distribution = ngx_slab_calloc(shpool, sizeof(ngx_atomic_t) * (shm_max_exponent + 2));
   if (record->distribution == NULL) {
+    ngx_slab_free(shpool, record);
     return NULL;
   }
 
@@ -87,12 +88,11 @@ ngx_int_t ngx_http_latency_init_shm_zone(ngx_shm_zone_t *shm_zone, void *data){
 
 // Parse an integer input from a config. arg_index is the index of the directive
 // argument to be parsed, where the name of the directive is argument 0.
-ngx_int_t ngx_parse_int(ngx_conf_t* cf, ngx_int_t arg_index, ngx_int_t* num) {
+ngx_int_t ngx_parse_int(ngx_conf_t* cf, ngx_int_t arg_index) {
   ngx_str_t *value;
 
   value = cf->args->elts;
-  *num = ngx_atoi(value[arg_index].data, value[arg_index].len);;
-  return *num;
+  return ngx_atoi(value[arg_index].data, value[arg_index].len);
 }
 
 
@@ -106,28 +106,27 @@ ngx_int_t ngx_parse_int(ngx_conf_t* cf, ngx_int_t arg_index, ngx_int_t* num) {
 char* ngx_http_latency(ngx_conf_t* cf, ngx_command_t* cmd, void* conf){
   ngx_http_latency_main_conf_t* main_conf;
   ngx_int_t base, scale_factor, max_exponent;
-  ngx_int_t parse_result;
   ngx_str_t *config_value;
 
   config_value = cf->args->elts;
   main_conf = (ngx_http_latency_main_conf_t*) conf;
 
-  parse_result = ngx_parse_int(cf, 1, &base);
-  if (parse_result == NGX_ERROR) {
+  base = ngx_parse_int(cf, 1);
+  if (base == NGX_ERROR) {
     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                        "invalid value for latency_status_stub: base \"%V\"", &config_value[1]);
     return NGX_CONF_ERROR;
   }
 
-  parse_result = ngx_parse_int(cf, 2, &scale_factor);
-  if (parse_result == NGX_ERROR) {
+  scale_factor = ngx_parse_int(cf, 2);
+  if (scale_factor == NGX_ERROR) {
     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                        "invalid value for latency_status_stub: scaled_factor \"%V\"", &config_value[2]);
     return NGX_CONF_ERROR;
   }
 
-  parse_result = ngx_parse_int(cf, 3, &max_exponent);
-  if (parse_result == NGX_ERROR) {
+  max_exponent = ngx_parse_int(cf, 3);
+  if (max_exponent == NGX_ERROR) {
     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                        "invalid value for latency_status_stub: max_value \"%V\"", &config_value[3]);
     return NGX_CONF_ERROR;
@@ -171,7 +170,7 @@ char* ngx_http_latency(ngx_conf_t* cf, ngx_command_t* cmd, void* conf){
 
   shm_name = ngx_palloc(cf->pool, sizeof *shm_name);
   shm_name->len = sizeof("latency_shared_memory") - 1;
-  shm_name->data = (unsigned char *) "shared_memory";
+  shm_name->data = (unsigned char *) "latency_shared_memory";
   shm_zone = ngx_shared_memory_add(cf, shm_name, 8 * ngx_pagesize, &ngx_http_latency_stub_status_module);
 
   if(shm_zone == NULL) {

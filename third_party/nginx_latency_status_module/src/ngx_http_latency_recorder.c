@@ -47,12 +47,12 @@ ngx_int_t get_latency_index(ngx_int_t max_exponent, ngx_int_t *latency_bucket_bo
 void update_latency_record(latency_stat *record, ngx_int_t latency, ngx_http_latency_main_conf_t *main_conf) {
   ngx_int_t distribution_index;
 
-  ngx_atomic_fetch_add(&(record->request_count), 1);
-  ngx_atomic_fetch_add(&(record->sum), latency);
-  ngx_atomic_fetch_add(&(record->sum_squares), latency * latency);
+  ngx_atomic_fetch_add(&record->request_count, 1);
+  ngx_atomic_fetch_add(&record->sum, latency);
+  ngx_atomic_fetch_add(&record->sum_squares, latency * latency);
 
   distribution_index = get_latency_index(main_conf->max_exponent, main_conf->latency_bucket_bounds, latency);
-  ngx_atomic_fetch_add(&(record->distribution[distribution_index]), 1);
+  ngx_atomic_fetch_add(&record->distribution[distribution_index], 1);
 }
 
 
