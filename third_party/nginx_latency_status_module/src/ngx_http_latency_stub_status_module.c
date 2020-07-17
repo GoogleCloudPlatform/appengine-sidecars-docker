@@ -65,14 +65,25 @@ ngx_int_t ngx_http_latency_init_shm_zone(ngx_shm_zone_t *shm_zone, void *data){
 
   ngx_slab_pool_t *shpool = (ngx_slab_pool_t *)shm_zone->shm.addr;
   ngx_http_latency_shm_t *record_set = ngx_slab_alloc(shpool, sizeof(ngx_http_latency_shm_t));
+  if (record_set == NULL) {
+    return NGX_ERROR;
+  }
 
   record_set->request_latency = create_latency_record(shpool);
+  if (record_set->request_latency == NULL) {
+    return NGX_ERROR;
+  }
+
   record_set->upstream_latency = create_latency_record(shpool);
+  if (record_set->upstream_latency == NULL) {
+    ngx_slab_free(shpool, record_set->request_latency);
+  }
+
   record_set->websocket_latency = create_latency_record(shpool);
 
-  if (record_set->request_latency == NULL ||
-      record_set->upstream_latency == NULL ||
-      record_set->websocket_latency == NULL) {
+  if (record_set->websocket_latency == NULL) {
+    ngx_slab_free(shpool, record_set->request_latency);
+    ngx_slab_free(shpool, record_set->upstream_latency);
     return NGX_ERROR;
   }
 
@@ -142,12 +153,11 @@ char* ngx_http_latency(ngx_conf_t* cf, ngx_command_t* cmd, void* conf){
   main_conf->max_exponent = max_exponent;
   shm_max_exponent = max_exponent;
 
-  ngx_int_t power = 1;
   ngx_int_t* bucket_bounds = ngx_palloc(cf->pool, sizeof(ngx_int_t) * (max_exponent + 1));
   if (bucket_bounds == NULL) {
     return NGX_CONF_ERROR;
   }
-  for (ngx_int_t i = 0; i <= max_exponent; i++) {
+  for (ngx_int_t i = 0, power = 1; i <= max_exponent; i++) {
     bucket_bounds[i] = scale_factor * power;
     power *= base;
   }

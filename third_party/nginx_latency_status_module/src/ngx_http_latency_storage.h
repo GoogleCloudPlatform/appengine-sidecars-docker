@@ -43,7 +43,12 @@ typedef struct {
 typedef struct {
   ngx_flag_t enabled;
   ngx_shm_zone_t *shm_zone;  // a pointer to the shared memory containing the latency stats
+
   // These values define the bucket boundaries used by the latency distribution.
+  // There will be max_exponent + 2 buckets with the boundaries
+  // [0, scaled_factor * base ^ i) for i = 0
+  // [scaled_factor * base ^ (i - 1), scaled_factor * base ^ i ) for 0 < i <= max_exponent
+  // [scaled_factor * base ^ (i - 1), infinity) for i = max_exponent + 1
   ngx_int_t base;
   ngx_int_t scale_factor;
   ngx_int_t max_exponent;
@@ -55,7 +60,7 @@ typedef struct {
   ngx_atomic_t request_count;
   ngx_atomic_t sum;
   ngx_atomic_t *distribution;
-  // needed for calculating the variance
+  // The sum of each sample in the distribution squared. Needed for calculating the variance.
   ngx_atomic_t sum_squares;
 } latency_stat;
 
