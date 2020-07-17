@@ -45,13 +45,11 @@ ngx_int_t get_latency_index(ngx_int_t max_exponent, ngx_int_t *latency_bucket_bo
 
 // Update a latency record with a single new latency.
 void update_latency_record(latency_stat *record, ngx_int_t latency, ngx_http_latency_main_conf_t *main_conf) {
-  ngx_int_t distribution_index;
-
   ngx_atomic_fetch_add(&record->request_count, 1);
   ngx_atomic_fetch_add(&record->sum, latency);
   ngx_atomic_fetch_add(&record->sum_squares, latency * latency);
 
-  distribution_index = get_latency_index(main_conf->max_exponent, main_conf->latency_bucket_bounds, latency);
+  ngx_int_t distribution_index = get_latency_index(main_conf->max_exponent, main_conf->latency_bucket_bounds, latency);
   ngx_atomic_fetch_add(&record->distribution[distribution_index], 1);
 }
 
@@ -59,25 +57,20 @@ void update_latency_record(latency_stat *record, ngx_int_t latency, ngx_http_lat
 // Record the latency statistics.
 ngx_int_t ngx_http_record_latency(ngx_http_request_t *r)
 {
-  ngx_time_t *now;
-  ngx_msec_int_t request_time;
-  ngx_http_latency_conf_t *conf;
-  ngx_http_latency_main_conf_t *main_conf;
-  ngx_http_latency_shm_t *latency_record;
-
-  conf = ngx_http_get_module_loc_conf(r, ngx_http_latency_stub_status_module);
+  ngx_http_latency_conf_t *conf = ngx_http_get_module_loc_conf(r, ngx_http_latency_stub_status_module);
 
   if (!conf->receiver_enabled) {
     return NGX_DECLINED;
   }
 
-  main_conf = ngx_http_get_module_main_conf(r, ngx_http_latency_stub_status_module);
+  ngx_http_latency_main_conf_t *main_conf = ngx_http_get_module_main_conf(
+      r, ngx_http_latency_stub_status_module);
 
-  now = ngx_timeofday();
-  request_time = (ngx_int_t)((now->sec - r->start_sec) * 1000 + now->msec - r->start_msec);
+  ngx_time_t *now = ngx_timeofday();
+  ngx_msec_int_t request_time = (ngx_int_t)((now->sec - r->start_sec) * 1000 + now->msec - r->start_msec);
   request_time = ngx_max(request_time, 0);
 
-  latency_record = get_latency_record(r);
+  ngx_http_latency_shm_t *latency_record = get_latency_record(r);
 
   if(latency_record == NULL) {
     return NGX_DECLINED;
@@ -109,13 +102,12 @@ ngx_int_t ngx_http_record_latency(ngx_http_request_t *r)
 
 ngx_int_t ngx_http_latency_init(ngx_conf_t *cf)
 {
-  ngx_http_core_main_conf_t  *core_main_config;
-  ngx_http_handler_pt *handler;
+  ngx_http_core_main_conf_t *core_main_config = ngx_http_conf_get_module_main_conf(
+      cf, ngx_http_core_module);
 
-  core_main_config = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
   // Set the handler to run at the very end of the request, after regular
   // filters, so it will record the full latency of the request.
-  handler = ngx_array_push(&core_main_config->phases[NGX_HTTP_LOG_PHASE].handlers);
+  ngx_http_handler_pt *handler = ngx_array_push(&core_main_config->phases[NGX_HTTP_LOG_PHASE].handlers);
   *handler = ngx_http_record_latency;
 
   return NGX_OK;

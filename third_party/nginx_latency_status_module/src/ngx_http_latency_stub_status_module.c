@@ -37,9 +37,7 @@ static ngx_int_t shm_max_exponent;
 
 // Initialize a single set of latency metrics.
 latency_stat *create_latency_record(ngx_slab_pool_t *shpool) {
-  latency_stat *record;
-
-  record = ngx_slab_alloc(shpool, sizeof(latency_stat));
+  latency_stat *record = ngx_slab_alloc(shpool, sizeof(latency_stat));
   if (record == NULL) {
     return record;
   }
@@ -60,16 +58,13 @@ latency_stat *create_latency_record(ngx_slab_pool_t *shpool) {
 
 // Initialize the shared memory used to store the latency statistics.
 ngx_int_t ngx_http_latency_init_shm_zone(ngx_shm_zone_t *shm_zone, void *data){
-  ngx_slab_pool_t *shpool;
-  ngx_http_latency_shm_t *record_set;
-
   if (data) {
     shm_zone->data = data;
     return NGX_OK;
   }
 
-  shpool = (ngx_slab_pool_t *)shm_zone->shm.addr;
-  record_set = ngx_slab_alloc(shpool, sizeof(ngx_http_latency_shm_t));
+  ngx_slab_pool_t *shpool = (ngx_slab_pool_t *)shm_zone->shm.addr;
+  ngx_http_latency_shm_t *record_set = ngx_slab_alloc(shpool, sizeof(ngx_http_latency_shm_t));
 
   record_set->request_latency = create_latency_record(shpool);
   record_set->upstream_latency = create_latency_record(shpool);
@@ -89,9 +84,7 @@ ngx_int_t ngx_http_latency_init_shm_zone(ngx_shm_zone_t *shm_zone, void *data){
 // Parse an integer input from a config. arg_index is the index of the directive
 // argument to be parsed, where the name of the directive is argument 0.
 ngx_int_t ngx_parse_int(ngx_conf_t* cf, ngx_int_t arg_index) {
-  ngx_str_t *value;
-
-  value = cf->args->elts;
+  ngx_str_t *value = cf->args->elts;
   return ngx_atoi(value[arg_index].data, value[arg_index].len);
 }
 
@@ -104,28 +97,24 @@ ngx_int_t ngx_parse_int(ngx_conf_t* cf, ngx_int_t arg_index) {
 // [scaled_factor * base ^ (i - 1), scaled_factor * base ^ i ) for 0 < i <= max_exponent
 // [scaled_factor * base ^ (i - 1), infinity) for i = max_exponent + 1
 char* ngx_http_latency(ngx_conf_t* cf, ngx_command_t* cmd, void* conf){
-  ngx_http_latency_main_conf_t* main_conf;
-  ngx_int_t base, scale_factor, max_exponent;
-  ngx_str_t *config_value;
+  ngx_str_t *config_value = cf->args->elts;
+  ngx_http_latency_main_conf_t *main_conf = (ngx_http_latency_main_conf_t*) conf;
 
-  config_value = cf->args->elts;
-  main_conf = (ngx_http_latency_main_conf_t*) conf;
-
-  base = ngx_parse_int(cf, 1);
+  ngx_int_t base = ngx_parse_int(cf, 1);
   if (base == NGX_ERROR) {
     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                        "invalid value for latency_status_stub: base \"%V\"", &config_value[1]);
     return NGX_CONF_ERROR;
   }
 
-  scale_factor = ngx_parse_int(cf, 2);
+  ngx_int_t scale_factor = ngx_parse_int(cf, 2);
   if (scale_factor == NGX_ERROR) {
     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                        "invalid value for latency_status_stub: scaled_factor \"%V\"", &config_value[2]);
     return NGX_CONF_ERROR;
   }
 
-  max_exponent = ngx_parse_int(cf, 3);
+  ngx_int_t max_exponent = ngx_parse_int(cf, 3);
   if (max_exponent == NGX_ERROR) {
     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                        "invalid value for latency_status_stub: max_value \"%V\"", &config_value[3]);
@@ -153,9 +142,8 @@ char* ngx_http_latency(ngx_conf_t* cf, ngx_command_t* cmd, void* conf){
   main_conf->max_exponent = max_exponent;
   shm_max_exponent = max_exponent;
 
-  ngx_int_t* bucket_bounds;
   ngx_int_t power = 1;
-  bucket_bounds = ngx_palloc(cf->pool, sizeof(ngx_int_t) * (max_exponent + 1));
+  ngx_int_t* bucket_bounds = ngx_palloc(cf->pool, sizeof(ngx_int_t) * (max_exponent + 1));
   if (bucket_bounds == NULL) {
     return NGX_CONF_ERROR;
   }
@@ -165,13 +153,11 @@ char* ngx_http_latency(ngx_conf_t* cf, ngx_command_t* cmd, void* conf){
   }
   main_conf->latency_bucket_bounds = bucket_bounds;
 
-  ngx_shm_zone_t *shm_zone;
-  ngx_str_t *shm_name;
-
-  shm_name = ngx_palloc(cf->pool, sizeof(ngx_str_t));
+  ngx_str_t *shm_name = ngx_palloc(cf->pool, sizeof(ngx_str_t));
   shm_name->len = sizeof("latency_shared_memory") - 1;
   shm_name->data = (unsigned char *) "latency_shared_memory";
-  shm_zone = ngx_shared_memory_add(cf, shm_name, 8 * ngx_pagesize, &ngx_http_latency_stub_status_module);
+  ngx_shm_zone_t *shm_zone = ngx_shared_memory_add(
+      cf, shm_name, 8 * ngx_pagesize, &ngx_http_latency_stub_status_module);
 
   if(shm_zone == NULL) {
     return NGX_CONF_ERROR;
@@ -187,9 +173,7 @@ char* ngx_http_latency(ngx_conf_t* cf, ngx_command_t* cmd, void* conf){
 
 // Create a new ngx_http_latency_main_conf_t.
 void *ngx_http_latency_create_main_conf(ngx_conf_t* cf){
-  ngx_http_latency_main_conf_t* conf;
-
-  conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_latency_main_conf_t));
+  ngx_http_latency_main_conf_t *conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_latency_main_conf_t));
   if(conf == NULL) {
     return NGX_CONF_ERROR;
   }
@@ -202,9 +186,7 @@ void *ngx_http_latency_create_main_conf(ngx_conf_t* cf){
 // Create a new ngx_http_latency_conf_t.
 void *ngx_http_latency_create_loc_conf(ngx_conf_t *cf)
 {
-  ngx_http_latency_conf_t *conf;
-
-  conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_latency_conf_t));
+  ngx_http_latency_conf_t *conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_latency_conf_t));
   if (conf == NULL) {
     return NULL;
   }
@@ -221,11 +203,11 @@ char *ngx_http_latency_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 {
   ngx_http_latency_conf_t *prev = parent;
   ngx_http_latency_conf_t *conf = child;
-  ngx_http_latency_main_conf_t *main_conf;
 
   ngx_conf_merge_value(conf->receiver_enabled, prev->receiver_enabled, 0);
   ngx_conf_merge_value(conf->status_page_enabled, prev->status_page_enabled, 0);
-  main_conf = ngx_http_conf_get_module_main_conf(cf, ngx_http_latency_stub_status_module);
+  ngx_http_latency_main_conf_t *main_conf = ngx_http_conf_get_module_main_conf(
+      cf, ngx_http_latency_stub_status_module);
 
   if (!(main_conf->enabled) || main_conf->enabled == NGX_CONF_UNSET) {
 

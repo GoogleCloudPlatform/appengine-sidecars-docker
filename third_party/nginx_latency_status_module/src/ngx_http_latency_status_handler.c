@@ -53,19 +53,11 @@ static void write_distribution_content(ngx_buf_t *buffer, char name[], ngx_int_t
 // distribution stats. The stats are in json format.
 ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
 {
-  size_t output_size, latency_stat_size;
-  ngx_int_t request_result;
-  ngx_buf_t *buffer;
-  ngx_chain_t out;
-  ngx_http_latency_main_conf_t *main_conf;
-  ngx_int_t dist_len;
-  ngx_atomic_int_t accepted, handled, active, requests, reading, writing, waiting;
-
   if (!(r->method & (NGX_HTTP_GET|NGX_HTTP_HEAD))) {
     return NGX_HTTP_NOT_ALLOWED;
   }
 
-  request_result = ngx_http_discard_request_body(r);
+  ngx_int_t request_result = ngx_http_discard_request_body(r);
 
   if (request_result != NGX_OK) {
     return request_result;
@@ -85,8 +77,9 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
     }
   }
 
-  main_conf = ngx_http_get_module_main_conf(r, ngx_http_latency_stub_status_module);
-  dist_len = main_conf->max_exponent + 2;
+  ngx_http_latency_main_conf_t *main_conf = ngx_http_get_module_main_conf(
+      r, ngx_http_latency_stub_status_module);
+  ngx_int_t dist_len = main_conf->max_exponent + 2;
 
   u_char const json_start[] = "{\n";
   u_char const json_end[] = "}\n";
@@ -100,7 +93,7 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
   u_char const json_array_sep[] = ", ";
   u_char const json_array_end[] = "],\n";
 
-  latency_stat_size = sizeof(json_var_start) + sizeof(json_sub_var_transition) + sizeof(json_sub_var_start) * 4
+  size_t latency_stat_size = sizeof(json_var_start) + sizeof(json_sub_var_transition) + sizeof(json_sub_var_start) * 4
       + sizeof(json_var_transition) * 3 + sizeof(json_var_end) * 3
       + sizeof(json_array_start) + sizeof(json_array_sep) * (dist_len - 1) + sizeof(json_array_end)
       + sizeof(json_sub_var_end)
@@ -110,7 +103,7 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
       + sizeof("distribution")
       + dist_len * NGX_ATOMIC_T_LEN;
 
-  output_size = sizeof(json_start)
+  size_t output_size = sizeof(json_start)
       + sizeof("accepted_connections")
       + sizeof("handled_connections")
       + sizeof("active_connections")
@@ -129,14 +122,22 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
       + 3 * latency_stat_size
       + sizeof(json_end);
 
-  buffer = ngx_create_temp_buf(r->pool, output_size);
+  ngx_buf_t *buffer = ngx_create_temp_buf(r->pool, output_size);
   if (buffer == NULL) {
     return NGX_HTTP_INTERNAL_SERVER_ERROR;
   }
 
+  ngx_chain_t out;
   out.buf = buffer;
   out.next = NULL;
 
+  ngx_atomic_int_t accepted = 0;
+  ngx_atomic_int_t handled = 0;
+  ngx_atomic_int_t active = 0;
+  ngx_atomic_int_t requests = 0;
+  ngx_atomic_int_t reading = 0;
+  ngx_atomic_int_t writing = 0;
+  ngx_atomic_int_t waiting = 0;
 #if (NGX_STAT_STUB)
   accepted = *ngx_stat_accepted;
   handled = *ngx_stat_handled;
@@ -145,14 +146,6 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
   reading = *ngx_stat_reading;
   writing = *ngx_stat_writing;
   waiting = *ngx_stat_waiting;
-#else
-  accepted = 0;
-  handled = 0;
-  active = 0;
-  requests = 0;
-  reading = 0;
-  writing = 0;
-  waiting = 0;
 #endif
 
   ngx_http_latency_shm_t *latency_record;
@@ -199,13 +192,11 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
 
 char* ngx_http_latency_stub_status(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
-  ngx_http_core_loc_conf_t *core_loc_config;
-  ngx_http_latency_conf_t *location_config;
-
-  core_loc_config = ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module);
+  ngx_http_core_loc_conf_t *core_loc_config = ngx_http_conf_get_module_loc_conf(
+      cf, ngx_http_core_module);
   core_loc_config->handler = ngx_http_latency_stub_status_handler;
 
-  location_config = (ngx_http_latency_conf_t*)conf;
+  ngx_http_latency_conf_t *location_config = (ngx_http_latency_conf_t*)conf;
   location_config->status_page_enabled = 1;
 
   return NGX_CONF_OK;
