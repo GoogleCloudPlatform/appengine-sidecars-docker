@@ -1,0 +1,17 @@
+receivers:
+    dockerstats:
+    dockerstats/customname:
+      scrape_interval: 10m
+
+processors:
+    exampleprocessor:
+
+exporters:
+    exampleexporter:
+
+service:
+    pipelines:
+        metrics:
+            receivers: [dockerstats]
+            processors: [exampleprocessor]
+            exporters: [exampleexporter]

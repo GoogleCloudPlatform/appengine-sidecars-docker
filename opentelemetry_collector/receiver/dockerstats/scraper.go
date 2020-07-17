@@ -49,7 +49,7 @@ type scraper struct {
 	done           chan bool
 
 	metricConsumer consumer.MetricsConsumer
-	docker         *client.Client
+	docker         client.ContainerAPIClient
 }
 
 func newScraper(scrapeInterval time.Duration, metricConsumer consumer.MetricsConsumer) (*scraper, error) {
