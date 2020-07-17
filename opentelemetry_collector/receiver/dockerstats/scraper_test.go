@@ -26,11 +26,11 @@ type fakeDocker struct {
 
 func (d *fakeDocker) ContainerList(ctx context.Context, opts types.ContainerListOptions) ([]types.Container, error) {
 	return []types.Container{
-		types.Container{
+		{
 			ID:    "id1",
 			Names: []string{"name1a", "name1b"},
 		},
-		types.Container{
+		{
 			ID:    "id2",
 			Names: []string{},
 		},
