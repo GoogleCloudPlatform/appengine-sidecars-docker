@@ -6,8 +6,10 @@ import (
 	"time"
 
 	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
-	"github.com/open-telemetry/opentelemetry-collector/consumer"
-	"github.com/open-telemetry/opentelemetry-collector/consumer/consumerdata"
+
+	"go.opentelemetry.io/collector/consumer"
+	"go.opentelemetry.io/collector/consumer/consumerdata"
+	"go.opentelemetry.io/collector/consumer/pdatautil"
 
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/metricgenerator"
 )
@@ -128,5 +130,6 @@ func (collector *VMImageAgeCollector) scrapeAndExport() {
 	}
 
 	ctx := context.Background()
-	collector.consumer.ConsumeMetricsData(ctx, consumerdata.MetricsData{Metrics: metrics})
+	md := consumerdata.MetricsData{Metrics: metrics}
+	collector.consumer.ConsumeMetrics(ctx, pdatautil.MetricsFromMetricsData([]consumerdata.MetricsData{md}))
 }

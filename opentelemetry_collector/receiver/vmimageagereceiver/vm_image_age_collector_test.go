@@ -6,8 +6,10 @@ import (
 	"time"
 
 	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
-	"github.com/open-telemetry/opentelemetry-collector/consumer/consumerdata"
 	"github.com/stretchr/testify/assert"
+
+	"go.opentelemetry.io/collector/consumer/pdata"
+	"go.opentelemetry.io/collector/consumer/pdatautil"
 )
 
 func TestCalculateImageAge(t *testing.T) {
@@ -55,15 +57,15 @@ type fakeConsumer struct {
 }
 
 type metricsStore struct {
-	metric consumerdata.MetricsData
+	metrics pdata.Metrics
 }
 
-func (s *metricsStore) storeMetric(toStore consumerdata.MetricsData) {
-	s.metric = toStore
+func (s *metricsStore) storeMetric(toStore pdata.Metrics) {
+	s.metrics = toStore
 }
 
-func (consumer fakeConsumer) ConsumeMetricsData(ctx context.Context, exportedData consumerdata.MetricsData) error {
-	consumer.storage.storeMetric(exportedData)
+func (consumer fakeConsumer) ConsumeMetrics(ctx context.Context, metrics pdata.Metrics) error {
+	consumer.storage.storeMetric(metrics)
 	return nil
 }
 
@@ -84,9 +86,11 @@ func TestScrapeAndExport(t *testing.T) {
 		}},
 	}
 
-	if assert.Len(t, consumer.storage.metric.Metrics, 1) {
+	// TODO: Rewrite tests to directly use pdata.Metrics instead of converting back to consumerdata.MetricsData.
+	cdMetrics := pdatautil.MetricsToMetricsData(consumer.storage.metrics)[0]
+	if assert.Len(t, cdMetrics.Metrics, 1) {
 
-		actualMetric := consumer.storage.metric.Metrics[0]
+		actualMetric := cdMetrics.Metrics[0]
 		assert.Equal(t, expectedMetricDescriptor, actualMetric.MetricDescriptor)
 
 		if assert.Len(t, actualMetric.Timeseries, 1) {
@@ -137,9 +141,11 @@ func TestScrapeAndExportWithError(t *testing.T) {
 		}},
 	}
 
-	if assert.Len(t, consumer.storage.metric.Metrics, 1) {
+	// TODO: Rewrite tests to directly use pdata.Metrics instead of converting back to consumerdata.MetricsData.
+	cdMetrics := pdatautil.MetricsToMetricsData(consumer.storage.metrics)[0]
+	if assert.Len(t, cdMetrics.Metrics, 1) {
 
-		actualMetric := consumer.storage.metric.Metrics[0]
+		actualMetric := cdMetrics.Metrics[0]
 		assert.Equal(t, expectedMetricDescriptor, actualMetric.MetricDescriptor)
 
 		if assert.Len(t, actualMetric.Timeseries, 1) {
