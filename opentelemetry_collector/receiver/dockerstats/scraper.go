@@ -87,6 +87,7 @@ func (s *scraper) stop() {
 }
 
 func (s *scraper) export() {
+	glog.Info("Exporting docker stats as metrics.")
 	ctx, cancel := context.WithTimeout(context.Background(), s.scrapeInterval)
 	defer cancel()
 
@@ -100,6 +101,8 @@ func (s *scraper) export() {
 	for _, container := range containers {
 		var name string
 		if len(container.Names) > 0 {
+			// Docker container names are prefixed with their parent's name (/ means docker
+			// daemon). See https://github.com/moby/moby/issues/6705#issuecomment-47298276.
 			name = strings.TrimPrefix(container.Names[0], "/")
 		} else {
 			name = container.ID
