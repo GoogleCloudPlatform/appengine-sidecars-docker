@@ -1,0 +1,27 @@
+
+ngx_addon_name=ngx_http_latency_stub_status_module
+
+HTTP_LATENCY_SRCS=" \
+  $ngx_addon_dir/ngx_http_latency_recorder.c \
+  $ngx_addon_dir/ngx_http_latency_status_handler.c  \
+  $ngx_addon_dir/ngx_http_latency_storage.c \
+  $ngx_addon_dir/ngx_http_latency_stub_status_module.c  \
+  "
+HTTP_LATENCY_DEPS=" \
+  $ngx_addon_dir/ngx_http_latency_recorder.h  \
+  $ngx_addon_dir/ngx_http_latency_status_handler.h  \
+  $ngx_addon_dir/ngx_http_latency_storage.h \
+  $ngx_addon_dir/ngx_http_latency_stub_status_module.h  \
+  "
+
+if test -n "$ngx_module_link"; then
+  ngx_module_type=HTTP
+  ngx_module_name=ngx_http_latency_stub_status_module
+  ngx_module_srcs="$HTTP_LATENCY_SRCS"
+  ngx_module_deps="$HTTP_LATENCY_DEPS"
+  . auto/module
+else
+  HTTP_MODULES="$HTTP_MODULE ngx_http_latency_stub_status_module"
+  NGX_ADDON_SRCS="$NGX_ADDON_SRCS $HTTP_LATENCY_SRCS"
+  NGX_ADDON_DEPS="$NGX_ADDON_DEPS $HTTP_LATENCY_DEPS"
+fi
