@@ -20,7 +20,7 @@ package main
 import (
 	"log"
 
-	"github.com/open-telemetry/opentelemetry-collector/service"
+	"go.opentelemetry.io/collector/service"
 )
 
 func main() {
@@ -38,8 +38,11 @@ func main() {
 		LongName: "AppEngine Flex OpenTelemetry Contrib Collector",
 		Version:  "latest",
 	}
-
-	svc, err := service.New(factories, info)
+	params := service.Parameters{
+		Factories:            factories,
+		ApplicationStartInfo: info,
+	}
+	svc, err := service.New(params)
 	handleErr(err)
 
 	err = svc.Start()

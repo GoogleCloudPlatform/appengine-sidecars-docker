@@ -16,36 +16,37 @@
 package main
 
 import (
-	"github.com/open-telemetry/opentelemetry-collector/config"
-	"github.com/open-telemetry/opentelemetry-collector/exporter"
-	"github.com/open-telemetry/opentelemetry-collector/oterr"
-	"github.com/open-telemetry/opentelemetry-collector/processor"
-	"github.com/open-telemetry/opentelemetry-collector/processor/resourceprocessor"
-	"github.com/open-telemetry/opentelemetry-collector/receiver"
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/component/componenterror"
+	"go.opentelemetry.io/collector/config"
+	"go.opentelemetry.io/collector/processor/resourceprocessor"
 
+	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/dockerstats"
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/vmimageagereceiver"
+
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/stackdriverexporter"
 )
 
 func components() (config.Factories, error) {
 	errs := []error{}
 
-	receivers, err := receiver.Build(
+	receivers, err := component.MakeReceiverFactoryMap(
+		&dockerstats.Factory{},
 		&vmimageagereceiver.Factory{},
 	)
 	if err != nil {
 		errs = append(errs, err)
 	}
 
-	exporters, err := exporter.Build(
+	exporters, err := component.MakeExporterFactoryMap(
 		&stackdriverexporter.Factory{},
 	)
 	if err != nil {
 		errs = append(errs, err)
 	}
 
-	processors, err := processor.Build(
-		&resourceprocessor.Factory{},
+	processors, err := component.MakeProcessorFactoryMap(
+		resourceprocessor.NewFactory(),
 	)
 	if err != nil {
 		errs = append(errs, err)
@@ -57,5 +58,5 @@ func components() (config.Factories, error) {
 		Exporters:  exporters,
 	}
 
-	return factories, oterr.CombineErrors(errs)
+	return factories, componenterror.CombineErrors(errs)
 }
