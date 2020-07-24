@@ -42,20 +42,41 @@ func (d *fakeDocker) ContainerList(ctx context.Context, opts types.ContainerList
 }
 
 func (d *fakeDocker) ContainerStats(ctx context.Context, id string, stream bool) (types.ContainerStats, error) {
-	s1 := types.Stats{
-		MemoryStats: types.MemoryStats{
-			Usage: 33,
-			Limit: 66,
+	s1 := types.StatsJSON{
+		Stats: types.Stats{
+			MemoryStats: types.MemoryStats{
+				Usage: 33,
+				Limit: 66,
+			},
+		},
+		Networks: map[string]types.NetworkStats{
+			"eth0": {
+				RxBytes: 111,
+				TxBytes: 222,
+			},
 		},
 	}
-	s2 := types.Stats{
-		MemoryStats: types.MemoryStats{
-			Usage: 44,
-			Limit: 88,
+	s2 := types.StatsJSON{
+		Stats: types.Stats{
+			MemoryStats: types.MemoryStats{
+				Usage: 44,
+				Limit: 88,
+			},
+		},
+		Networks: map[string]types.NetworkStats{
+			"eth0": {
+				RxBytes: 333,
+				TxBytes: 444,
+			},
+			"eth1": {
+				RxBytes: 222,
+				TxBytes: 333,
+			},
 		},
 	}
-	s3 := types.Stats{}
-	var stats types.Stats
+	s3 := types.StatsJSON{}
+
+	var stats types.StatsJSON
 	var err error
 	switch id {
 	case "id1":
@@ -138,14 +159,20 @@ func TestScraperExport(t *testing.T) {
 	data := pdatautil.MetricsToMetricsData(c.metrics)[0]
 	verifyContainerMetricValue(t, data, "container/memory/usage", "name1a", 33)
 	verifyContainerMetricValue(t, data, "container/memory/limit", "name1a", 66)
+	verifyContainerMetricValue(t, data, "container/network/received_bytes", "name1a", 111)
+	verifyContainerMetricValue(t, data, "container/network/sent_bytes", "name1a", 222)
 	verifyContainerMetricValue(t, data, "container/uptime", "name1a", 43200)
 	verifyContainerMetricValue(t, data, "container/restart_count", "name1a", 3)
 	verifyContainerMetricValue(t, data, "container/memory/usage", "id2", 44)
 	verifyContainerMetricValue(t, data, "container/memory/limit", "id2", 88)
+	verifyContainerMetricValue(t, data, "container/network/received_bytes", "id2", 555)
+	verifyContainerMetricValue(t, data, "container/network/sent_bytes", "id2", 777)
 	verifyContainerMetricValue(t, data, "container/uptime", "id2", 86400)
 	verifyContainerMetricValue(t, data, "container/restart_count", "id2", 5)
 	verifyContainerMetricAbsent(t, data, "container/memory/usage", "name3")
 	verifyContainerMetricAbsent(t, data, "container/memory/limit", "name3")
+	verifyContainerMetricAbsent(t, data, "container/network/received_bytes", "name3")
+	verifyContainerMetricAbsent(t, data, "container/network/sent_bytes", "name3")
 	verifyContainerMetricAbsent(t, data, "container/uptime", "name3")
 	verifyContainerMetricAbsent(t, data, "container/restart_count", "name3")
 }

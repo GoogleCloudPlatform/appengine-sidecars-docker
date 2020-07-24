@@ -41,6 +41,20 @@ var (
 		Type:        mpb.MetricDescriptor_GAUGE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
+	nwRecvBytesDesc = &mpb.MetricDescriptor{
+		Name:        "container/network/received_bytes",
+		Description: "Bytes received by container over all network interfaces",
+		Unit:        "byte",
+		Type:        mpb.MetricDescriptor_CUMULATIVE_INT64,
+		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
+	}
+	nwSentBytesDesc = &mpb.MetricDescriptor{
+		Name:        "container/network/sent_bytes",
+		Description: "Bytes sent by container over all network interfaces",
+		Unit:        "byte",
+		Type:        mpb.MetricDescriptor_CUMULATIVE_INT64,
+		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
+	}
 	// Container health metrics.
 	uptimeDesc = &mpb.MetricDescriptor{
 		Name:        "container/uptime",
@@ -153,7 +167,7 @@ func (s *scraper) export() {
 	s.metricConsumer.ConsumeMetrics(ctx, pdatautil.MetricsFromMetricsData([]consumerdata.MetricsData{md}))
 }
 
-func (s *scraper) readResourceUsageStats(ctx context.Context, id string) (*types.Stats, error) {
+func (s *scraper) readResourceUsageStats(ctx context.Context, id string) (*types.StatsJSON, error) {
 	st, err := s.docker.ContainerStats(ctx, id, false /*stream*/)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve stats: %v", err)
@@ -165,14 +179,20 @@ func (s *scraper) readResourceUsageStats(ctx context.Context, id string) (*types
 		return nil, fmt.Errorf("failed to read stats: %v", err)
 	}
 
-	var stats types.Stats
+	var stats types.StatsJSON
 	if err = json.Unmarshal(b, &stats); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal stats JSON: %v", err)
 	}
 	return &stats, nil
 }
 
-func (s *scraper) usageStatsToMetrics(stats *types.Stats, labelValues []*mpb.LabelValue) []*mpb.Metric {
+func (s *scraper) usageStatsToMetrics(stats *types.StatsJSON, labelValues []*mpb.LabelValue) []*mpb.Metric {
+	var rx, tx uint64
+	for _, nw := range stats.Networks {
+		rx += nw.RxBytes
+		tx += nw.TxBytes
+	}
+
 	return []*mpb.Metric{
 		{
 			MetricDescriptor: memUsageDesc,
@@ -184,6 +204,18 @@ func (s *scraper) usageStatsToMetrics(stats *types.Stats, labelValues []*mpb.Lab
 			MetricDescriptor: memLimitDesc,
 			Timeseries: []*mpb.TimeSeries{
 				metricgenerator.MakeInt64TimeSeries(int64(stats.MemoryStats.Limit), s.startTime, s.now(), labelValues),
+			},
+		},
+		{
+			MetricDescriptor: nwRecvBytesDesc,
+			Timeseries: []*mpb.TimeSeries{
+				metricgenerator.MakeInt64TimeSeries(int64(rx), s.startTime, s.now(), labelValues),
+			},
+		},
+		{
+			MetricDescriptor: nwSentBytesDesc,
+			Timeseries: []*mpb.TimeSeries{
+				metricgenerator.MakeInt64TimeSeries(int64(tx), s.startTime, s.now(), labelValues),
 			},
 		},
 	}
