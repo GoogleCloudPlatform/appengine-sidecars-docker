@@ -68,6 +68,33 @@ func (d *fakeDocker) ContainerStats(ctx context.Context, id string, stream bool)
 	}, nil
 }
 
+func (d *fakeDocker) ContainerInspect(ctx context.Context, id string) (types.ContainerJSON, error) {
+	var c types.ContainerJSON
+
+	switch id {
+	case "id1":
+		c = types.ContainerJSON{
+			ContainerJSONBase: &types.ContainerJSONBase{
+				RestartCount: 3,
+				State: &types.ContainerState{
+					StartedAt: "2019-12-31T12:00:00.000000000Z",
+				},
+			},
+		}
+	case "id2":
+		c = types.ContainerJSON{
+			ContainerJSONBase: &types.ContainerJSONBase{
+				RestartCount: 5,
+				State: &types.ContainerState{
+					StartedAt: "2019-12-31T00:00:00.000000000Z",
+				},
+			},
+		}
+	}
+
+	return c, nil
+}
+
 // fakeMetricConsumer extends consumer.MetricsConsumer.
 type fakeMetricsConsumer struct {
 	metrics pdata.Metrics
@@ -78,24 +105,32 @@ func (c *fakeMetricsConsumer) ConsumeMetrics(ctx context.Context, md pdata.Metri
 	return nil
 }
 
+func fakeNow() time.Time {
+	t, _ := time.Parse(time.RFC3339, "2020-01-01T00:00:00Z")
+	return t
+}
+
 func TestScraperExport(t *testing.T) {
-	now := time.Now()
 	c := &fakeMetricsConsumer{}
 	s := &scraper{
-		startTime:      now,
+		startTime:      fakeNow(),
 		metricConsumer: c,
 		docker:         &fakeDocker{},
 		scrapeInterval: 10 * time.Second,
+		now:            fakeNow,
 	}
 
 	s.export()
 
 	data := pdatautil.MetricsToMetricsData(c.metrics)[0]
-	assert.Len(t, data.Metrics, 4)
 	verifyContainerMetricValue(t, data, "container/memory/usage", "name1a", 33)
 	verifyContainerMetricValue(t, data, "container/memory/limit", "name1a", 66)
+	verifyContainerMetricValue(t, data, "container/uptime", "name1a", 43200)
+	verifyContainerMetricValue(t, data, "container/restart_count", "name1a", 3)
 	verifyContainerMetricValue(t, data, "container/memory/usage", "id2", 44)
 	verifyContainerMetricValue(t, data, "container/memory/limit", "id2", 88)
+	verifyContainerMetricValue(t, data, "container/uptime", "id2", 86400)
+	verifyContainerMetricValue(t, data, "container/restart_count", "id2", 5)
 }
 
 func verifyContainerMetricValue(t *testing.T, data consumerdata.MetricsData, name, label string, value int64) {
