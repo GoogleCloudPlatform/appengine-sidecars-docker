@@ -172,13 +172,13 @@ func (s *scraper) readStats(ctx context.Context, id string) (*types.Stats, error
 
 func (s *scraper) statsToMetrics(stats *types.Stats, labelValues []*mpb.LabelValue) []*mpb.Metric {
 	return []*mpb.Metric{
-		&mpb.Metric{
+		{
 			MetricDescriptor: memUsageDesc,
 			Timeseries: []*mpb.TimeSeries{
 				metricgenerator.MakeInt64TimeSeries(int64(stats.MemoryStats.Usage), s.startTime, s.now(), labelValues),
 			},
 		},
-		&mpb.Metric{
+		{
 			MetricDescriptor: memLimitDesc,
 			Timeseries: []*mpb.TimeSeries{
 				metricgenerator.MakeInt64TimeSeries(int64(stats.MemoryStats.Limit), s.startTime, s.now(), labelValues),
@@ -207,13 +207,13 @@ func (s *scraper) readInfo(ctx context.Context, id string) (containerInfo, error
 
 func (s *scraper) infoToMetrics(info containerInfo, labelValues []*mpb.LabelValue) []*mpb.Metric {
 	return []*mpb.Metric{
-		&mpb.Metric{
+		{
 			MetricDescriptor: uptimeDesc,
 			Timeseries: []*mpb.TimeSeries{
 				metricgenerator.MakeInt64TimeSeries(int64(info.uptime.Seconds()), s.startTime, s.now(), labelValues),
 			},
 		},
-		&mpb.Metric{
+		{
 			MetricDescriptor: restartCountDesc,
 			Timeseries: []*mpb.TimeSeries{
 				metricgenerator.MakeInt64TimeSeries(info.restartCount, s.startTime, s.now(), labelValues),
