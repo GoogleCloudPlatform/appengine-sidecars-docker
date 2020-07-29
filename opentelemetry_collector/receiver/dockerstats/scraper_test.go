@@ -146,3 +146,24 @@ func verifyContainerMetricValue(t *testing.T, data consumerdata.MetricsData, nam
 	}
 	assert.Equal(t, value, metric.Timeseries[0].Points[0].GetInt64Value())
 }
+
+type alwaysFailDocker struct {
+	client.Client
+}
+
+func (d *alwaysFailDocker) ContainerList(_ context.Context, _ types.ContainerListOptions) ([]types.Container, error) {
+	return []types.Container{}, fmt.Errorf("always fail")
+}
+
+func TestScraperContinuesOnError(t *testing.T) {
+	s := &scraper{
+		now:            fakeNow,
+		docker:         &alwaysFailDocker{},
+		scrapeInterval: 1 * time.Second,
+		done:           make(chan bool),
+	}
+	s.start()
+	time.Sleep(6 * time.Second)
+	s.stop()
+	assert.GreaterOrEqual(t, s.scrapeCount, uint64(5))
+}

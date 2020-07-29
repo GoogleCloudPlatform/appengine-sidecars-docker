@@ -30,14 +30,14 @@ var (
 	memUsageDesc = &mpb.MetricDescriptor{
 		Name:        "container/memory/usage",
 		Description: "Total memory the container is using",
-		Unit:        "By",
+		Unit:        "byte",
 		Type:        mpb.MetricDescriptor_GAUGE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
 	memLimitDesc = &mpb.MetricDescriptor{
 		Name:        "container/memory/limit",
 		Description: "Total memory the container is allowed to use",
-		Unit:        "By",
+		Unit:        "byte",
 		Type:        mpb.MetricDescriptor_GAUGE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
@@ -45,7 +45,7 @@ var (
 	uptimeDesc = &mpb.MetricDescriptor{
 		Name:        "container/uptime",
 		Description: "Container uptime",
-		Unit:        "s",
+		Unit:        "second",
 		Type:        mpb.MetricDescriptor_GAUGE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
@@ -67,6 +67,7 @@ type scraper struct {
 	startTime      time.Time
 	scrapeInterval time.Duration
 	done           chan bool
+	scrapeCount    uint64
 
 	metricConsumer consumer.MetricsConsumer
 	docker         client.ContainerAPIClient
@@ -98,6 +99,7 @@ func (s *scraper) start() {
 			select {
 			case <-ticker.C:
 				s.export()
+				s.scrapeCount++
 			case <-s.done:
 				return
 			}
@@ -132,18 +134,18 @@ func (s *scraper) export() {
 		}
 		labelValues := []*mpb.LabelValue{metricgenerator.MakeLabelValue(name)}
 
-		stats, err := s.readStats(ctx, container.ID)
+		stats, err := s.readResourceUsageStats(ctx, container.ID)
 		if err != nil {
 			glog.Warningf("readStats failed for container %s(%s): %v", name, container.ID, err)
 		} else {
-			metrics = append(metrics, s.statsToMetrics(stats, labelValues)...)
+			metrics = append(metrics, s.usageStatsToMetrics(stats, labelValues)...)
 		}
 
-		info, err := s.readInfo(ctx, container.ID)
+		info, err := s.readContainerInfo(ctx, container.ID)
 		if err != nil {
 			glog.Warningf("readInfo failed for container %s(%s): %v", name, container.ID, err)
 		} else {
-			metrics = append(metrics, s.infoToMetrics(info, labelValues)...)
+			metrics = append(metrics, s.containerInfoToMetrics(info, labelValues)...)
 		}
 	}
 
@@ -151,7 +153,7 @@ func (s *scraper) export() {
 	s.metricConsumer.ConsumeMetrics(ctx, pdatautil.MetricsFromMetricsData([]consumerdata.MetricsData{md}))
 }
 
-func (s *scraper) readStats(ctx context.Context, id string) (*types.Stats, error) {
+func (s *scraper) readResourceUsageStats(ctx context.Context, id string) (*types.Stats, error) {
 	st, err := s.docker.ContainerStats(ctx, id, false /*stream*/)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve stats: %v", err)
@@ -170,7 +172,7 @@ func (s *scraper) readStats(ctx context.Context, id string) (*types.Stats, error
 	return &stats, nil
 }
 
-func (s *scraper) statsToMetrics(stats *types.Stats, labelValues []*mpb.LabelValue) []*mpb.Metric {
+func (s *scraper) usageStatsToMetrics(stats *types.Stats, labelValues []*mpb.LabelValue) []*mpb.Metric {
 	return []*mpb.Metric{
 		{
 			MetricDescriptor: memUsageDesc,
@@ -187,7 +189,7 @@ func (s *scraper) statsToMetrics(stats *types.Stats, labelValues []*mpb.LabelVal
 	}
 }
 
-func (s *scraper) readInfo(ctx context.Context, id string) (containerInfo, error) {
+func (s *scraper) readContainerInfo(ctx context.Context, id string) (containerInfo, error) {
 	var info containerInfo
 
 	c, err := s.docker.ContainerInspect(ctx, id)
@@ -200,12 +202,16 @@ func (s *scraper) readInfo(ctx context.Context, id string) (containerInfo, error
 	if err != nil {
 		return info, fmt.Errorf("failed to parse container start time (%s): %v", c.State.StartedAt, err)
 	}
-	info.uptime = s.now().Sub(t)
+	now := s.now()
+	if t.After(now) {
+		return info, fmt.Errorf("invalid container start time %v, should be <= current time %v", t, now)
+	}
+	info.uptime = now.Sub(t)
 
 	return info, nil
 }
 
-func (s *scraper) infoToMetrics(info containerInfo, labelValues []*mpb.LabelValue) []*mpb.Metric {
+func (s *scraper) containerInfoToMetrics(info containerInfo, labelValues []*mpb.LabelValue) []*mpb.Metric {
 	return []*mpb.Metric{
 		{
 			MetricDescriptor: uptimeDesc,
