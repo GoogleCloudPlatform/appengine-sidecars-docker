@@ -1,4 +1,5 @@
 receivers:
+  dockerstats:
   vmimageage:
     build_date: @BUILD_DATE@
     vm_image_name: @IMAGE_NAME@
@@ -16,6 +17,9 @@ processors:
 exporters:
   stackdriver:
     metric_prefix: appengine.googleapis.com/flex/internal
+  stackdriver/instance:
+    # TODO: Change to appengine.googleapis.com once ACLs allow it.
+    metric_prefix: custom.googleapis.com/flex/instance
 
 service:
   pipelines:
@@ -23,3 +27,7 @@ service:
       receivers: [vmimageage]
       processors: [resource]
       exporters: [stackdriver]
+    metrics/instance:
+      receivers: [dockerstats]
+      processors: [resource]
+      exporters: [stackdriver/instance]
