@@ -30,26 +30,49 @@ var (
 	memUsageDesc = &mpb.MetricDescriptor{
 		Name:        "container/memory/usage",
 		Description: "Total memory the container is using",
-		Unit:        "By",
+		Unit:        "byte",
 		Type:        mpb.MetricDescriptor_GAUGE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
 	memLimitDesc = &mpb.MetricDescriptor{
 		Name:        "container/memory/limit",
 		Description: "Total memory the container is allowed to use",
-		Unit:        "By",
+		Unit:        "byte",
 		Type:        mpb.MetricDescriptor_GAUGE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
+	// Container health metrics.
+	uptimeDesc = &mpb.MetricDescriptor{
+		Name:        "container/uptime",
+		Description: "Container uptime",
+		Unit:        "second",
+		Type:        mpb.MetricDescriptor_GAUGE_INT64,
+		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
+	}
+	restartCountDesc = &mpb.MetricDescriptor{
+		Name:        "container/restart_count",
+		Description: "Number of times the container has been restarted.",
+		Unit:        "Count",
+		Type:        mpb.MetricDescriptor_CUMULATIVE_INT64,
+		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
+	}
 )
+
+type containerInfo struct {
+	uptime       time.Duration
+	restartCount int64
+}
 
 type scraper struct {
 	startTime      time.Time
 	scrapeInterval time.Duration
 	done           chan bool
+	scrapeCount    uint64
 
 	metricConsumer consumer.MetricsConsumer
 	docker         client.ContainerAPIClient
+
+	now func() time.Time
 }
 
 func newScraper(scrapeInterval time.Duration, metricConsumer consumer.MetricsConsumer) (*scraper, error) {
@@ -63,11 +86,12 @@ func newScraper(scrapeInterval time.Duration, metricConsumer consumer.MetricsCon
 		done:           make(chan bool),
 		metricConsumer: metricConsumer,
 		docker:         docker,
+		now:            time.Now,
 	}, nil
 }
 
 func (s *scraper) start() {
-	s.startTime = time.Now()
+	s.startTime = s.now()
 	go func() {
 		ticker := time.NewTicker(s.scrapeInterval)
 		defer ticker.Stop()
@@ -75,6 +99,7 @@ func (s *scraper) start() {
 			select {
 			case <-ticker.C:
 				s.export()
+				s.scrapeCount++
 			case <-s.done:
 				return
 			}
@@ -109,31 +134,26 @@ func (s *scraper) export() {
 		}
 		labelValues := []*mpb.LabelValue{metricgenerator.MakeLabelValue(name)}
 
-		stats, err := s.readStats(ctx, container.ID)
+		stats, err := s.readResourceUsageStats(ctx, container.ID)
 		if err != nil {
-			glog.Warningf("readStats failed for container %s: %v", container.ID, err)
-			continue
+			glog.Warningf("readStats failed for container %s(%s): %v", name, container.ID, err)
+		} else {
+			metrics = append(metrics, s.usageStatsToMetrics(stats, labelValues)...)
 		}
 
-		metrics = append(metrics, &mpb.Metric{
-			MetricDescriptor: memUsageDesc,
-			Timeseries: []*mpb.TimeSeries{
-				metricgenerator.MakeInt64TimeSeries(int64(stats.MemoryStats.Usage), s.startTime, time.Now(), labelValues),
-			},
-		})
-		metrics = append(metrics, &mpb.Metric{
-			MetricDescriptor: memLimitDesc,
-			Timeseries: []*mpb.TimeSeries{
-				metricgenerator.MakeInt64TimeSeries(int64(stats.MemoryStats.Limit), s.startTime, time.Now(), labelValues),
-			},
-		})
+		info, err := s.readContainerInfo(ctx, container.ID)
+		if err != nil {
+			glog.Warningf("readInfo failed for container %s(%s): %v", name, container.ID, err)
+		} else {
+			metrics = append(metrics, s.containerInfoToMetrics(info, labelValues)...)
+		}
 	}
 
 	md := consumerdata.MetricsData{Metrics: metrics}
 	s.metricConsumer.ConsumeMetrics(ctx, pdatautil.MetricsFromMetricsData([]consumerdata.MetricsData{md}))
 }
 
-func (s *scraper) readStats(ctx context.Context, id string) (*types.Stats, error) {
+func (s *scraper) readResourceUsageStats(ctx context.Context, id string) (*types.Stats, error) {
 	st, err := s.docker.ContainerStats(ctx, id, false /*stream*/)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve stats: %v", err)
@@ -150,4 +170,60 @@ func (s *scraper) readStats(ctx context.Context, id string) (*types.Stats, error
 		return nil, fmt.Errorf("failed to unmarshal stats JSON: %v", err)
 	}
 	return &stats, nil
+}
+
+func (s *scraper) usageStatsToMetrics(stats *types.Stats, labelValues []*mpb.LabelValue) []*mpb.Metric {
+	return []*mpb.Metric{
+		{
+			MetricDescriptor: memUsageDesc,
+			Timeseries: []*mpb.TimeSeries{
+				metricgenerator.MakeInt64TimeSeries(int64(stats.MemoryStats.Usage), s.startTime, s.now(), labelValues),
+			},
+		},
+		{
+			MetricDescriptor: memLimitDesc,
+			Timeseries: []*mpb.TimeSeries{
+				metricgenerator.MakeInt64TimeSeries(int64(stats.MemoryStats.Limit), s.startTime, s.now(), labelValues),
+			},
+		},
+	}
+}
+
+func (s *scraper) readContainerInfo(ctx context.Context, id string) (containerInfo, error) {
+	var info containerInfo
+
+	c, err := s.docker.ContainerInspect(ctx, id)
+	if err != nil {
+		return info, fmt.Errorf("failed to retrieve container info: %v", err)
+	}
+	info.restartCount = int64(c.RestartCount)
+
+	t, err := time.Parse(time.RFC3339Nano, c.State.StartedAt)
+	if err != nil {
+		return info, fmt.Errorf("failed to parse container start time (%s): %v", c.State.StartedAt, err)
+	}
+	now := s.now()
+	if t.After(now) {
+		return info, fmt.Errorf("invalid container start time %v, should be <= current time %v", t, now)
+	}
+	info.uptime = now.Sub(t)
+
+	return info, nil
+}
+
+func (s *scraper) containerInfoToMetrics(info containerInfo, labelValues []*mpb.LabelValue) []*mpb.Metric {
+	return []*mpb.Metric{
+		{
+			MetricDescriptor: uptimeDesc,
+			Timeseries: []*mpb.TimeSeries{
+				metricgenerator.MakeInt64TimeSeries(int64(info.uptime.Seconds()), s.startTime, s.now(), labelValues),
+			},
+		},
+		{
+			MetricDescriptor: restartCountDesc,
+			Timeseries: []*mpb.TimeSeries{
+				metricgenerator.MakeInt64TimeSeries(info.restartCount, s.startTime, s.now(), labelValues),
+			},
+		},
+	}
 }
