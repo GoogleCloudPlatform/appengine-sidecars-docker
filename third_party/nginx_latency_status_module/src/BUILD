@@ -37,6 +37,9 @@ cc_library(
     visibility = [
         "//visibility:public",
     ],
+    defines = [
+        "NGX_LATENCY_STATUS",
+    ],
     deps = [
         "@nginx//:http",
     ],
