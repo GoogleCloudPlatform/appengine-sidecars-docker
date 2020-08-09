@@ -41,6 +41,7 @@ cc_library(
         "NGX_LATENCY_STATUS",
     ],
     deps = [
+        ":ngx_latency_status_lib",
         "@nginx//:http",
     ],
 )
