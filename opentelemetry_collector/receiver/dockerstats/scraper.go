@@ -42,14 +42,14 @@ var (
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
 	nwRecvBytesDesc = &mpb.MetricDescriptor{
-		Name:        "container/network/received_bytes",
+		Name:        "container/network/received_bytes_count",
 		Description: "Bytes received by container over all network interfaces",
 		Unit:        "byte",
 		Type:        mpb.MetricDescriptor_CUMULATIVE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
 	nwSentBytesDesc = &mpb.MetricDescriptor{
-		Name:        "container/network/sent_bytes",
+		Name:        "container/network/sent_bytes_count",
 		Description: "Bytes sent by container over all network interfaces",
 		Unit:        "byte",
 		Type:        mpb.MetricDescriptor_CUMULATIVE_INT64,
