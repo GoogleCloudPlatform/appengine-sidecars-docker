@@ -18,8 +18,7 @@ exporters:
   stackdriver:
     metric_prefix: appengine.googleapis.com/flex/internal
   stackdriver/instance:
-    # TODO: Change to appengine.googleapis.com once ACLs allow it.
-    metric_prefix: custom.googleapis.com/flex/instance
+    metric_prefix: appengine.googleapis.com/flex/instance
 
 service:
   pipelines:
