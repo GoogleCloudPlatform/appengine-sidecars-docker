@@ -27,6 +27,7 @@
 # SUCH DAMAGE.
 
 # tests for the nginx latency status module
+# run with TEST_NGINX_BINARY={path to nginx binary} prove http_latency_status.t
 
 ###############################################################################
 
