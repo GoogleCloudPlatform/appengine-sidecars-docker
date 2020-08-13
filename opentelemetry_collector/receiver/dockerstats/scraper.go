@@ -30,35 +30,35 @@ var (
 	cpuUsageDesc = &mpb.MetricDescriptor{
 		Name:        "container/cpu/usage",
 		Description: "Total CPU time consumed",
-		Unit:        "ns",
+		Unit:        "nanoseconds",
 		Type:        mpb.MetricDescriptor_CUMULATIVE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
 	cpuLimitDesc = &mpb.MetricDescriptor{
 		Name:        "container/cpu/limit",
 		Description: "CPU time limit (where applicable)",
-		Unit:        "ns",
+		Unit:        "nanoseconds",
 		Type:        mpb.MetricDescriptor_GAUGE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
 	memUsageDesc = &mpb.MetricDescriptor{
 		Name:        "container/memory/usage",
 		Description: "Total memory the container is using",
-		Unit:        "byte",
+		Unit:        "bytes",
 		Type:        mpb.MetricDescriptor_GAUGE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
 	memLimitDesc = &mpb.MetricDescriptor{
 		Name:        "container/memory/limit",
 		Description: "Total memory the container is allowed to use",
-		Unit:        "byte",
+		Unit:        "bytes",
 		Type:        mpb.MetricDescriptor_GAUGE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
 	nwRecvBytesDesc = &mpb.MetricDescriptor{
 		Name:        "container/network/received_bytes_count",
 		Description: "Bytes received by container over all network interfaces",
-		Unit:        "byte",
+		Unit:        "bytes",
 		Type:        mpb.MetricDescriptor_CUMULATIVE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
@@ -73,7 +73,7 @@ var (
 	uptimeDesc = &mpb.MetricDescriptor{
 		Name:        "container/uptime",
 		Description: "Container uptime",
-		Unit:        "second",
+		Unit:        "seconds",
 		Type:        mpb.MetricDescriptor_GAUGE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
