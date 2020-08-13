@@ -32,10 +32,9 @@
 ###############################################################################
 
 use warnings;
-#use strict;
+use strict;
 
 use Test::More;
-use AnyEvent::WebSocket::Client;
 
 BEGIN { use FindBin; chdir($FindBin::Bin); }
 
@@ -74,7 +73,7 @@ http {
 	    record_latency on;
         }
         location /pass {
-            proxy_pass http:#u/;
+            proxy_pass http://u/;
 	    record_latency on;
         }
         location /error {
