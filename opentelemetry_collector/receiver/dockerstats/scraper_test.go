@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/stretchr/testify/assert"
 
@@ -44,6 +45,11 @@ func (d *fakeDocker) ContainerList(ctx context.Context, opts types.ContainerList
 func (d *fakeDocker) ContainerStats(ctx context.Context, id string, stream bool) (types.ContainerStats, error) {
 	s1 := types.StatsJSON{
 		Stats: types.Stats{
+			CPUStats: types.CPUStats{
+				CPUUsage: types.CPUUsage{
+					TotalUsage: 100000000,
+				},
+			},
 			MemoryStats: types.MemoryStats{
 				Usage: 33,
 				Limit: 66,
@@ -58,6 +64,11 @@ func (d *fakeDocker) ContainerStats(ctx context.Context, id string, stream bool)
 	}
 	s2 := types.StatsJSON{
 		Stats: types.Stats{
+			CPUStats: types.CPUStats{
+				CPUUsage: types.CPUUsage{
+					TotalUsage: 200000000,
+				},
+			},
 			MemoryStats: types.MemoryStats{
 				Usage: 44,
 				Limit: 88,
@@ -110,6 +121,7 @@ func (d *fakeDocker) ContainerInspect(ctx context.Context, id string) (types.Con
 				State: &types.ContainerState{
 					StartedAt: "2019-12-31T12:00:00.000000000Z",
 				},
+				HostConfig: &container.HostConfig{},
 			},
 		}
 	case "id2":
@@ -118,6 +130,11 @@ func (d *fakeDocker) ContainerInspect(ctx context.Context, id string) (types.Con
 				RestartCount: 5,
 				State: &types.ContainerState{
 					StartedAt: "2019-12-31T00:00:00.000000000Z",
+				},
+				HostConfig: &container.HostConfig{
+					Resources: container.Resources{
+						NanoCPUs: 500000000,
+					},
 				},
 			},
 		}
@@ -157,18 +174,24 @@ func TestScraperExport(t *testing.T) {
 	s.export()
 
 	data := pdatautil.MetricsToMetricsData(c.metrics)[0]
+	verifyContainerMetricValue(t, data, "container/cpu/usage", "name1a", 100000000)
+	verifyContainerMetricAbsent(t, data, "container/cpu/limit", "name1a")
 	verifyContainerMetricValue(t, data, "container/memory/usage", "name1a", 33)
 	verifyContainerMetricValue(t, data, "container/memory/limit", "name1a", 66)
 	verifyContainerMetricValue(t, data, "container/network/received_bytes_count", "name1a", 111)
 	verifyContainerMetricValue(t, data, "container/network/sent_bytes_count", "name1a", 222)
 	verifyContainerMetricValue(t, data, "container/uptime", "name1a", 43200)
 	verifyContainerMetricValue(t, data, "container/restart_count", "name1a", 3)
+	verifyContainerMetricValue(t, data, "container/cpu/usage", "id2", 200000000)
+	verifyContainerMetricValue(t, data, "container/cpu/limit", "id2", 500000000)
 	verifyContainerMetricValue(t, data, "container/memory/usage", "id2", 44)
 	verifyContainerMetricValue(t, data, "container/memory/limit", "id2", 88)
 	verifyContainerMetricValue(t, data, "container/network/received_bytes_count", "id2", 555)
 	verifyContainerMetricValue(t, data, "container/network/sent_bytes_count", "id2", 777)
 	verifyContainerMetricValue(t, data, "container/uptime", "id2", 86400)
 	verifyContainerMetricValue(t, data, "container/restart_count", "id2", 5)
+	verifyContainerMetricAbsent(t, data, "container/cpu/usage", "name3")
+	verifyContainerMetricAbsent(t, data, "container/cpu/limit", "name3")
 	verifyContainerMetricAbsent(t, data, "container/memory/usage", "name3")
 	verifyContainerMetricAbsent(t, data, "container/memory/limit", "name3")
 	verifyContainerMetricAbsent(t, data, "container/network/received_bytes_count", "name3")

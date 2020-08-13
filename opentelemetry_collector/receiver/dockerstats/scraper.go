@@ -27,24 +27,38 @@ var (
 		Description: "Name of the container (or ID if name is not available)",
 	}
 
+	cpuUsageDesc = &mpb.MetricDescriptor{
+		Name:        "container/cpu/usage",
+		Description: "Total CPU time consumed",
+		Unit:        "nanoseconds",
+		Type:        mpb.MetricDescriptor_CUMULATIVE_INT64,
+		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
+	}
+	cpuLimitDesc = &mpb.MetricDescriptor{
+		Name:        "container/cpu/limit",
+		Description: "CPU time limit (where applicable)",
+		Unit:        "nanoseconds",
+		Type:        mpb.MetricDescriptor_GAUGE_INT64,
+		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
+	}
 	memUsageDesc = &mpb.MetricDescriptor{
 		Name:        "container/memory/usage",
 		Description: "Total memory the container is using",
-		Unit:        "byte",
+		Unit:        "bytes",
 		Type:        mpb.MetricDescriptor_GAUGE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
 	memLimitDesc = &mpb.MetricDescriptor{
 		Name:        "container/memory/limit",
 		Description: "Total memory the container is allowed to use",
-		Unit:        "byte",
+		Unit:        "bytes",
 		Type:        mpb.MetricDescriptor_GAUGE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
 	nwRecvBytesDesc = &mpb.MetricDescriptor{
 		Name:        "container/network/received_bytes_count",
 		Description: "Bytes received by container over all network interfaces",
-		Unit:        "byte",
+		Unit:        "bytes",
 		Type:        mpb.MetricDescriptor_CUMULATIVE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
@@ -59,7 +73,7 @@ var (
 	uptimeDesc = &mpb.MetricDescriptor{
 		Name:        "container/uptime",
 		Description: "Container uptime",
-		Unit:        "second",
+		Unit:        "seconds",
 		Type:        mpb.MetricDescriptor_GAUGE_INT64,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
@@ -75,6 +89,7 @@ var (
 type containerInfo struct {
 	uptime       time.Duration
 	restartCount int64
+	cpuLimit     int64
 }
 
 type scraper struct {
@@ -195,6 +210,14 @@ func (s *scraper) usageStatsToMetrics(stats *types.StatsJSON, labelValues []*mpb
 
 	return []*mpb.Metric{
 		{
+			MetricDescriptor: cpuUsageDesc,
+			Timeseries: []*mpb.TimeSeries{
+				metricgenerator.MakeInt64TimeSeries(int64(stats.CPUStats.CPUUsage.TotalUsage), s.startTime, s.now(), labelValues),
+			},
+		},
+		// Unfortunately, Docker API doesn't expose CPU Limits via CPUStats API. That information
+		// is extracted via container inspection (see readInfo() below).
+		{
 			MetricDescriptor: memUsageDesc,
 			Timeseries: []*mpb.TimeSeries{
 				metricgenerator.MakeInt64TimeSeries(int64(stats.MemoryStats.Usage), s.startTime, s.now(), labelValues),
@@ -229,6 +252,7 @@ func (s *scraper) readContainerInfo(ctx context.Context, id string) (containerIn
 		return info, fmt.Errorf("failed to retrieve container info: %v", err)
 	}
 	info.restartCount = int64(c.RestartCount)
+	info.cpuLimit = c.HostConfig.NanoCPUs
 
 	t, err := time.Parse(time.RFC3339Nano, c.State.StartedAt)
 	if err != nil {
@@ -244,7 +268,7 @@ func (s *scraper) readContainerInfo(ctx context.Context, id string) (containerIn
 }
 
 func (s *scraper) containerInfoToMetrics(info containerInfo, labelValues []*mpb.LabelValue) []*mpb.Metric {
-	return []*mpb.Metric{
+	metrics := []*mpb.Metric{
 		{
 			MetricDescriptor: uptimeDesc,
 			Timeseries: []*mpb.TimeSeries{
@@ -258,4 +282,13 @@ func (s *scraper) containerInfoToMetrics(info containerInfo, labelValues []*mpb.
 			},
 		},
 	}
+	if info.cpuLimit > 0 { // only generate if the container has a CPU limit.
+		metrics = append(metrics, &mpb.Metric{
+			MetricDescriptor: cpuLimitDesc,
+			Timeseries: []*mpb.TimeSeries{
+				metricgenerator.MakeInt64TimeSeries(info.cpuLimit, s.startTime, s.now(), labelValues),
+			},
+		})
+	}
+	return metrics
 }
