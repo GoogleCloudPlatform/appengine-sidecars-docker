@@ -30,6 +30,12 @@ licenses(["notice"])  #BSD license
 cc_library(
     name = "ngx_latency_status_module",
     srcs = [
+        "ngx_http_latency_recorder.c",
+        "ngx_http_latency_recorder.h",
+        "ngx_http_latency_status_handler.c",
+        "ngx_http_latency_status_handler.h",
+        "ngx_http_latency_storage.c",
+        "ngx_http_latency_storage.h",
         "ngx_http_latency_stub_status_module.c",
         "ngx_http_latency_stub_status_module.h",
         ],
@@ -41,24 +47,7 @@ cc_library(
         "NGX_LATENCY_STATUS",
     ],
     deps = [
-        ":ngx_latency_status_lib",
         "@nginx//:http",
     ],
 )
 
-cc_library(
-    name = "ngx_latency_status_lib",
-    srcs = [
-        "ngx_http_latency_recorder.c",
-        "ngx_http_latency_status_handler.c",
-        "ngx_http_latency_storage.c",
-    ],
-    hdrs = [
-        "ngx_http_latency_recorder.h",
-        "ngx_http_latency_status_handler.h",
-        "ngx_http_latency_storage.h"
-    ],
-    deps = [
-        "@nginx//:http"
-    ]
-)
