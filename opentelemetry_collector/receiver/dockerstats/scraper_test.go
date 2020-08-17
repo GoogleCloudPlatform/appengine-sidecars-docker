@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 
 	"go.opentelemetry.io/collector/consumer/consumerdata"
 	"go.opentelemetry.io/collector/consumer/pdata"
@@ -169,6 +170,7 @@ func TestScraperExport(t *testing.T) {
 		docker:         &fakeDocker{},
 		scrapeInterval: 10 * time.Second,
 		now:            fakeNow,
+		logger:         zap.NewNop(),
 	}
 
 	s.export()
@@ -237,6 +239,7 @@ func TestScraperContinuesOnError(t *testing.T) {
 		docker:         &alwaysFailDocker{},
 		scrapeInterval: 1 * time.Second,
 		done:           make(chan bool),
+		logger:         zap.NewNop(),
 	}
 	s.start()
 	time.Sleep(6 * time.Second)

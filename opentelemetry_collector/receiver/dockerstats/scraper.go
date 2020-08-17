@@ -10,11 +10,12 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-	"github.com/golang/glog"
 
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/consumerdata"
 	"go.opentelemetry.io/collector/consumer/pdatautil"
+
+	"go.uber.org/zap"
 
 	mpb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
 
@@ -100,11 +101,12 @@ type scraper struct {
 
 	metricConsumer consumer.MetricsConsumer
 	docker         client.ContainerAPIClient
+	logger         *zap.Logger
 
 	now func() time.Time
 }
 
-func newScraper(scrapeInterval time.Duration, metricConsumer consumer.MetricsConsumer) (*scraper, error) {
+func newScraper(scrapeInterval time.Duration, metricConsumer consumer.MetricsConsumer, logger *zap.Logger) (*scraper, error) {
 	docker, err := client.NewEnvClient()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize docker client: %v", err)
@@ -115,6 +117,7 @@ func newScraper(scrapeInterval time.Duration, metricConsumer consumer.MetricsCon
 		done:           make(chan bool),
 		metricConsumer: metricConsumer,
 		docker:         docker,
+		logger:         logger,
 		now:            time.Now,
 	}, nil
 }
@@ -141,13 +144,13 @@ func (s *scraper) stop() {
 }
 
 func (s *scraper) export() {
-	glog.Info("Exporting docker stats as metrics.")
+	s.logger.Info("Exporting docker stats as metrics.")
 	ctx, cancel := context.WithTimeout(context.Background(), s.scrapeInterval)
 	defer cancel()
 
 	containers, err := s.docker.ContainerList(ctx, types.ContainerListOptions{})
 	if err != nil {
-		glog.Warningf("Failed to get docker container list: %v", err)
+		s.logger.Warn("Failed to get docker container list.", zap.Error(err))
 		return
 	}
 
@@ -162,17 +165,18 @@ func (s *scraper) export() {
 			name = container.ID
 		}
 		labelValues := []*mpb.LabelValue{metricgenerator.MakeLabelValue(name)}
+		cLogger := s.logger.With(zap.String("name", name), zap.String("id", container.ID))
 
 		stats, err := s.readResourceUsageStats(ctx, container.ID)
 		if err != nil {
-			glog.Warningf("readStats failed for container %s(%s): %v", name, container.ID, err)
+			cLogger.Warn("readResourceUsageStats failed.", zap.Error(err))
 		} else {
 			metrics = append(metrics, s.usageStatsToMetrics(stats, labelValues)...)
 		}
 
 		info, err := s.readContainerInfo(ctx, container.ID)
 		if err != nil {
-			glog.Warningf("readInfo failed for container %s(%s): %v", name, container.ID, err)
+			cLogger.Warn("readContainerInfo failed.", zap.Error(err))
 		} else {
 			metrics = append(metrics, s.containerInfoToMetrics(info, labelValues)...)
 		}
