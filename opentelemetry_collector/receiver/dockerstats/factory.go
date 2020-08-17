@@ -51,7 +51,7 @@ func (f *Factory) CreateMetricsReceiver(ctx context.Context, params component.Re
 		return nil, fmt.Errorf("invalid scrape duration: %v, must be positive", c.ScrapeInterval)
 	}
 
-	s, err := newScraper(c.ScrapeInterval, nextConsumer)
+	s, err := newScraper(c.ScrapeInterval, nextConsumer, params.Logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dockerstats scraper: %v", err)
 	}
