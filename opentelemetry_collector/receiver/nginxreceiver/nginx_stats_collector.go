@@ -19,6 +19,7 @@ import (
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/metricgenerator"
 )
 
+// NginxStatsCollector is a struct that generates metrics by polling the nginx status page at statsUrl.
 type NginxStatsCollector struct {
 	consumer consumer.MetricsConsumer
 
@@ -32,6 +33,7 @@ type NginxStatsCollector struct {
 	statsUrl       string
 }
 
+// LatencyStats is a struct to parse the latency stats json into.
 type LatencyStats struct {
 	RequestCount int64   `json:"request_count"`
 	LatencySum   int64   `json:"latency_sum"`
@@ -39,6 +41,7 @@ type LatencyStats struct {
 	Distribution []int64 `json:"distribution"`
 }
 
+// NginxStats is a struct to parse the nginx stats json into.
 type NginxStats struct {
 	RequestLatency      LatencyStats `json:"request_latency"`
 	UpstreamLatency     LatencyStats `json:"upstream_latency"`
@@ -50,10 +53,8 @@ const (
 	defaultExportInterval = time.Minute
 )
 
-func getHttp(url string) (resp *http.Response, err error) {
-	return http.Get(url)
-}
-
+// NewNginxStatsCollector creates a new NginxStatsCollector that generates metrics
+// based on nginx stats found by polling the url
 func NewNginxStatsCollector(exportInterval time.Duration, url string, logger *zap.Logger, consumer consumer.MetricsConsumer) *NginxStatsCollector {
 	if exportInterval <= 0 {
 		exportInterval = defaultExportInterval
@@ -66,12 +67,13 @@ func NewNginxStatsCollector(exportInterval time.Duration, url string, logger *za
 		logger:         logger,
 		exportInterval: exportInterval,
 		statsUrl:       url,
-		getStatus:      getHttp,
+		getStatus:      http.Get,
 	}
 
 	return collector
 }
 
+// StartCollection starts a go routine that periodically polls nginx for stats and exports metrics based on them.
 func (collector *NginxStatsCollector) StartCollection() {
 	collector.startTime = collector.now()
 
@@ -88,10 +90,12 @@ func (collector *NginxStatsCollector) StartCollection() {
 	}()
 }
 
+// StopCollection stops the polling for nginx stats and the export of the metrics.
 func (collector *NginxStatsCollector) StopCollection() {
 	close(collector.done)
 }
 
+// Get the stats from the nginx latency status module and parse them into the NginxStats struct.
 func (collector *NginxStatsCollector) scrapeNginxStats() (*NginxStats, error) {
 	resp, err := collector.getStatus(collector.statsUrl)
 	if err != nil {
