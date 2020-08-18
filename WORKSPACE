@@ -13,13 +13,13 @@
 # limitations under the License.
 ###############################################################################
 #
-# A Bazel workspace for the IAP JWT verfication nginx module.
+# A Bazel workspace for appengine's nginx modules.
 
-workspace(name = "iap_jwt_verify_nginx")
+workspace(name = "appengine_nginx")
 
-load(":iap_jwt_verify_nginx.bzl", "iap_jwt_verify_nginx_repositories")
+load(":appengine_nginx.bzl", "appengine_nginx_repositories")
 
-iap_jwt_verify_nginx_repositories(False)
+appengine_nginx_repositories(False)
 
 load("@nginx//:build.bzl", "nginx_repositories")
 
