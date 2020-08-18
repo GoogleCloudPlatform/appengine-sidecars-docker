@@ -51,7 +51,7 @@ cc_library(
 )
 """
 
-def iap_jwt_verify_nginx_repositories(have_nginx):
+def appengine_nginx_repositories(have_nginx):
   if (not have_nginx):
     native.git_repository(
         name = "nginx",
