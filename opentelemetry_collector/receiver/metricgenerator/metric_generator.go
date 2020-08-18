@@ -129,6 +129,10 @@ func MakeSingleValueDistributionTimeSeries(
 
 func GetSumOfSquaredDeviationFromIntDist(
 	sum, sumSquares, count int64) float64 {
+	if count <= 0 {
+		return 0
+	}
+
 	diff := count*sumSquares - sum*sum
 	return float64(diff) / float64(count)
 }

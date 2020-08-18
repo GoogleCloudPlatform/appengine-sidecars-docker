@@ -12,7 +12,7 @@ var requestLatencyMetric = &metricspb.MetricDescriptor{
 	LabelKeys:   []*metricspb.LabelKey{},
 }
 
-var websocketLatencyMetric = &metricspb.MetricDescriptor{
+var upstreamLatencyMetric = &metricspb.MetricDescriptor{
 	Name:        "on_vm_upstream_latencies",
 	Description: "The upstream latency measured at nginx. ie The latency of the user provided app code.",
 	Unit:        "milliseconds",
@@ -20,7 +20,7 @@ var websocketLatencyMetric = &metricspb.MetricDescriptor{
 	LabelKeys:   []*metricspb.LabelKey{},
 }
 
-var upstreamLatencyMetric = &metricspb.MetricDescriptor{
+var websocketLatencyMetric = &metricspb.MetricDescriptor{
 	Name:        "web_socket/durations",
 	Description: "The duration of websocket connections measured at nginx.",
 	Unit:        "milliseconds",

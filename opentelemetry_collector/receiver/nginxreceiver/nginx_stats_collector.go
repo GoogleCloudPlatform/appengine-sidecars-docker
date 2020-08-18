@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -21,9 +22,11 @@ import (
 type NginxStatsCollector struct {
 	consumer consumer.MetricsConsumer
 
+	now       func() time.Time
 	startTime time.Time
 	done      chan struct{}
 	logger    *zap.Logger
+	getStatus func(string) (resp *http.Response, err error)
 
 	exportInterval time.Duration
 	statsUrl       string
@@ -47,6 +50,10 @@ const (
 	defaultExportInterval = time.Minute
 )
 
+func getHttp(url string) (resp *http.Response, err error) {
+	return http.Get(url)
+}
+
 func NewNginxStatsCollector(exportInterval time.Duration, url string, logger *zap.Logger, consumer consumer.MetricsConsumer) *NginxStatsCollector {
 	if exportInterval <= 0 {
 		exportInterval = defaultExportInterval
@@ -54,17 +61,19 @@ func NewNginxStatsCollector(exportInterval time.Duration, url string, logger *za
 
 	collector := &NginxStatsCollector{
 		consumer:       consumer,
-		startTime:      time.Now(),
+		now:            time.Now,
 		done:           make(chan struct{}),
 		logger:         logger,
 		exportInterval: exportInterval,
 		statsUrl:       url,
+		getStatus:      getHttp,
 	}
 
 	return collector
 }
 
 func (collector *NginxStatsCollector) StartCollection() {
+	collector.startTime = collector.now()
 
 	go func() {
 		ticker := time.NewTicker(collector.exportInterval)
@@ -84,9 +93,12 @@ func (collector *NginxStatsCollector) StopCollection() {
 }
 
 func (collector *NginxStatsCollector) scrapeNginxStats() (*NginxStats, error) {
-	resp, err := http.Get(collector.statsUrl)
+	resp, err := collector.getStatus(collector.statsUrl)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Error getting nginx stats. status code: %d", resp.StatusCode)
 	}
 
 	defer resp.Body.Close()
@@ -117,7 +129,7 @@ func (collector *NginxStatsCollector) appendDistributionMetric(
 		sumSquaredDeviation,
 		stats.RequestCount,
 		collector.startTime,
-		time.Now(),
+		collector.now(),
 		bucketOptions,
 		[]*metricspb.LabelValue{},
 	)
@@ -165,18 +177,18 @@ func (collector *NginxStatsCollector) scrapeAndExport() {
 		if err = stats.RequestLatency.checkConsistency(stats.LatencyBucketBounds); err != nil {
 			collector.logger.Error("Invalid value received for RequestLatency", zap.Error(err))
 		} else {
-			collector.appendDistributionMetric(&stats.RequestLatency, bucketOptions, metrics, requestLatencyMetric)
+			metrics = collector.appendDistributionMetric(&stats.RequestLatency, bucketOptions, metrics, requestLatencyMetric)
 		}
 		if err = stats.WebsocketLatency.checkConsistency(stats.LatencyBucketBounds); err != nil {
 			collector.logger.Error("Invalid value received for WebsocketLatency", zap.Error(err))
 		} else {
-			collector.appendDistributionMetric(&stats.WebsocketLatency, bucketOptions, metrics, websocketLatencyMetric)
+			metrics = collector.appendDistributionMetric(&stats.WebsocketLatency, bucketOptions, metrics, websocketLatencyMetric)
 		}
 
 		if err = stats.UpstreamLatency.checkConsistency(stats.LatencyBucketBounds); err != nil {
 			collector.logger.Error("Invalid value received for UpstreamLatency", zap.Error(err))
 		} else {
-			collector.appendDistributionMetric(&stats.UpstreamLatency, bucketOptions, metrics, upstreamLatencyMetric)
+			metrics = collector.appendDistributionMetric(&stats.UpstreamLatency, bucketOptions, metrics, upstreamLatencyMetric)
 		}
 	}
 
