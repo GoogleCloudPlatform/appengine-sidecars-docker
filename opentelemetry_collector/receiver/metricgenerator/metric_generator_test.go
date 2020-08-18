@@ -186,16 +186,16 @@ func Test_FormatBuckets(t *testing.T) {
 }
 
 func Test_GetSumOfSquaredDeviationFromInt(t *testing.T) {
-	deviation := GetSumOfSquaredDeviationFromInt(9, 33, 3)
-	assert.Equal(t, 6, deviation)
+	deviation := GetSumOfSquaredDeviationFromIntDist(9, 33, 3)
+	assert.Equal(t, float64(6), deviation)
 }
 
 func Test_GetSumOfSquaredDeviationFromIntWithZero(t *testing.T) {
-	deviation := GetSumOfSquaredDeviationFromInt(0, 0, 0)
-	assertEqual(t, 0, deviation)
+	deviation := GetSumOfSquaredDeviationFromIntDist(0, 0, 0)
+	assert.Equal(t, float64(0), deviation)
 }
 
 func Test_GetSumOfSquaredDeviationFromIntFraction(t *testing.T) {
-	deviation := GetSumOfSquaredDeviationFromInt(5, 13, 2)
-	assertEqual(t, 0.5, deviation)
+	deviation := GetSumOfSquaredDeviationFromIntDist(5, 13, 2)
+	assert.Equal(t, 0.5, deviation)
 }
