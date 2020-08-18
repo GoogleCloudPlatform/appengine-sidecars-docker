@@ -62,7 +62,7 @@ func fakeHttpGet(url string) (resp *http.Response, err error) {
 	} else if url == "http://malformatted" {
 		return getResponseFromJson(malformattedJson, 200), nil
 	} else if url == "http://unset" {
-	        return getResponseFromJson("{}", 200), nil
+		return getResponseFromJson("{}", 200), nil
 	}
 	return nil, errors.New("failed request")
 }
@@ -297,15 +297,15 @@ func TestCheckConsistencyNegativeDistribution(t *testing.T) {
 	assert.Equal(t, expectedError, err)
 }
 
-func TestCheckConsistencyUnsetDistribution(t * testing.T) {
+func TestCheckConsistencyUnsetDistribution(t *testing.T) {
 	stats := LatencyStats{
 		RequestCount: 3,
-		LatencySum: 8,
-		SumSquares: 24,
+		LatencySum:   8,
+		SumSquares:   24,
 		Distribution: nil,
 	}
 	var buckets []float64
-	
+
 	err := stats.checkConsistency(buckets)
 	expectedError := errors.New("One of the distribution values from the stats json is unset")
 	assert.Equal(t, expectedError, err)

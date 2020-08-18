@@ -116,19 +116,19 @@ func (collector *NginxStatsCollector) scrapeNginxStats() (*NginxStats, error) {
 	stats := NginxStats{
 		RequestLatency: LatencyStats{
 			RequestCount: -1,
-			LatencySum: -1,
-			SumSquares: -1,
+			LatencySum:   -1,
+			SumSquares:   -1,
 		},
 		UpstreamLatency: LatencyStats{
 			RequestCount: -1,
-                        LatencySum: -1,
-                        SumSquares: -1,
-                },
+			LatencySum:   -1,
+			SumSquares:   -1,
+		},
 		WebsocketLatency: LatencyStats{
-                        RequestCount: -1,
-                        LatencySum: -1,
-                        SumSquares: -1,
-                },
+			RequestCount: -1,
+			LatencySum:   -1,
+			SumSquares:   -1,
+		},
 	}
 	if err = json.Unmarshal([]byte(statsJson), &stats); err != nil {
 		return nil, err
