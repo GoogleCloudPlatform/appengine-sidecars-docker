@@ -61,6 +61,8 @@ func fakeHttpGet(url string) (resp *http.Response, err error) {
 		return getResponseFromJson("{}", 404), nil
 	} else if url == "http://malformatted" {
 		return getResponseFromJson(malformattedJson, 200), nil
+	} else if url == "http://unset" {
+	        return getResponseFromJson("{}", 200), nil
 	}
 	return nil, errors.New("failed request")
 }
@@ -116,6 +118,45 @@ func TestScrapeNginxStats(t *testing.T) {
 			Distribution: []int64{0, 0, 1},
 		},
 		LatencyBucketBounds: []float64{2, 4},
+	}
+	assert.Nil(t, err)
+	assert.Equal(t, expectedStats, stats)
+}
+
+func TestScrapeNginxStatsUnset(t *testing.T) {
+	collector := &NginxStatsCollector{
+		consumer:       &fakeConsumer{},
+		now:            fakeNow,
+		startTime:      fakeNow(),
+		done:           make(chan struct{}),
+		logger:         zap.NewNop(),
+		exportInterval: defaultExportInterval,
+		statsUrl:       "http://unset",
+		getStatus:      fakeHttpGet,
+	}
+
+	stats, err := collector.scrapeNginxStats()
+
+	expectedStats := &NginxStats{
+		RequestLatency: LatencyStats{
+			RequestCount: -1,
+			LatencySum:   -1,
+			SumSquares:   -1,
+			Distribution: nil,
+		},
+		UpstreamLatency: LatencyStats{
+			RequestCount: -1,
+			LatencySum:   -1,
+			SumSquares:   -1,
+			Distribution: nil,
+		},
+		WebsocketLatency: LatencyStats{
+			RequestCount: -1,
+			LatencySum:   -1,
+			SumSquares:   -1,
+			Distribution: nil,
+		},
+		LatencyBucketBounds: nil,
 	}
 	assert.Nil(t, err)
 	assert.Equal(t, expectedStats, stats)
@@ -253,6 +294,20 @@ func TestCheckConsistencyNegativeDistribution(t *testing.T) {
 
 	err := stats.checkConsistency(buckets)
 	expectedError := errors.New("One of the latency distribution counts is less than 0")
+	assert.Equal(t, expectedError, err)
+}
+
+func TestCheckConsistencyUnsetDistribution(t * testing.T) {
+	stats := LatencyStats{
+		RequestCount: 3,
+		LatencySum: 8,
+		SumSquares: 24,
+		Distribution: nil,
+	}
+	var buckets []float64
+	
+	err := stats.checkConsistency(buckets)
+	expectedError := errors.New("One of the distribution values from the stats json is unset")
 	assert.Equal(t, expectedError, err)
 }
 

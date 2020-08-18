@@ -111,7 +111,25 @@ func (collector *NginxStatsCollector) scrapeNginxStats() (*NginxStats, error) {
 		return nil, err
 	}
 
-	var stats NginxStats
+	// Setting the default int value to -1 makes it possible to tell when a value is missing from the json
+	// since the regular defualt is 0, which is a valid value for the stats.
+	stats := NginxStats{
+		RequestLatency: LatencyStats{
+			RequestCount: -1,
+			LatencySum: -1,
+			SumSquares: -1,
+		},
+		UpstreamLatency: LatencyStats{
+			RequestCount: -1,
+                        LatencySum: -1,
+                        SumSquares: -1,
+                },
+		WebsocketLatency: LatencyStats{
+                        RequestCount: -1,
+                        LatencySum: -1,
+                        SumSquares: -1,
+                },
+	}
 	if err = json.Unmarshal([]byte(statsJson), &stats); err != nil {
 		return nil, err
 	}
@@ -145,6 +163,10 @@ func (collector *NginxStatsCollector) appendDistributionMetric(
 }
 
 func (stats *LatencyStats) checkConsistency(bounds []float64) error {
+	if len(bounds) == 0 || len(stats.Distribution) == 0 {
+		return errors.New("One of the distribution values from the stats json is unset")
+	}
+
 	if len(bounds)+1 != len(stats.Distribution) {
 		return errors.New("The length of the latency distribution and distribution bucket boundaries do not match")
 	}
