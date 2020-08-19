@@ -122,7 +122,7 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
       + sizeof("websocket_latency")
       + 3 * latency_stat_size
       + sizeof(json_end)
-      - sizeof(",")  // the final object shouldn't have a comma after it;
+      - sizeof(",");  // the final object shouldn't have a comma after it;
 
   ngx_buf_t *buffer = ngx_create_temp_buf(r->pool, output_size);
   if (buffer == NULL) {
