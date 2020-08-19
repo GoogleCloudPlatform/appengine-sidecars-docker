@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configcheck"
 	"go.opentelemetry.io/collector/config/configerror"
+	"go.opentelemetry.io/collector/config/configmodels"
 )
 
 func TestCreateDefaultConfig(t *testing.T) {
@@ -22,6 +23,9 @@ func TestCreateDefaultConfig(t *testing.T) {
 func TestCreateReceiver(t *testing.T) {
 	factory := &Factory{}
 	cfg := factory.CreateDefaultConfig()
+	config := cfg.(*Config)
+	config.StatsUrl = "http://example.com"
+	cfg = configmodels.Receiver(config)
 	params := component.ReceiverCreateParams{Logger: zap.NewNop()}
 
 	tReceiver, err := factory.CreateTraceReceiver(context.Background(), params, cfg, nil)

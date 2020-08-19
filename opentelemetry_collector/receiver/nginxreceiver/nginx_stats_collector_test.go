@@ -25,7 +25,7 @@ func fakeNow() time.Time {
 	return t
 }
 
-func fakeHttpGet(url string) (resp *http.Response, err error) {
+func fakeHttpGet(testUrl string) (resp *http.Response, err error) {
 	successJson := `{
   "accepted_connections": 3,
   "handled_connections": 3,
@@ -55,13 +55,13 @@ func fakeHttpGet(url string) (resp *http.Response, err error) {
   "latency_bucket_bounds": [2, 4]
 }`
 	malformattedJson := "malformatted json requests 0"
-	if url == "http://success" {
+	if testUrl == "http://success" {
 		return getResponseFromJson(successJson, 200), nil
-	} else if url == "http://not_found" {
+	} else if testUrl == "http://not_found" {
 		return getResponseFromJson("{}", 404), nil
-	} else if url == "http://malformatted" {
+	} else if testUrl == "http://malformatted" {
 		return getResponseFromJson(malformattedJson, 200), nil
-	} else if url == "http://unset" {
+	} else if testUrl == "http://unset" {
 		return getResponseFromJson("{}", 200), nil
 	}
 	return nil, errors.New("failed request")
@@ -91,7 +91,7 @@ func TestScrapeNginxStats(t *testing.T) {
 		startTime:      fakeNow(),
 		done:           make(chan struct{}),
 		logger:         zap.NewNop(),
-		exportInterval: defaultExportInterval,
+		exportInterval: time.Minute,
 		statsUrl:       "http://success",
 		getStatus:      fakeHttpGet,
 	}
@@ -130,7 +130,7 @@ func TestScrapeNginxStatsUnset(t *testing.T) {
 		startTime:      fakeNow(),
 		done:           make(chan struct{}),
 		logger:         zap.NewNop(),
-		exportInterval: defaultExportInterval,
+		exportInterval: time.Minute,
 		statsUrl:       "http://unset",
 		getStatus:      fakeHttpGet,
 	}
@@ -169,7 +169,7 @@ func TestScrapeNginxStatsNotFound(t *testing.T) {
 		now:            fakeNow,
 		done:           make(chan struct{}),
 		logger:         zap.NewNop(),
-		exportInterval: defaultExportInterval,
+		exportInterval: time.Minute,
 		statsUrl:       "http://not_found",
 		getStatus:      fakeHttpGet,
 	}
@@ -186,7 +186,7 @@ func TestScrapeNginxStatsMalformatted(t *testing.T) {
 		now:            fakeNow,
 		done:           make(chan struct{}),
 		logger:         zap.NewNop(),
-		exportInterval: defaultExportInterval,
+		exportInterval: time.Minute,
 		statsUrl:       "http://malformatted",
 		getStatus:      fakeHttpGet,
 	}
@@ -203,7 +203,7 @@ func TestScrapeNginxStatsError(t *testing.T) {
 		now:            fakeNow,
 		done:           make(chan struct{}),
 		logger:         zap.NewNop(),
-		exportInterval: defaultExportInterval,
+		exportInterval: time.Minute,
 		statsUrl:       "http://error",
 		getStatus:      fakeHttpGet,
 	}
@@ -318,7 +318,7 @@ func TestAppendDistributionMetric(t *testing.T) {
 		startTime:      fakeNow(),
 		done:           make(chan struct{}),
 		logger:         zap.NewNop(),
-		exportInterval: defaultExportInterval,
+		exportInterval: time.Minute,
 		statsUrl:       "http://success",
 		getStatus:      fakeHttpGet,
 	}
@@ -404,7 +404,7 @@ func TestScrapeAndExport(t *testing.T) {
 		startTime:      fakeNow(),
 		done:           make(chan struct{}),
 		logger:         zap.NewNop(),
-		exportInterval: defaultExportInterval,
+		exportInterval: time.Minute,
 		statsUrl:       "http://success",
 		getStatus:      fakeHttpGet,
 	}
@@ -443,7 +443,7 @@ func TestScrapeAndExportError(t *testing.T) {
 		startTime:      fakeNow(),
 		done:           make(chan struct{}),
 		logger:         zap.NewNop(),
-		exportInterval: defaultExportInterval,
+		exportInterval: time.Minute,
 		statsUrl:       "http://error",
 		getStatus:      fakeHttpGet,
 	}

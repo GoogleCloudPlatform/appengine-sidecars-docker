@@ -127,8 +127,10 @@ func MakeSingleValueDistributionTimeSeries(
 	return makeTimeseriesFromDistribution(&distribution, startTime, currentTime, labels)
 }
 
-func GetSumOfSquaredDeviationFromIntDist(
-	sum, sumSquares, count int64) float64 {
+// GetSumOfSquaredDeviationsFromIntDist calculates the sum of squared deviations from the mean.
+// For values x_i this is:     Sum[i=1..n]((x_i - mean)^2)
+// Calculated from the count, sum, and sum of squares of the values.
+func GetSumOfSquaredDeviationFromIntDist(sum, sumSquares, count int64) float64 {
 	if count <= 0 {
 		return 0
 	}
@@ -137,7 +139,9 @@ func GetSumOfSquaredDeviationFromIntDist(
 	return float64(diff) / float64(count)
 }
 
-func MakeDistributionTimeSeries(distribution []int64,
+// MakeDistributionTimeSeries formats a distribution and its metadata as a TimeSeries.
+func MakeDistributionTimeSeries(
+	distribution []int64,
 	sum float64,
 	sumSquaredDeviation float64,
 	count int64,
@@ -157,9 +161,9 @@ func MakeDistributionTimeSeries(distribution []int64,
 		&distributionProto,
 		startTime, currentTime,
 		labels)
-
 }
 
+// makeTimeseriesFromDistribution formats a distribution proto as a TimeSeries.
 func makeTimeseriesFromDistribution(
 	distribution *metricspb.DistributionValue,
 	startTime, currentTime time.Time,

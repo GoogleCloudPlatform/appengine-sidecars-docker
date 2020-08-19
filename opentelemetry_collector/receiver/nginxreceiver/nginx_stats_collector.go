@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
@@ -49,15 +50,15 @@ type NginxStats struct {
 	LatencyBucketBounds []float64    `json:"latency_bucket_bounds"`
 }
 
-const (
-	defaultExportInterval = time.Minute
-)
-
 // NewNginxStatsCollector creates a new NginxStatsCollector that generates metrics
 // based on nginx stats found by polling the url
-func NewNginxStatsCollector(exportInterval time.Duration, url string, logger *zap.Logger, consumer consumer.MetricsConsumer) *NginxStatsCollector {
-	if exportInterval <= 0 {
-		exportInterval = defaultExportInterval
+func NewNginxStatsCollector(interval time.Duration, statsUrl string, logger *zap.Logger, consumer consumer.MetricsConsumer) (*NginxStatsCollector, error) {
+	if interval <= 0 {
+		return nil, errors.New("ExportInterval must be greater than 0")
+	}
+
+	if _, err := url.ParseRequestURI(statsUrl); err != nil {
+		return nil, fmt.Errorf("StatsUrl %s is not valid: %v", statsUrl, err)
 	}
 
 	collector := &NginxStatsCollector{
@@ -65,12 +66,12 @@ func NewNginxStatsCollector(exportInterval time.Duration, url string, logger *za
 		now:            time.Now,
 		done:           make(chan struct{}),
 		logger:         logger,
-		exportInterval: exportInterval,
-		statsUrl:       url,
+		exportInterval: interval,
+		statsUrl:       statsUrl,
 		getStatus:      http.Get,
 	}
 
-	return collector
+	return collector, nil
 }
 
 // StartCollection starts a go routine that periodically polls nginx for stats and exports metrics based on them.
@@ -79,6 +80,8 @@ func (collector *NginxStatsCollector) StartCollection() {
 
 	go func() {
 		ticker := time.NewTicker(collector.exportInterval)
+		defer ticker.Stop()
+
 		for {
 			select {
 			case <-ticker.C:
@@ -101,16 +104,22 @@ func (collector *NginxStatsCollector) scrapeNginxStats() (*NginxStats, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("Error getting nginx stats. status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("Error getting nginx stats. status code: %d content: %s", resp.StatusCode, body)
 	}
 
-	defer resp.Body.Close()
-	statsJson, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
+	return readStatsJson(body)
+}
+
+// readStatsJson parses the stats Json and sets defaults.
+func readStatsJson(statsJson []byte) (*NginxStats, error) {
 	// Setting the default int value to -1 makes it possible to tell when a value is missing from the json
 	// since the regular defualt is 0, which is a valid value for the stats.
 	stats := NginxStats{
@@ -130,10 +139,9 @@ func (collector *NginxStatsCollector) scrapeNginxStats() (*NginxStats, error) {
 			SumSquares:   -1,
 		},
 	}
-	if err = json.Unmarshal([]byte(statsJson), &stats); err != nil {
+	if err := json.Unmarshal(statsJson, &stats); err != nil {
 		return nil, err
 	}
-
 	return &stats, nil
 }
 

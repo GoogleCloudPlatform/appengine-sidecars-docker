@@ -2,6 +2,7 @@ package nginxreceiver
 
 import (
 	"context"
+	"time"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configerror"
@@ -35,6 +36,7 @@ func (f *Factory) CreateDefaultConfig() configmodels.Receiver {
 			TypeVal: typeStr,
 			NameVal: typeStr,
 		},
+		ExportInterval: time.Minute,
 	}
 }
 
@@ -58,7 +60,11 @@ func (f *Factory) CreateMetricsReceiver(
 ) (component.MetricsReceiver, error) {
 
 	cfg := config.(*Config)
-	collector := NewNginxStatsCollector(cfg.ExportInterval, cfg.StatsUrl, params.Logger, consumer)
+	collector, err := NewNginxStatsCollector(cfg.ExportInterval, cfg.StatsUrl, params.Logger, consumer)
+
+	if err != nil {
+		return nil, err
+	}
 
 	receiver := &Receiver{
 		nginxStatsCollector: collector,
