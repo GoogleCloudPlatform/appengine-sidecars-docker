@@ -162,3 +162,40 @@ func Test_MakeSingleDistributionTimeSeries(t *testing.T) {
 	}
 	assert.Equal(t, distribution.GetBuckets(), expectedBuckets)
 }
+
+func Test_FormatBucketOptions(t *testing.T) {
+	bucketOptions := FormatBucketOptions([]float64{2, 4, 10})
+	expectedBucketOptions := &metricspb.DistributionValue_BucketOptions{
+		Type: &metricspb.DistributionValue_BucketOptions_Explicit_{
+			Explicit: &metricspb.DistributionValue_BucketOptions_Explicit{
+				Bounds: []float64{2, 4, 10},
+			},
+		},
+	}
+	assert.Equal(t, expectedBucketOptions, bucketOptions)
+}
+
+func Test_FormatBuckets(t *testing.T) {
+	buckets := formatBuckets([]int64{1, 4, 3})
+	expectedBuckets := []*metricspb.DistributionValue_Bucket{
+		{Count: 1},
+		{Count: 4},
+		{Count: 3},
+	}
+	assert.Equal(t, expectedBuckets, buckets)
+}
+
+func Test_GetSumOfSquaredDeviationFromInt(t *testing.T) {
+	deviation := GetSumOfSquaredDeviationFromIntDist(9, 33, 3)
+	assert.Equal(t, float64(6), deviation)
+}
+
+func Test_GetSumOfSquaredDeviationFromIntWithZero(t *testing.T) {
+	deviation := GetSumOfSquaredDeviationFromIntDist(0, 0, 0)
+	assert.Equal(t, float64(0), deviation)
+}
+
+func Test_GetSumOfSquaredDeviationFromIntFraction(t *testing.T) {
+	deviation := GetSumOfSquaredDeviationFromIntDist(5, 13, 2)
+	assert.Equal(t, 0.5, deviation)
+}
