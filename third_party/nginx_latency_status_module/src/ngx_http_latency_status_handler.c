@@ -44,7 +44,7 @@ static void write_distribution_content(ngx_buf_t *buffer, char name[], ngx_int_t
   for (int i = 0; i < len_dist - 1; i++) {
     buffer->last = ngx_sprintf(buffer->last, "%uA, ", latency_record->distribution[i]);
   }
-  buffer->last = ngx_sprintf(buffer->last, "%uA],\n", latency_record->distribution[len_dist]);
+  buffer->last = ngx_sprintf(buffer->last, "%uA]\n", latency_record->distribution[len_dist]);
   buffer->last = ngx_cpymem(buffer->last, json_sub_var_end, sizeof(json_sub_var_end) - 1);
 }
 
@@ -101,7 +101,8 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
       + sizeof("latency_sum")
       + sizeof("sum_squares")
       + sizeof("distribution")
-      + dist_len * NGX_ATOMIC_T_LEN;
+      + dist_len * NGX_ATOMIC_T_LEN
+      - sizeof(",");  // the final sub object shouldn't have a comma after it.
 
   size_t output_size = sizeof(json_start)
       + sizeof("accepted_connections")
@@ -114,13 +115,14 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
       + 7 + (sizeof(json_var_start) + sizeof(json_var_transition) + sizeof(json_var_end))
       + NGX_ATOMIC_T_LEN * 8
       + sizeof("latency_bucket_bounds")
-      + sizeof(json_array_start) + sizeof(json_array_sep) * (dist_len - 1) + sizeof(json_array_end)
-      + dist_len * NGX_ATOMIC_T_LEN
+      + sizeof(json_array_start) + sizeof(json_array_sep) * (dist_len - 2) + sizeof(json_array_end)
+      + (dist_len - 1) * NGX_ATOMIC_T_LEN
       + sizeof("request_latency")
       + sizeof("upstream_latency")
       + sizeof("websocket_latency")
       + 3 * latency_stat_size
-      + sizeof(json_end);
+      + sizeof(json_end)
+      - sizeof(",");  // the final object shouldn't have a comma after it;
 
   ngx_buf_t *buffer = ngx_create_temp_buf(r->pool, output_size);
   if (buffer == NULL) {
@@ -151,7 +153,7 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
   ngx_http_latency_shm_t *latency_record;
   latency_record = get_latency_record(r);
 
-  u_char const bucket_array_start[] = "  \"latency_bucket_bounds\": [0,";
+  u_char const bucket_array_start[] = "  \"latency_bucket_bounds\": [";
 
   buffer->last = ngx_cpymem(buffer->last, json_start, sizeof(json_start) - 1);
   buffer->last = ngx_sprintf(buffer->last, "  \"accepted_connections\": %uA,\n", accepted);
@@ -162,15 +164,15 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
   buffer->last = ngx_sprintf(buffer->last, "  \"writing_connections\": %uA,\n", writing);
   buffer->last = ngx_sprintf(buffer->last, "  \"waiting_connections\": %uA,\n", waiting);
 
+  write_distribution_content(buffer, "request_latency", dist_len, latency_record->request_latency);
+  write_distribution_content(buffer, "upstream_latency", dist_len, latency_record->upstream_latency);
+  write_distribution_content(buffer, "websocket_latency", dist_len, latency_record->websocket_latency);
+
   buffer->last = ngx_cpymem(buffer->last, bucket_array_start, sizeof(bucket_array_start) - 1);
   for (int i = 0; i < dist_len - 2; i++) {
     buffer->last = ngx_sprintf(buffer->last, " %A,", main_conf->latency_bucket_bounds[i]);
   }
-  buffer->last = ngx_sprintf(buffer->last, " %A],\n", main_conf->latency_bucket_bounds[dist_len - 2]);
-
-  write_distribution_content(buffer, "request_latency", dist_len, latency_record->request_latency);
-  write_distribution_content(buffer, "upstream_latency", dist_len, latency_record->upstream_latency);
-  write_distribution_content(buffer, "websocket_latency", dist_len, latency_record->websocket_latency);
+  buffer->last = ngx_sprintf(buffer->last, " %A]\n", main_conf->latency_bucket_bounds[dist_len - 2]);
 
   buffer->last = ngx_cpymem(buffer->last, json_end, sizeof(json_end) - 1);
 

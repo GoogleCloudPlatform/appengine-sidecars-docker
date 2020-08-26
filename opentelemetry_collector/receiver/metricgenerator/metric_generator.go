@@ -51,6 +51,16 @@ func MakeExponentialBucketOptions(boundsBase, maxExponent float64) *metricspb.Di
 	}
 }
 
+func FormatBucketOptions(bounds []float64) *metricspb.DistributionValue_BucketOptions {
+	return &metricspb.DistributionValue_BucketOptions{
+		Type: &metricspb.DistributionValue_BucketOptions_Explicit_{
+			Explicit: &metricspb.DistributionValue_BucketOptions_Explicit{
+				Bounds: bounds,
+			},
+		},
+	}
+}
+
 // MakeBuckets generates a proto representation of a distribution containing a single value.
 // bounds defines the bucket boundaries of the distribution.
 func MakeBuckets(values, bounds []float64) []*metricspb.DistributionValue_Bucket {
@@ -75,6 +85,17 @@ func getBucketIndex(val float64, bounds []float64) int {
 		}
 	}
 	return len(bounds)
+}
+
+func formatBuckets(distribution []int64) []*metricspb.DistributionValue_Bucket {
+	buckets := make([]*metricspb.DistributionValue_Bucket, len(distribution), len(distribution))
+	for i := 0; i < len(distribution); i++ {
+		buckets[i] = &metricspb.DistributionValue_Bucket{
+			Count: distribution[i],
+		}
+	}
+
+	return buckets
 }
 
 // MakeLabelValue generates a proto representation of a metric label with value as its value.
@@ -103,9 +124,53 @@ func MakeSingleValueDistributionTimeSeries(
 		Buckets:               MakeBuckets([]float64{val}, bounds),
 	}
 
+	return makeTimeseriesFromDistribution(&distribution, startTime, currentTime, labels)
+}
+
+// GetSumOfSquaredDeviationsFromIntDist calculates the sum of squared deviations from the mean.
+// For values x_i this is:     Sum[i=1..n]((x_i - mean)^2)
+// Calculated from the count, sum, and sum of squares of the values.
+func GetSumOfSquaredDeviationFromIntDist(sum, sumSquares, count int64) float64 {
+	if count <= 0 {
+		return 0
+	}
+
+	diff := count*sumSquares - sum*sum
+	return float64(diff) / float64(count)
+}
+
+// MakeDistributionTimeSeries formats a distribution and its metadata as a TimeSeries.
+func MakeDistributionTimeSeries(
+	distribution []int64,
+	sum float64,
+	sumSquaredDeviation float64,
+	count int64,
+	startTime, currentTime time.Time,
+	bucketOptions *metricspb.DistributionValue_BucketOptions,
+	labels []*metricspb.LabelValue) *metricspb.TimeSeries {
+
+	distributionProto := metricspb.DistributionValue{
+		Count:                 count,
+		Sum:                   sum,
+		SumOfSquaredDeviation: sumSquaredDeviation,
+		BucketOptions:         bucketOptions,
+		Buckets:               formatBuckets(distribution),
+	}
+
+	return makeTimeseriesFromDistribution(
+		&distributionProto,
+		startTime, currentTime,
+		labels)
+}
+
+// makeTimeseriesFromDistribution formats a distribution proto as a TimeSeries.
+func makeTimeseriesFromDistribution(
+	distribution *metricspb.DistributionValue,
+	startTime, currentTime time.Time,
+	labels []*metricspb.LabelValue) *metricspb.TimeSeries {
 	point := metricspb.Point{
 		Timestamp: TimeToTimestamp(currentTime),
-		Value:     &metricspb.Point_DistributionValue{DistributionValue: &distribution},
+		Value:     &metricspb.Point_DistributionValue{DistributionValue: distribution},
 	}
 
 	return &metricspb.TimeSeries{
