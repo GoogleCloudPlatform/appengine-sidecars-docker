@@ -1,0 +1,18 @@
+receivers:
+  nginxstats:
+  nginxstats/customname:
+    export_interval: 10m
+    stats_url: http://example.com
+
+processors:
+  exampleprocessor:
+
+exporters:
+  exampleexporter:
+
+service:
+  pipelines:
+    metrics:
+      receivers: [nginxstats]
+      processors: [exampleprocessor]
+      exporters: [exampleexporter]

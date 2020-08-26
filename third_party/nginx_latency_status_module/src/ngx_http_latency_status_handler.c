@@ -115,14 +115,14 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
       + 7 + (sizeof(json_var_start) + sizeof(json_var_transition) + sizeof(json_var_end))
       + NGX_ATOMIC_T_LEN * 8
       + sizeof("latency_bucket_bounds")
-      + sizeof(json_array_start) + sizeof(json_array_sep) * (dist_len - 1) + sizeof(json_array_end)
-      + dist_len * NGX_ATOMIC_T_LEN
+      + sizeof(json_array_start) + sizeof(json_array_sep) * (dist_len - 2) + sizeof(json_array_end)
+      + (dist_len - 1) * NGX_ATOMIC_T_LEN
       + sizeof("request_latency")
       + sizeof("upstream_latency")
       + sizeof("websocket_latency")
       + 3 * latency_stat_size
       + sizeof(json_end)
-      - sizeof(",")  // the final object shouldn't have a comma after it;
+      - sizeof(",");  // the final object shouldn't have a comma after it;
 
   ngx_buf_t *buffer = ngx_create_temp_buf(r->pool, output_size);
   if (buffer == NULL) {
@@ -153,7 +153,7 @@ ngx_int_t ngx_http_latency_stub_status_handler(ngx_http_request_t *r)
   ngx_http_latency_shm_t *latency_record;
   latency_record = get_latency_record(r);
 
-  u_char const bucket_array_start[] = "  \"latency_bucket_bounds\": [0,";
+  u_char const bucket_array_start[] = "  \"latency_bucket_bounds\": [";
 
   buffer->last = ngx_cpymem(buffer->last, json_start, sizeof(json_start) - 1);
   buffer->last = ngx_sprintf(buffer->last, "  \"accepted_connections\": %uA,\n", accepted);
