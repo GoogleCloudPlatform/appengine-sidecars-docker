@@ -129,7 +129,7 @@ my $initial_status = "{\n  \"accepted_connections\": 1,\n".
                        "    \"sum_squares\": 0,\n".
                        "    \"distribution\": [0, 0, 0]\n".
 		       "  },\n".
-		       "  \"latency_bucket_bounds\": [0, 100, 200]\n".
+		       "  \"latency_bucket_bounds\": [ 100, 200]\n".
 		       "}\n";
 
 like(http_get('/status'), qr/\Q${initial_status}\E/, 'check initial stats twice');
