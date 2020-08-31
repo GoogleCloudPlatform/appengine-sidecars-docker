@@ -20,7 +20,7 @@ import (
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/metricgenerator"
 )
 
-// NginxStatsCollector is a struct that generates metrics by polling the nginx status page at statsUrl.
+// NginxStatsCollector is a struct that generates metrics by polling the nginx status page at statsURL.
 type NginxStatsCollector struct {
 	consumer consumer.MetricsConsumer
 
@@ -31,7 +31,7 @@ type NginxStatsCollector struct {
 	getStatus func(string) (resp *http.Response, err error)
 
 	exportInterval time.Duration
-	statsUrl       string
+	statsURL       string
 }
 
 // LatencyStats is a struct to parse the latency stats json into.
@@ -52,13 +52,13 @@ type NginxStats struct {
 
 // NewNginxStatsCollector creates a new NginxStatsCollector that generates metrics
 // based on nginx stats found by polling the url
-func NewNginxStatsCollector(interval time.Duration, statsUrl string, logger *zap.Logger, consumer consumer.MetricsConsumer) (*NginxStatsCollector, error) {
+func NewNginxStatsCollector(interval time.Duration, statsURL string, logger *zap.Logger, consumer consumer.MetricsConsumer) (*NginxStatsCollector, error) {
 	if interval <= 0 {
 		return nil, errors.New("ExportInterval must be greater than 0")
 	}
 
-	if _, err := url.ParseRequestURI(statsUrl); err != nil {
-		return nil, fmt.Errorf("StatsUrl %s is not valid: %v", statsUrl, err)
+	if _, err := url.ParseRequestURI(statsURL); err != nil {
+		return nil, fmt.Errorf("StatsURL %s is not valid: %v", statsURL, err)
 	}
 
 	collector := &NginxStatsCollector{
@@ -67,7 +67,7 @@ func NewNginxStatsCollector(interval time.Duration, statsUrl string, logger *zap
 		done:           make(chan struct{}),
 		logger:         logger,
 		exportInterval: interval,
-		statsUrl:       statsUrl,
+		statsURL:       statsURL,
 		getStatus:      http.Get,
 	}
 
@@ -100,7 +100,7 @@ func (collector *NginxStatsCollector) StopCollection() {
 
 // Get the stats from the nginx latency status module and parse them into the NginxStats struct.
 func (collector *NginxStatsCollector) scrapeNginxStats() (*NginxStats, error) {
-	resp, err := collector.getStatus(collector.statsUrl)
+	resp, err := collector.getStatus(collector.statsURL)
 	if err != nil {
 		return nil, err
 	}
@@ -115,11 +115,11 @@ func (collector *NginxStatsCollector) scrapeNginxStats() (*NginxStats, error) {
 		return nil, err
 	}
 
-	return readStatsJson(body)
+	return readStatsJSON(body)
 }
 
-// readStatsJson parses the stats Json and sets defaults.
-func readStatsJson(statsJson []byte) (*NginxStats, error) {
+// readStatsJSON parses the stats JSON and sets defaults.
+func readStatsJSON(statsJSON []byte) (*NginxStats, error) {
 	// Setting the default int value to -1 makes it possible to tell when a value is missing from the json
 	// since the regular defualt is 0, which is a valid value for the stats.
 	stats := NginxStats{
@@ -139,7 +139,7 @@ func readStatsJson(statsJson []byte) (*NginxStats, error) {
 			SumSquares:   -1,
 		},
 	}
-	if err := json.Unmarshal(statsJson, &stats); err != nil {
+	if err := json.Unmarshal(statsJSON, &stats); err != nil {
 		return nil, err
 	}
 	return &stats, nil
@@ -151,7 +151,7 @@ func (collector *NginxStatsCollector) appendDistributionMetric(
 	metrics []*metricspb.Metric,
 	descriptor *metricspb.MetricDescriptor) []*metricspb.Metric {
 
-	sumSquaredDeviation := metricgenerator.GetSumOfSquaredDeviationFromIntDist(
+	sumSquaredDeviation := metricgenerator.GetSumOfSquaredDeviationsFromIntDist(
 		stats.LatencySum, stats.SumSquares, stats.RequestCount)
 	timeseries := metricgenerator.MakeDistributionTimeSeries(
 		stats.Distribution,

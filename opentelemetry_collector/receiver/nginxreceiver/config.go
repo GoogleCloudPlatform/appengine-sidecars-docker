@@ -9,5 +9,5 @@ import (
 type Config struct {
 	configmodels.ReceiverSettings `mapstructure:",squash"`
 	ExportInterval                time.Duration `mapstructure:"export_interval"`
-	StatsUrl                      string        `mapstructure:"stats_url"`
+	StatsURL                      string        `mapstructure:"stats_url"`
 }

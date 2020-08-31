@@ -185,17 +185,17 @@ func Test_FormatBuckets(t *testing.T) {
 	assert.Equal(t, expectedBuckets, buckets)
 }
 
-func Test_GetSumOfSquaredDeviationFromInt(t *testing.T) {
-	deviation := GetSumOfSquaredDeviationFromIntDist(9, 33, 3)
+func Test_GetSumOfSquaredDeviationsFromInt(t *testing.T) {
+	deviation := GetSumOfSquaredDeviationsFromIntDist(9, 33, 3)
 	assert.Equal(t, float64(6), deviation)
 }
 
-func Test_GetSumOfSquaredDeviationFromIntWithZero(t *testing.T) {
-	deviation := GetSumOfSquaredDeviationFromIntDist(0, 0, 0)
+func Test_GetSumOfSquaredDeviationsFromIntWithZero(t *testing.T) {
+	deviation := GetSumOfSquaredDeviationsFromIntDist(0, 0, 0)
 	assert.Equal(t, float64(0), deviation)
 }
 
-func Test_GetSumOfSquaredDeviationFromIntFraction(t *testing.T) {
-	deviation := GetSumOfSquaredDeviationFromIntDist(5, 13, 2)
+func Test_GetSumOfSquaredDeviationsFromIntFraction(t *testing.T) {
+	deviation := GetSumOfSquaredDeviationsFromIntDist(5, 13, 2)
 	assert.Equal(t, 0.5, deviation)
 }

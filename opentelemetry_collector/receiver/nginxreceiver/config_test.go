@@ -36,6 +36,6 @@ func TestLoadConfig(t *testing.T) {
 				NameVal: "nginxstats/customname",
 			},
 			ExportInterval: 10 * time.Minute,
-			StatsUrl:       "http://example.com",
+			StatsURL:       "http://example.com",
 		})
 }
