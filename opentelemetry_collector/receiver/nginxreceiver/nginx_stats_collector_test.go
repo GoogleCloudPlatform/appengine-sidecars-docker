@@ -25,8 +25,8 @@ func fakeNow() time.Time {
 	return t
 }
 
-func fakeHttpGet(testUrl string) (resp *http.Response, err error) {
-	successJson := `{
+func fakeHTTPGet(testURL string) (resp *http.Response, err error) {
+	successJSON := `{
   "accepted_connections": 3,
   "handled_connections": 3,
   "active_connections": 1,
@@ -54,20 +54,20 @@ func fakeHttpGet(testUrl string) (resp *http.Response, err error) {
   },
   "latency_bucket_bounds": [2, 4]
 }`
-	malformattedJson := "malformatted json requests 0"
-	if testUrl == "http://success" {
-		return getResponseFromJson(successJson, 200), nil
-	} else if testUrl == "http://not_found" {
-		return getResponseFromJson("{}", 404), nil
-	} else if testUrl == "http://malformatted" {
-		return getResponseFromJson(malformattedJson, 200), nil
-	} else if testUrl == "http://unset" {
-		return getResponseFromJson("{}", 200), nil
+	malformattedJSON := "malformatted json requests 0"
+	if testURL == "http://success" {
+		return getResponseFromJSON(successJSON, 200), nil
+	} else if testURL == "http://not_found" {
+		return getResponseFromJSON("{}", 404), nil
+	} else if testURL == "http://malformatted" {
+		return getResponseFromJSON(malformattedJSON, 200), nil
+	} else if testURL == "http://unset" {
+		return getResponseFromJSON("{}", 200), nil
 	}
 	return nil, errors.New("failed request")
 }
 
-func getResponseFromJson(json string, status int) *http.Response {
+func getResponseFromJSON(json string, status int) *http.Response {
 	body := ioutil.NopCloser(bytes.NewReader([]byte(json)))
 	return &http.Response{
 		StatusCode: status,
@@ -92,8 +92,8 @@ func TestScrapeNginxStats(t *testing.T) {
 		done:           make(chan struct{}),
 		logger:         zap.NewNop(),
 		exportInterval: time.Minute,
-		statsUrl:       "http://success",
-		getStatus:      fakeHttpGet,
+		statsURL:       "http://success",
+		getStatus:      fakeHTTPGet,
 	}
 
 	stats, err := collector.scrapeNginxStats()
@@ -131,8 +131,8 @@ func TestScrapeNginxStatsUnset(t *testing.T) {
 		done:           make(chan struct{}),
 		logger:         zap.NewNop(),
 		exportInterval: time.Minute,
-		statsUrl:       "http://unset",
-		getStatus:      fakeHttpGet,
+		statsURL:       "http://unset",
+		getStatus:      fakeHTTPGet,
 	}
 
 	stats, err := collector.scrapeNginxStats()
@@ -170,8 +170,8 @@ func TestScrapeNginxStatsNotFound(t *testing.T) {
 		done:           make(chan struct{}),
 		logger:         zap.NewNop(),
 		exportInterval: time.Minute,
-		statsUrl:       "http://not_found",
-		getStatus:      fakeHttpGet,
+		statsURL:       "http://not_found",
+		getStatus:      fakeHTTPGet,
 	}
 
 	_, err := collector.scrapeNginxStats()
@@ -187,8 +187,8 @@ func TestScrapeNginxStatsMalformatted(t *testing.T) {
 		done:           make(chan struct{}),
 		logger:         zap.NewNop(),
 		exportInterval: time.Minute,
-		statsUrl:       "http://malformatted",
-		getStatus:      fakeHttpGet,
+		statsURL:       "http://malformatted",
+		getStatus:      fakeHTTPGet,
 	}
 
 	_, err := collector.scrapeNginxStats()
@@ -204,8 +204,8 @@ func TestScrapeNginxStatsError(t *testing.T) {
 		done:           make(chan struct{}),
 		logger:         zap.NewNop(),
 		exportInterval: time.Minute,
-		statsUrl:       "http://error",
-		getStatus:      fakeHttpGet,
+		statsURL:       "http://error",
+		getStatus:      fakeHTTPGet,
 	}
 
 	_, err := collector.scrapeNginxStats()
@@ -319,8 +319,8 @@ func TestAppendDistributionMetric(t *testing.T) {
 		done:           make(chan struct{}),
 		logger:         zap.NewNop(),
 		exportInterval: time.Minute,
-		statsUrl:       "http://success",
-		getStatus:      fakeHttpGet,
+		statsURL:       "http://success",
+		getStatus:      fakeHTTPGet,
 	}
 	stats := &LatencyStats{
 		RequestCount: 3,
@@ -405,8 +405,8 @@ func TestScrapeAndExport(t *testing.T) {
 		done:           make(chan struct{}),
 		logger:         zap.NewNop(),
 		exportInterval: time.Minute,
-		statsUrl:       "http://success",
-		getStatus:      fakeHttpGet,
+		statsURL:       "http://success",
+		getStatus:      fakeHTTPGet,
 	}
 	collector.scrapeAndExport()
 	data := pdatautil.MetricsToMetricsData(consumer.metrics)
@@ -444,8 +444,8 @@ func TestScrapeAndExportError(t *testing.T) {
 		done:           make(chan struct{}),
 		logger:         zap.NewNop(),
 		exportInterval: time.Minute,
-		statsUrl:       "http://error",
-		getStatus:      fakeHttpGet,
+		statsURL:       "http://error",
+		getStatus:      fakeHTTPGet,
 	}
 	collector.scrapeAndExport()
 	data := pdatautil.MetricsToMetricsData(consumer.metrics)
