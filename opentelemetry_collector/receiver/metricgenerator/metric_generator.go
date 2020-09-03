@@ -30,6 +30,15 @@ func MakeInt64TimeSeries(val int64, startTime, now time.Time, labels []*metricsp
 	}
 }
 
+// MakeDoubleTimeSeries generates a proto representation of a timeseries containing a single point for an double metric.
+func MakeDoubleTimeSeries(val float64, startTime, now time.Time, labels []*metricspb.LabelValue) *metricspb.TimeSeries {
+	return &metricspb.TimeSeries{
+		StartTimestamp: TimeToTimestamp(startTime),
+		LabelValues:    labels,
+		Points:         []*metricspb.Point{{Timestamp: TimeToTimestamp(now), Value: &metricspb.Point_DoubleValue{DoubleValue: val}}},
+	}
+}
+
 // MakeExponentialBucketOptions generates a proto representation of a config which,
 // defines a distribution's bounds. This defines maxExponent + 2 buckets. The boundaries for bucket
 // index i are:

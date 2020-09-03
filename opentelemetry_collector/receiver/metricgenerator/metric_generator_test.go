@@ -53,6 +53,34 @@ func Test_MakeInt64TimeSeries(t *testing.T) {
 	assert.Equal(t, timeseries, expectedTimeseries)
 }
 
+func Test_MakeDoubleTimeSeries(t *testing.T) {
+	seconds1 := int64(1541015015)
+	seconds2 := int64(1541015016)
+	nanoseconds := int64(123456789)
+	startTime := time.Unix(seconds1, nanoseconds)
+	currentTime := time.Unix(seconds2, nanoseconds)
+	labelValues := []*metricspb.LabelValue{MakeLabelValue("test_label")}
+	timeseries := MakeDoubleTimeSeries(1.1, startTime, currentTime, labelValues)
+
+	expectedTimeseries := &metricspb.TimeSeries{
+		StartTimestamp: &timestamp.Timestamp{
+			Seconds: seconds1,
+			Nanos:   int32(nanoseconds),
+		},
+		LabelValues: labelValues,
+		Points: []*metricspb.Point{{
+			Timestamp: &timestamp.Timestamp{
+				Seconds: seconds2,
+				Nanos:   int32(nanoseconds),
+			},
+			Value: &metricspb.Point_DoubleValue{
+				DoubleValue: 1.1,
+			},
+		}},
+	}
+	assert.Equal(t, timeseries, expectedTimeseries)
+}
+
 func Test_MakeExponentialBucketOptions(t *testing.T) {
 	bucketOptions := MakeExponentialBucketOptions(2, 5)
 	expectedBounds := []float64{1, 2, 4, 8, 16, 32}
