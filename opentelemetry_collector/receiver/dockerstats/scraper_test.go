@@ -176,23 +176,23 @@ func TestScraperExport(t *testing.T) {
 	s.export()
 
 	data := pdatautil.MetricsToMetricsData(c.metrics)[0]
-	verifyContainerMetricValue(t, data, "container/cpu/usage", "name1a", 100000000)
+	verifyContainerMetricDoubleValue(t, data, "container/cpu/usage_time", "name1a", 0.1)
 	verifyContainerMetricAbsent(t, data, "container/cpu/limit", "name1a")
-	verifyContainerMetricValue(t, data, "container/memory/usage", "name1a", 33)
-	verifyContainerMetricValue(t, data, "container/memory/limit", "name1a", 66)
-	verifyContainerMetricValue(t, data, "container/network/received_bytes_count", "name1a", 111)
-	verifyContainerMetricValue(t, data, "container/network/sent_bytes_count", "name1a", 222)
-	verifyContainerMetricValue(t, data, "container/uptime", "name1a", 43200)
-	verifyContainerMetricValue(t, data, "container/restart_count", "name1a", 3)
-	verifyContainerMetricValue(t, data, "container/cpu/usage", "id2", 200000000)
-	verifyContainerMetricValue(t, data, "container/cpu/limit", "id2", 500000000)
-	verifyContainerMetricValue(t, data, "container/memory/usage", "id2", 44)
-	verifyContainerMetricValue(t, data, "container/memory/limit", "id2", 88)
-	verifyContainerMetricValue(t, data, "container/network/received_bytes_count", "id2", 555)
-	verifyContainerMetricValue(t, data, "container/network/sent_bytes_count", "id2", 777)
-	verifyContainerMetricValue(t, data, "container/uptime", "id2", 86400)
-	verifyContainerMetricValue(t, data, "container/restart_count", "id2", 5)
-	verifyContainerMetricAbsent(t, data, "container/cpu/usage", "name3")
+	verifyContainerMetricInt64Value(t, data, "container/memory/usage", "name1a", 33)
+	verifyContainerMetricInt64Value(t, data, "container/memory/limit", "name1a", 66)
+	verifyContainerMetricInt64Value(t, data, "container/network/received_bytes_count", "name1a", 111)
+	verifyContainerMetricInt64Value(t, data, "container/network/sent_bytes_count", "name1a", 222)
+	verifyContainerMetricInt64Value(t, data, "container/uptime", "name1a", 43200)
+	verifyContainerMetricInt64Value(t, data, "container/restart_count", "name1a", 3)
+	verifyContainerMetricDoubleValue(t, data, "container/cpu/usage_time", "id2", 0.2)
+	verifyContainerMetricDoubleValue(t, data, "container/cpu/limit", "id2", 0.5)
+	verifyContainerMetricInt64Value(t, data, "container/memory/usage", "id2", 44)
+	verifyContainerMetricInt64Value(t, data, "container/memory/limit", "id2", 88)
+	verifyContainerMetricInt64Value(t, data, "container/network/received_bytes_count", "id2", 555)
+	verifyContainerMetricInt64Value(t, data, "container/network/sent_bytes_count", "id2", 777)
+	verifyContainerMetricInt64Value(t, data, "container/uptime", "id2", 86400)
+	verifyContainerMetricInt64Value(t, data, "container/restart_count", "id2", 5)
+	verifyContainerMetricAbsent(t, data, "container/cpu/usage_time", "name3")
 	verifyContainerMetricAbsent(t, data, "container/cpu/limit", "name3")
 	verifyContainerMetricAbsent(t, data, "container/memory/usage", "name3")
 	verifyContainerMetricAbsent(t, data, "container/memory/limit", "name3")
@@ -202,7 +202,7 @@ func TestScraperExport(t *testing.T) {
 	verifyContainerMetricAbsent(t, data, "container/restart_count", "name3")
 }
 
-func verifyContainerMetricValue(t *testing.T, data consumerdata.MetricsData, name, label string, value int64) {
+func verifyContainerMetricInt64Value(t *testing.T, data consumerdata.MetricsData, name, label string, value int64) {
 	var metric *mpb.Metric
 	for _, m := range data.Metrics {
 		if m.MetricDescriptor.Name == name && m.Timeseries[0].LabelValues[0].Value == label {
@@ -214,6 +214,20 @@ func verifyContainerMetricValue(t *testing.T, data consumerdata.MetricsData, nam
 		return
 	}
 	assert.Equal(t, value, metric.Timeseries[0].Points[0].GetInt64Value())
+}
+
+func verifyContainerMetricDoubleValue(t *testing.T, data consumerdata.MetricsData, name, label string, value float64) {
+	var metric *mpb.Metric
+	for _, m := range data.Metrics {
+		if m.MetricDescriptor.Name == name && m.Timeseries[0].LabelValues[0].Value == label {
+			metric = m
+		}
+	}
+	if metric == nil {
+		t.Errorf("Unable to find metric %q", name)
+		return
+	}
+	assert.Equal(t, value, metric.Timeseries[0].Points[0].GetDoubleValue())
 }
 
 func verifyContainerMetricAbsent(t *testing.T, data consumerdata.MetricsData, name, label string) {
