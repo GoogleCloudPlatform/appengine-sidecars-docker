@@ -22,6 +22,7 @@ import (
 	"go.opentelemetry.io/collector/processor/resourceprocessor"
 
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/dockerstats"
+	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/nginxreceiver"
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/vmimageagereceiver"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/stackdriverexporter"
@@ -32,6 +33,7 @@ func components() (config.Factories, error) {
 
 	receivers, err := component.MakeReceiverFactoryMap(
 		&dockerstats.Factory{},
+		&nginxreceiver.Factory{},
 		&vmimageagereceiver.Factory{},
 	)
 	if err != nil {
