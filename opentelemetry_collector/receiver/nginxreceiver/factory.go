@@ -60,7 +60,7 @@ func (f *Factory) CreateMetricsReceiver(
 ) (component.MetricsReceiver, error) {
 
 	cfg := config.(*Config)
-	collector, err := NewNginxStatsCollector(cfg.ExportInterval, cfg.StatsUrl, params.Logger, consumer)
+	collector, err := NewNginxStatsCollector(cfg.ExportInterval, cfg.StatsURL, params.Logger, consumer)
 
 	if err != nil {
 		return nil, err

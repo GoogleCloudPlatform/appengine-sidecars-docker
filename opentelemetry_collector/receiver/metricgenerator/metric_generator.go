@@ -30,6 +30,15 @@ func MakeInt64TimeSeries(val int64, startTime, now time.Time, labels []*metricsp
 	}
 }
 
+// MakeDoubleTimeSeries generates a proto representation of a timeseries containing a single point for an double metric.
+func MakeDoubleTimeSeries(val float64, startTime, now time.Time, labels []*metricspb.LabelValue) *metricspb.TimeSeries {
+	return &metricspb.TimeSeries{
+		StartTimestamp: TimeToTimestamp(startTime),
+		LabelValues:    labels,
+		Points:         []*metricspb.Point{{Timestamp: TimeToTimestamp(now), Value: &metricspb.Point_DoubleValue{DoubleValue: val}}},
+	}
+}
+
 // MakeExponentialBucketOptions generates a proto representation of a config which,
 // defines a distribution's bounds. This defines maxExponent + 2 buckets. The boundaries for bucket
 // index i are:
@@ -51,6 +60,9 @@ func MakeExponentialBucketOptions(boundsBase, maxExponent float64) *metricspb.Di
 	}
 }
 
+// FormatBucketOptions formats a []float64 bounds as a DistributionValue_BucketOptions proto.
+// bounds should list the upper boundaries of the distribution buckets,
+// except for the last bucket which has +infinity as an implied upper bound.
 func FormatBucketOptions(bounds []float64) *metricspb.DistributionValue_BucketOptions {
 	return &metricspb.DistributionValue_BucketOptions{
 		Type: &metricspb.DistributionValue_BucketOptions_Explicit_{
@@ -130,7 +142,7 @@ func MakeSingleValueDistributionTimeSeries(
 // GetSumOfSquaredDeviationsFromIntDist calculates the sum of squared deviations from the mean.
 // For values x_i this is:     Sum[i=1..n]((x_i - mean)^2)
 // Calculated from the count, sum, and sum of squares of the values.
-func GetSumOfSquaredDeviationFromIntDist(sum, sumSquares, count int64) float64 {
+func GetSumOfSquaredDeviationsFromIntDist(sum, sumSquares, count int64) float64 {
 	if count <= 0 {
 		return 0
 	}

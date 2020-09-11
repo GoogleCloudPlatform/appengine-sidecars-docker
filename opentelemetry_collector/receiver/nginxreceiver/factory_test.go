@@ -24,7 +24,7 @@ func TestCreateReceiver(t *testing.T) {
 	factory := &Factory{}
 	cfg := factory.CreateDefaultConfig()
 	config := cfg.(*Config)
-	config.StatsUrl = "http://example.com"
+	config.StatsURL = "http://example.com"
 	cfg = configmodels.Receiver(config)
 	params := component.ReceiverCreateParams{Logger: zap.NewNop()}
 

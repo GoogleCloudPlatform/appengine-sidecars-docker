@@ -53,6 +53,34 @@ func Test_MakeInt64TimeSeries(t *testing.T) {
 	assert.Equal(t, timeseries, expectedTimeseries)
 }
 
+func Test_MakeDoubleTimeSeries(t *testing.T) {
+	seconds1 := int64(1541015015)
+	seconds2 := int64(1541015016)
+	nanoseconds := int64(123456789)
+	startTime := time.Unix(seconds1, nanoseconds)
+	currentTime := time.Unix(seconds2, nanoseconds)
+	labelValues := []*metricspb.LabelValue{MakeLabelValue("test_label")}
+	timeseries := MakeDoubleTimeSeries(1.1, startTime, currentTime, labelValues)
+
+	expectedTimeseries := &metricspb.TimeSeries{
+		StartTimestamp: &timestamp.Timestamp{
+			Seconds: seconds1,
+			Nanos:   int32(nanoseconds),
+		},
+		LabelValues: labelValues,
+		Points: []*metricspb.Point{{
+			Timestamp: &timestamp.Timestamp{
+				Seconds: seconds2,
+				Nanos:   int32(nanoseconds),
+			},
+			Value: &metricspb.Point_DoubleValue{
+				DoubleValue: 1.1,
+			},
+		}},
+	}
+	assert.Equal(t, timeseries, expectedTimeseries)
+}
+
 func Test_MakeExponentialBucketOptions(t *testing.T) {
 	bucketOptions := MakeExponentialBucketOptions(2, 5)
 	expectedBounds := []float64{1, 2, 4, 8, 16, 32}
@@ -185,17 +213,17 @@ func Test_FormatBuckets(t *testing.T) {
 	assert.Equal(t, expectedBuckets, buckets)
 }
 
-func Test_GetSumOfSquaredDeviationFromInt(t *testing.T) {
-	deviation := GetSumOfSquaredDeviationFromIntDist(9, 33, 3)
+func Test_GetSumOfSquaredDeviationsFromInt(t *testing.T) {
+	deviation := GetSumOfSquaredDeviationsFromIntDist(9, 33, 3)
 	assert.Equal(t, float64(6), deviation)
 }
 
-func Test_GetSumOfSquaredDeviationFromIntWithZero(t *testing.T) {
-	deviation := GetSumOfSquaredDeviationFromIntDist(0, 0, 0)
+func Test_GetSumOfSquaredDeviationsFromIntWithZero(t *testing.T) {
+	deviation := GetSumOfSquaredDeviationsFromIntDist(0, 0, 0)
 	assert.Equal(t, float64(0), deviation)
 }
 
-func Test_GetSumOfSquaredDeviationFromIntFraction(t *testing.T) {
-	deviation := GetSumOfSquaredDeviationFromIntDist(5, 13, 2)
+func Test_GetSumOfSquaredDeviationsFromIntFraction(t *testing.T) {
+	deviation := GetSumOfSquaredDeviationsFromIntDist(5, 13, 2)
 	assert.Equal(t, 0.5, deviation)
 }

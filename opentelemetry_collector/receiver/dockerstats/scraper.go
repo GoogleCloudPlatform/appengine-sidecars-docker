@@ -29,17 +29,17 @@ var (
 	}
 
 	cpuUsageDesc = &mpb.MetricDescriptor{
-		Name:        "container/cpu/usage",
+		Name:        "container/cpu/usage_time",
 		Description: "Total CPU time consumed",
-		Unit:        "nanoseconds",
-		Type:        mpb.MetricDescriptor_CUMULATIVE_INT64,
+		Unit:        "seconds",
+		Type:        mpb.MetricDescriptor_CUMULATIVE_DOUBLE,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
 	cpuLimitDesc = &mpb.MetricDescriptor{
 		Name:        "container/cpu/limit",
 		Description: "CPU time limit (where applicable)",
-		Unit:        "nanoseconds",
-		Type:        mpb.MetricDescriptor_GAUGE_INT64,
+		Unit:        "seconds",
+		Type:        mpb.MetricDescriptor_GAUGE_DOUBLE,
 		LabelKeys:   []*mpb.LabelKey{containerNameLabel},
 	}
 	memUsageDesc = &mpb.MetricDescriptor{
@@ -216,7 +216,7 @@ func (s *scraper) usageStatsToMetrics(stats *types.StatsJSON, labelValues []*mpb
 		{
 			MetricDescriptor: cpuUsageDesc,
 			Timeseries: []*mpb.TimeSeries{
-				metricgenerator.MakeInt64TimeSeries(int64(stats.CPUStats.CPUUsage.TotalUsage), s.startTime, s.now(), labelValues),
+				metricgenerator.MakeDoubleTimeSeries(time.Duration(stats.CPUStats.CPUUsage.TotalUsage).Seconds(), s.startTime, s.now(), labelValues),
 			},
 		},
 		// Unfortunately, Docker API doesn't expose CPU Limits via CPUStats API. That information
@@ -290,7 +290,7 @@ func (s *scraper) containerInfoToMetrics(info containerInfo, labelValues []*mpb.
 		metrics = append(metrics, &mpb.Metric{
 			MetricDescriptor: cpuLimitDesc,
 			Timeseries: []*mpb.TimeSeries{
-				metricgenerator.MakeInt64TimeSeries(info.cpuLimit, s.startTime, s.now(), labelValues),
+				metricgenerator.MakeDoubleTimeSeries(time.Duration(info.cpuLimit).Seconds(), s.startTime, s.now(), labelValues),
 			},
 		})
 	}
