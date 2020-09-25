@@ -18,6 +18,7 @@ set_metadata "${IMAGE}" "IMAGE_NAME"
 set_metadata "${GAE_BACKEND_VERSION}" "VERSION"
 set_metadata "${GAE_BACKEND_NAME}" "SERVICE"
 set_metadata "${INSTANCE_ID}" "INSTANCE"
+set_metadata "${NGINX_STATS_URL}" "NGINX_STATS_URL"
 
 if [[ -z "${ZONE}" ]]; then
   sed -i "s/@REGION@/unknown/" "${OPENTELEMETRY_CONFIG_FILE}"
