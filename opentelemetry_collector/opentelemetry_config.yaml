@@ -25,7 +25,7 @@ exporters:
 service:
   pipelines:
     metrics:
-            receivers: [vmimageage, nginxstats]
+      receivers: [vmimageage, nginxstats]
       processors: [resource]
       exporters: [stackdriver]
     metrics/instance:
