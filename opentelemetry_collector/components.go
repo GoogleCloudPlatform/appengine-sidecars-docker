@@ -40,7 +40,7 @@ func components() (component.Factories, error) {
 	}
 
 	exporters, err := component.MakeExporterFactoryMap(
-		&stackdriverexporter.Factory{},
+		stackdriverexporter.NewFactory(),
 	)
 	if err != nil {
 		errs = append(errs, err)
