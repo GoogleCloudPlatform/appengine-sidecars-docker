@@ -58,7 +58,7 @@ func (f *Factory) CreateMetricsReceiver(
 ) (component.MetricsReceiver, error) {
 
 	cfg := config.(*Config)
-	collector := NewVMImageAgeCollector(cfg.ExportInterval, cfg.BuildDate, cfg.VMImageName, consumer)
+	collector := NewVMImageAgeCollector(cfg.ExportInterval, cfg.BuildDate, cfg.VMImageName, consumer, params.Logger)
 
 	receiver := &Receiver{
 		vmImageAgeCollector: collector,

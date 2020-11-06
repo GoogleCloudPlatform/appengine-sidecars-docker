@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/consumerdata"
 	"go.opentelemetry.io/collector/consumer/pdatautil"
+	"go.uber.org/zap"
 
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/metricgenerator"
 )
@@ -25,6 +26,7 @@ type VMImageAgeCollector struct {
 	buildDate      string
 	done           chan struct{}
 	vmImageName    string
+	logger         *zap.Logger
 
 	parsedBuildDate time.Time
 	buildDateError  bool
@@ -38,7 +40,7 @@ const (
 
 // NewVMImageAgeCollector creates a new VMImageAgeCollector that generates metrics
 // based on the buildDate and vmImageName.
-func NewVMImageAgeCollector(exportInterval time.Duration, buildDate, vmImageName string, consumer consumer.MetricsConsumer) *VMImageAgeCollector {
+func NewVMImageAgeCollector(exportInterval time.Duration, buildDate, vmImageName string, consumer consumer.MetricsConsumer, logger *zap.Logger) *VMImageAgeCollector {
 	if exportInterval <= 0 {
 		exportInterval = defaultExportInterval
 	}
@@ -50,6 +52,7 @@ func NewVMImageAgeCollector(exportInterval time.Duration, buildDate, vmImageName
 		vmImageName:    vmImageName,
 		exportInterval: exportInterval,
 		done:           make(chan struct{}),
+		logger:         logger,
 	}
 
 	return collector
@@ -131,5 +134,8 @@ func (collector *VMImageAgeCollector) scrapeAndExport() {
 
 	ctx := context.Background()
 	md := consumerdata.MetricsData{Metrics: metrics}
-	collector.consumer.ConsumeMetrics(ctx, pdatautil.MetricsFromMetricsData([]consumerdata.MetricsData{md}))
+	err := collector.consumer.ConsumeMetrics(ctx, pdatautil.MetricsFromMetricsData([]consumerdata.MetricsData{md}))
+	if err != nil {
+		collector.logger.Error("Error sending metrics", zap.Error(err))
+	}
 }
