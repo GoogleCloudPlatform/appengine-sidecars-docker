@@ -13,7 +13,7 @@ require (
 	github.com/ory/x v0.0.109 // indirect
 	github.com/shirou/gopsutil v2.20.4+incompatible // indirect
 	github.com/stretchr/testify v1.6.1
-	go.opentelemetry.io/collector v0.8.1-0.20200815205113-8e5c6065eb0e
+	go.opentelemetry.io/collector v0.9.0
 	go.uber.org/zap v1.15.0
 	sigs.k8s.io/structured-merge-diff v0.0.0-20190525122527-15d366b2352e // indirect
 )

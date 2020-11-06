@@ -44,6 +44,17 @@ func (f *Factory) CreateTraceReceiver(ctx context.Context, params component.Rece
 	return nil, configerror.ErrDataTypeIsNotSupported
 }
 
+// CreateLogsReceiver generates an error because this receiver does not
+// produce traces.
+func (f* Factory) CreateLogsReceiver(
+        _ context.Context,
+        _ component.ReceiverCreateParams,
+        cfg configmodels.Receiver,
+        nextConsumer consumer.LogsConsumer,
+) (component.LogsReceiver, error) {
+        return nil, configerror.ErrDataTypeIsNotSupported
+}
+
 // CreateMetricsReceiver creates a metric receiver for dockerstats.
 func (f *Factory) CreateMetricsReceiver(ctx context.Context, params component.ReceiverCreateParams, cfg configmodels.Receiver, nextConsumer consumer.MetricsConsumer) (component.MetricsReceiver, error) {
 	c := cfg.(*Config)

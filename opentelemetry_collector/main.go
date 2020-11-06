@@ -20,6 +20,7 @@ package main
 import (
 	"log"
 
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/service"
 )
 
@@ -33,7 +34,7 @@ func main() {
 	factories, err := components()
 	handleErr(err)
 
-	info := service.ApplicationStartInfo{
+	info := component.ApplicationStartInfo{
 		ExeName:  "otelcontribcol",
 		LongName: "AppEngine Flex OpenTelemetry Contrib Collector",
 		Version:  "latest",
