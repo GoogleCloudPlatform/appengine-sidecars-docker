@@ -31,9 +31,9 @@ func components() (component.Factories, error) {
 	errs := []error{}
 
 	receivers, err := component.MakeReceiverFactoryMap(
-		&dockerstats.Factory{},
-		&nginxreceiver.Factory{},
-		&vmimageagereceiver.Factory{},
+		dockerstats.NewFactory(),
+		nginxreceiver.NewFactory(),
+		vmimageagereceiver.NewFactory(),
 	)
 	if err != nil {
 		errs = append(errs, err)

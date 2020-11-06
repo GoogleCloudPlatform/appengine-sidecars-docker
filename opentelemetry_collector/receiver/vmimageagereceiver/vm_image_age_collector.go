@@ -9,7 +9,7 @@ import (
 
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/consumerdata"
-	"go.opentelemetry.io/collector/consumer/pdatautil"
+	"go.opentelemetry.io/collector/translator/internaldata"	
 	"go.uber.org/zap"
 
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/metricgenerator"
@@ -134,7 +134,7 @@ func (collector *VMImageAgeCollector) scrapeAndExport() {
 
 	ctx := context.Background()
 	md := consumerdata.MetricsData{Metrics: metrics}
-	err := collector.consumer.ConsumeMetrics(ctx, pdatautil.MetricsFromMetricsData([]consumerdata.MetricsData{md}))
+	err := collector.consumer.ConsumeMetrics(ctx, internaldata.OCSliceToMetrics([]consumerdata.MetricsData{md}))
 	if err != nil {
 		collector.logger.Error("Error sending metrics", zap.Error(err))
 	}

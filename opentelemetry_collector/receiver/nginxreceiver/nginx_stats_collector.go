@@ -14,7 +14,7 @@ import (
 
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/consumerdata"
-	"go.opentelemetry.io/collector/consumer/pdatautil"
+	"go.opentelemetry.io/collector/translator/internaldata"
 	"go.uber.org/zap"
 
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/metricgenerator"
@@ -228,5 +228,6 @@ func (collector *NginxStatsCollector) scrapeAndExport() {
 
 	ctx := context.Background()
 	md := consumerdata.MetricsData{Metrics: metrics}
-	collector.consumer.ConsumeMetrics(ctx, pdatautil.MetricsFromMetricsData([]consumerdata.MetricsData{md}))
+	resourceMetrics := internaldata.OCSliceToMetrics([]consumerdata.MetricsData{md})
+	collector.consumer.ConsumeMetrics(ctx, resourceMetrics)
 }
