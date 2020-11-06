@@ -3,13 +3,13 @@ module github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_co
 go 1.14
 
 require (
-	github.com/census-instrumentation/opencensus-proto v0.2.1
+	github.com/census-instrumentation/opencensus-proto v0.3.0
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v1.13.1
-	github.com/golang/protobuf v1.3.5
+	github.com/golang/protobuf v1.4.2
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/stackdriverexporter v0.6.0
 	github.com/stretchr/testify v1.6.1
-	go.opentelemetry.io/collector v0.6.0
-	go.uber.org/zap v1.14.0
+	go.opentelemetry.io/collector v0.8.0
+	go.uber.org/zap v1.15.0
 )

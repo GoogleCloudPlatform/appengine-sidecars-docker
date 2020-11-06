@@ -18,7 +18,6 @@ package main
 import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenterror"
-	"go.opentelemetry.io/collector/config"
 	"go.opentelemetry.io/collector/processor/resourceprocessor"
 
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/dockerstats"
@@ -28,7 +27,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/stackdriverexporter"
 )
 
-func components() (config.Factories, error) {
+func components() (component.Factories, error) {
 	errs := []error{}
 
 	receivers, err := component.MakeReceiverFactoryMap(
@@ -54,7 +53,7 @@ func components() (config.Factories, error) {
 		errs = append(errs, err)
 	}
 
-	factories := config.Factories{
+	factories := component.Factories{
 		Receivers:  receivers,
 		Processors: processors,
 		Exporters:  exporters,
