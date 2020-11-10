@@ -7,17 +7,18 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/collector/config"
+	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/configmodels"
+	"go.opentelemetry.io/collector/config/configtest"
 )
 
 func TestLoadConfig(t *testing.T) {
-	factories, err := config.ExampleComponents()
+	factories, err := componenttest.ExampleComponents()
 	assert.Nil(t, err)
 
-	factory := &Factory{}
-	factories.Receivers[receiverType] = factory
-	cfg, err := config.LoadConfigFile(t, path.Join(".", "testdata", "config.yaml"), factories)
+	factory := NewFactory()
+	factories.Receivers[typeStr] = factory
+	cfg, err := configtest.LoadConfigFile(t, path.Join(".", "testdata", "config.yaml"), factories)
 
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
@@ -30,7 +31,7 @@ func TestLoadConfig(t *testing.T) {
 	customReceiver := cfg.Receivers["dockerstats/customname"].(*Config)
 	assert.Equal(t, customReceiver, &Config{
 		ReceiverSettings: configmodels.ReceiverSettings{
-			TypeVal: receiverType,
+			TypeVal: typeStr,
 			NameVal: "dockerstats/customname",
 		},
 		ScrapeInterval: 10 * time.Minute,

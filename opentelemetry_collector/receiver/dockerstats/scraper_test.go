@@ -17,7 +17,7 @@ import (
 
 	"go.opentelemetry.io/collector/consumer/consumerdata"
 	"go.opentelemetry.io/collector/consumer/pdata"
-	"go.opentelemetry.io/collector/consumer/pdatautil"
+	"go.opentelemetry.io/collector/translator/internaldata"
 
 	mpb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
 )
@@ -175,7 +175,7 @@ func TestScraperExport(t *testing.T) {
 
 	s.export()
 
-	data := pdatautil.MetricsToMetricsData(c.metrics)[0]
+	data := internaldata.MetricsToOC(c.metrics)[0]
 	verifyContainerMetricDoubleValue(t, data, "container/cpu/usage_time", "name1a", 0.1)
 	verifyContainerMetricAbsent(t, data, "container/cpu/limit", "name1a")
 	verifyContainerMetricInt64Value(t, data, "container/memory/usage", "name1a", 33)

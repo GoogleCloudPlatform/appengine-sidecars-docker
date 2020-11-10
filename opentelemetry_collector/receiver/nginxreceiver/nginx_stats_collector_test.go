@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/consumer/consumerdata"
 	"go.opentelemetry.io/collector/consumer/pdata"
-	"go.opentelemetry.io/collector/consumer/pdatautil"
+	"go.opentelemetry.io/collector/translator/internaldata"
 	"go.uber.org/zap"
 
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/metricgenerator"
@@ -380,9 +380,6 @@ func checkDistributionMetricValue(t *testing.T, data consumerdata.MetricsData, n
 			distribution := metric.Timeseries[0].Points[0].GetDistributionValue()
 			assert.Equal(t, stats.RequestCount, distribution.Count)
 			assert.Equal(t, float64(stats.LatencySum), distribution.Sum)
-			avg := float64(stats.LatencySum) / float64(stats.RequestCount)
-			expectedDeviation := float64(stats.SumSquares) - float64(stats.RequestCount)*avg*avg
-			assert.InDelta(t, expectedDeviation, distribution.SumOfSquaredDeviation, 0.000001)
 			if assert.Equal(t, len(stats.Distribution), len(distribution.Buckets)) {
 				for i, bucket := range distribution.Buckets {
 					assert.Equal(t, stats.Distribution[i], bucket.Count)
@@ -409,7 +406,7 @@ func TestScrapeAndExport(t *testing.T) {
 		getStatus:      fakeHTTPGet,
 	}
 	collector.scrapeAndExport()
-	data := pdatautil.MetricsToMetricsData(consumer.metrics)
+	data := internaldata.MetricsToOC(consumer.metrics)
 	assert.Len(t, data, 1)
 
 	requestLatency := &LatencyStats{
@@ -448,8 +445,7 @@ func TestScrapeAndExportError(t *testing.T) {
 		getStatus:      fakeHTTPGet,
 	}
 	collector.scrapeAndExport()
-	data := pdatautil.MetricsToMetricsData(consumer.metrics)
+	data := internaldata.MetricsToOC(consumer.metrics)
 
-	assert.Len(t, data, 1)
-	assert.Len(t, data[0].Metrics, 0)
+	assert.Len(t, data, 0)
 }
