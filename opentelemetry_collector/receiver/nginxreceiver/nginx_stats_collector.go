@@ -229,5 +229,8 @@ func (collector *NginxStatsCollector) scrapeAndExport() {
 	ctx := context.Background()
 	md := consumerdata.MetricsData{Metrics: metrics}
 	resourceMetrics := internaldata.OCSliceToMetrics([]consumerdata.MetricsData{md})
-	collector.consumer.ConsumeMetrics(ctx, resourceMetrics)
+	err = collector.consumer.ConsumeMetrics(ctx, resourceMetrics)
+	if err != nil {
+		collector.logger.Error("Error sending nginx metrics", zap.Error(err))
+	}
 }

@@ -82,7 +82,7 @@ func TestScrapeAndExport(t *testing.T) {
 		Unit:        "Days",
 		Type:        metricspb.MetricDescriptor_GAUGE_DOUBLE,
 		LabelKeys: []*metricspb.LabelKey{{
-			Key:         "vm_image_name",
+			Key: "vm_image_name",
 		}},
 	}
 
@@ -117,7 +117,7 @@ func TestScrapeAndExportWithError(t *testing.T) {
 		Unit:        "Count",
 		Type:        metricspb.MetricDescriptor_GAUGE_INT64,
 		LabelKeys: []*metricspb.LabelKey{{
-			Key:         "vm_image_name",
+			Key: "vm_image_name",
 		}},
 	}
 

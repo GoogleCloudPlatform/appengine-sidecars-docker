@@ -182,7 +182,10 @@ func (s *scraper) export() {
 	}
 
 	md := consumerdata.MetricsData{Metrics: metrics}
-	s.metricConsumer.ConsumeMetrics(ctx, internaldata.OCSliceToMetrics([]consumerdata.MetricsData{md}))
+	err = s.metricConsumer.ConsumeMetrics(ctx, internaldata.OCSliceToMetrics([]consumerdata.MetricsData{md}))
+	if err != nil {
+		s.logger.Error("Error sending docker stats metrics", zap.Error(err))
+	}
 }
 
 func (s *scraper) readResourceUsageStats(ctx context.Context, id string) (*types.StatsJSON, error) {
