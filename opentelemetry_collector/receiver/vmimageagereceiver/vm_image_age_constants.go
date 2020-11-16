@@ -10,10 +10,10 @@ var vmImageNameLabel = &metricspb.LabelKey{
 }
 
 var vmImageAgeMetric = &metricspb.MetricDescriptor{
-	Name:        "vm_image_ages",
+	Name:        "vm_image_age",
 	Description: "The VM image age for the VM instance",
 	Unit:        "Days",
-	Type:        metricspb.MetricDescriptor_GAUGE_DISTRIBUTION,
+	Type:        metricspb.MetricDescriptor_GAUGE_DOUBLE,
 	LabelKeys:   []*metricspb.LabelKey{vmImageNameLabel},
 }
 

@@ -30,7 +30,6 @@ type VMImageAgeCollector struct {
 
 	parsedBuildDate time.Time
 	buildDateError  bool
-	bucketOptions   *metricspb.DistributionValue_BucketOptions
 	labelValues     []*metricspb.LabelValue
 }
 
@@ -92,7 +91,6 @@ func (collector *VMImageAgeCollector) StartCollection() {
 
 func (collector *VMImageAgeCollector) setupCollection() {
 	collector.parseBuildDate()
-	collector.bucketOptions = metricgenerator.MakeExponentialBucketOptions(boundsBase, numBounds)
 	collector.labelValues = []*metricspb.LabelValue{metricgenerator.MakeLabelValue(collector.vmImageName)}
 }
 
@@ -120,8 +118,8 @@ func (collector *VMImageAgeCollector) scrapeAndExport() {
 		if err != nil {
 			metrics = append(metrics, collector.makeErrorMetrics())
 		} else {
-			timeseries := metricgenerator.MakeSingleValueDistributionTimeSeries(
-				imageAge, collector.startTime, time.Now(), collector.bucketOptions, collector.labelValues)
+			timeseries := metricgenerator.MakeDoubleTimeSeries(
+				imageAge, collector.startTime, time.Now(), collector.labelValues)
 			metrics = append(
 				metrics,
 				&metricspb.Metric{

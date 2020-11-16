@@ -77,13 +77,12 @@ func TestScrapeAndExport(t *testing.T) {
 	collector.scrapeAndExport()
 
 	expectedMetricDescriptor := &metricspb.MetricDescriptor{
-		Name:        "vm_image_ages",
+		Name:        "vm_image_age",
 		Description: "The VM image age for the VM instance",
 		Unit:        "Days",
-		Type:        metricspb.MetricDescriptor_GAUGE_DISTRIBUTION,
+		Type:        metricspb.MetricDescriptor_GAUGE_DOUBLE,
 		LabelKeys: []*metricspb.LabelKey{{
 			Key:         "vm_image_name",
-			Description: "The name of the VM image",
 		}},
 	}
 
@@ -100,26 +99,7 @@ func TestScrapeAndExport(t *testing.T) {
 			assert.Equal(t, expectedLabel, timeseries.LabelValues)
 
 			if assert.Len(t, timeseries.Points, 1) {
-				point := timeseries.Points[0].GetDistributionValue()
-				assert.Equal(t, int64(1), point.Count)
-				assert.Equal(t, float64(0), point.SumOfSquaredDeviation)
-
-				expectedBuckets := []*metricspb.DistributionValue_Bucket{
-					{Count: 0},
-					{Count: 0},
-					{Count: 0},
-					{Count: 0},
-					{Count: 0},
-					{Count: 0},
-					{Count: 0},
-					{Count: 0},
-					{Count: 0},
-					{Count: 1},
-				}
-
-				assert.Equal(t, expectedBuckets, point.GetBuckets())
-
-				assert.Equal(t, []float64{1, 2, 4, 8, 16, 32, 64, 128, 256}, point.GetBucketOptions().GetExplicit().Bounds)
+				assert.Greater(t, timeseries.Points[0].GetDoubleValue(), 0.0)
 			}
 		}
 	}
@@ -138,7 +118,6 @@ func TestScrapeAndExportWithError(t *testing.T) {
 		Type:        metricspb.MetricDescriptor_GAUGE_INT64,
 		LabelKeys: []*metricspb.LabelKey{{
 			Key:         "vm_image_name",
-			Description: "The name of the VM image",
 		}},
 	}
 
