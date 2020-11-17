@@ -9,7 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"go.opentelemetry.io/collector/consumer/pdata"
-	"go.opentelemetry.io/collector/consumer/pdatautil"
+	"go.opentelemetry.io/collector/translator/internaldata"
+	"go.uber.org/zap"
 )
 
 func TestCalculateImageAge(t *testing.T) {
@@ -39,7 +40,7 @@ func TestCalculateImageAgeWith0Age(t *testing.T) {
 }
 
 func TestParseBuildDate(t *testing.T) {
-	collector := NewVMImageAgeCollector(0, "2006-01-02T15:04:05+00:00", "test_image_name", nil)
+	collector := NewVMImageAgeCollector(0, "2006-01-02T15:04:05+00:00", "test_image_name", nil, nil)
 	collector.parseBuildDate()
 	assert.False(t, collector.buildDateError)
 	diff := collector.parsedBuildDate.Sub(time.Date(2006, time.January, 2, 15, 4, 5, 0, time.FixedZone("", 0)))
@@ -47,7 +48,7 @@ func TestParseBuildDate(t *testing.T) {
 }
 
 func TestParseBuildDateError(t *testing.T) {
-	collector := NewVMImageAgeCollector(0, "misformated_date", "test_image_name", nil)
+	collector := NewVMImageAgeCollector(0, "misformated_date", "test_image_name", nil, nil)
 	collector.parseBuildDate()
 	assert.True(t, collector.buildDateError)
 }
@@ -71,23 +72,22 @@ func (consumer fakeConsumer) ConsumeMetrics(ctx context.Context, metrics pdata.M
 
 func TestScrapeAndExport(t *testing.T) {
 	consumer := fakeConsumer{storage: &metricsStore{}}
-	collector := NewVMImageAgeCollector(0, "2006-01-02T15:04:05+00:00", "test_image_name", consumer)
+	collector := NewVMImageAgeCollector(0, "2006-01-02T15:04:05+00:00", "test_image_name", consumer, zap.NewNop())
 	collector.setupCollection()
 	collector.scrapeAndExport()
 
 	expectedMetricDescriptor := &metricspb.MetricDescriptor{
-		Name:        "vm_image_ages",
+		Name:        "vm_image_age",
 		Description: "The VM image age for the VM instance",
 		Unit:        "Days",
-		Type:        metricspb.MetricDescriptor_GAUGE_DISTRIBUTION,
+		Type:        metricspb.MetricDescriptor_GAUGE_DOUBLE,
 		LabelKeys: []*metricspb.LabelKey{{
-			Key:         "vm_image_name",
-			Description: "The name of the VM image",
+			Key: "vm_image_name",
 		}},
 	}
 
 	// TODO: Rewrite tests to directly use pdata.Metrics instead of converting back to consumerdata.MetricsData.
-	cdMetrics := pdatautil.MetricsToMetricsData(consumer.storage.metrics)[0]
+	cdMetrics := internaldata.MetricsToOC(consumer.storage.metrics)[0]
 	if assert.Len(t, cdMetrics.Metrics, 1) {
 
 		actualMetric := cdMetrics.Metrics[0]
@@ -99,26 +99,7 @@ func TestScrapeAndExport(t *testing.T) {
 			assert.Equal(t, expectedLabel, timeseries.LabelValues)
 
 			if assert.Len(t, timeseries.Points, 1) {
-				point := timeseries.Points[0].GetDistributionValue()
-				assert.Equal(t, int64(1), point.Count)
-				assert.Equal(t, float64(0), point.SumOfSquaredDeviation)
-
-				expectedBuckets := []*metricspb.DistributionValue_Bucket{
-					{Count: 0},
-					{Count: 0},
-					{Count: 0},
-					{Count: 0},
-					{Count: 0},
-					{Count: 0},
-					{Count: 0},
-					{Count: 0},
-					{Count: 0},
-					{Count: 1},
-				}
-
-				assert.Equal(t, expectedBuckets, point.GetBuckets())
-
-				assert.Equal(t, []float64{1, 2, 4, 8, 16, 32, 64, 128, 256}, point.GetBucketOptions().GetExplicit().Bounds)
+				assert.Greater(t, timeseries.Points[0].GetDoubleValue(), 0.0)
 			}
 		}
 	}
@@ -126,7 +107,7 @@ func TestScrapeAndExport(t *testing.T) {
 
 func TestScrapeAndExportWithError(t *testing.T) {
 	consumer := fakeConsumer{storage: &metricsStore{}}
-	collector := NewVMImageAgeCollector(0, "", "test_image_name", consumer)
+	collector := NewVMImageAgeCollector(0, "", "test_image_name", consumer, zap.NewNop())
 	collector.setupCollection()
 	collector.scrapeAndExport()
 
@@ -136,13 +117,12 @@ func TestScrapeAndExportWithError(t *testing.T) {
 		Unit:        "Count",
 		Type:        metricspb.MetricDescriptor_GAUGE_INT64,
 		LabelKeys: []*metricspb.LabelKey{{
-			Key:         "vm_image_name",
-			Description: "The name of the VM image",
+			Key: "vm_image_name",
 		}},
 	}
 
 	// TODO: Rewrite tests to directly use pdata.Metrics instead of converting back to consumerdata.MetricsData.
-	cdMetrics := pdatautil.MetricsToMetricsData(consumer.storage.metrics)[0]
+	cdMetrics := internaldata.MetricsToOC(consumer.storage.metrics)[0]
 	if assert.Len(t, cdMetrics.Metrics, 1) {
 
 		actualMetric := cdMetrics.Metrics[0]

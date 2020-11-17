@@ -13,8 +13,7 @@ import (
 
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/consumerdata"
-	"go.opentelemetry.io/collector/consumer/pdatautil"
-
+	"go.opentelemetry.io/collector/translator/internaldata"
 	"go.uber.org/zap"
 
 	mpb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
@@ -182,7 +181,10 @@ func (s *scraper) export() {
 	}
 
 	md := consumerdata.MetricsData{Metrics: metrics}
-	s.metricConsumer.ConsumeMetrics(ctx, pdatautil.MetricsFromMetricsData([]consumerdata.MetricsData{md}))
+	err = s.metricConsumer.ConsumeMetrics(ctx, internaldata.OCSliceToMetrics([]consumerdata.MetricsData{md}))
+	if err != nil {
+		s.logger.Error("Error sending docker stats metrics", zap.Error(err))
+	}
 }
 
 func (s *scraper) readResourceUsageStats(ctx context.Context, id string) (*types.StatsJSON, error) {

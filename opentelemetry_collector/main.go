@@ -18,8 +18,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/service"
 )
 
@@ -33,7 +35,7 @@ func main() {
 	factories, err := components()
 	handleErr(err)
 
-	info := service.ApplicationStartInfo{
+	info := component.ApplicationStartInfo{
 		ExeName:  "otelcontribcol",
 		LongName: "AppEngine Flex OpenTelemetry Contrib Collector",
 		Version:  "latest",
@@ -42,9 +44,22 @@ func main() {
 		Factories:            factories,
 		ApplicationStartInfo: info,
 	}
-	svc, err := service.New(params)
-	handleErr(err)
 
-	err = svc.Start()
-	handleErr(err)
+	if err := run(params); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run(params service.Parameters) error {
+	app, err := service.New(params)
+	if err != nil {
+		return fmt.Errorf("failed to construct the application: %w", err)
+	}
+
+	err = app.Run()
+	if err != nil {
+		return fmt.Errorf("application run finished with error: %w", err)
+	}
+
+	return nil
 }

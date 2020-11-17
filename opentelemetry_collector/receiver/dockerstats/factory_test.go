@@ -14,7 +14,7 @@ import (
 )
 
 func TestCreateDefaultConfig(t *testing.T) {
-	factory := &Factory{}
+	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 	assert.NotNil(t, cfg, "failed to create default config")
 	assert.NoError(t, configcheck.ValidateConfig(cfg))
@@ -22,18 +22,18 @@ func TestCreateDefaultConfig(t *testing.T) {
 	assert.Greater(t, int64(c.ScrapeInterval), int64(0))
 }
 
-func TestCreateTraceReceiver(t *testing.T) {
-	factory := &Factory{}
+func TestCreateTracesReceiver(t *testing.T) {
+	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 	params := component.ReceiverCreateParams{Logger: zap.NewNop()}
 
-	r, err := factory.CreateTraceReceiver(context.Background(), params, cfg, nil)
+	r, err := factory.CreateTracesReceiver(context.Background(), params, cfg, nil)
 	assert.Equal(t, err, configerror.ErrDataTypeIsNotSupported)
 	assert.Nil(t, r)
 }
 
 func TestCreateMetricsReceiver(t *testing.T) {
-	factory := &Factory{}
+	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 	params := component.ReceiverCreateParams{Logger: zap.NewNop()}
 
