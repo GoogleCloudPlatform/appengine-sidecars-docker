@@ -143,7 +143,6 @@ func (s *scraper) stop() {
 }
 
 func (s *scraper) export() {
-	s.logger.Info("Exporting docker stats as metrics.")
 	ctx, cancel := context.WithTimeout(context.Background(), s.scrapeInterval)
 	defer cancel()
 

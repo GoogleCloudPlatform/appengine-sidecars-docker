@@ -21,7 +21,7 @@ func createDefaultConfig() configmodels.Receiver {
 			TypeVal: typeStr,
 			NameVal: typeStr,
 		},
-		ScrapeInterval: 30 * time.Second,
+		ScrapeInterval: time.Minute,
 	}
 }
 
