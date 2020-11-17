@@ -28,7 +28,7 @@ func (f *Factory) CreateDefaultConfig() configmodels.Receiver {
 			TypeVal: receiverType,
 			NameVal: receiverType,
 		},
-		ScrapeInterval: 30 * time.Second,
+		ScrapeInterval: time.Minute,
 	}
 }
 
