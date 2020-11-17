@@ -13,7 +13,6 @@ import (
 
 const typeStr = "dockerstats"
 
-
 // CreateDefaultConfig creates the default configuration for dockerstats receiver.
 func createDefaultConfig() configmodels.Receiver {
 	return &Config{

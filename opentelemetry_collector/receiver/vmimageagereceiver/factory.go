@@ -23,7 +23,6 @@ func createDefaultConfig() configmodels.Receiver {
 	}
 }
 
-
 // CreateMetricsReceiver creates a metrics receiver based on the provided config.
 func createMetricsReceiver(
 	ctx context.Context,
