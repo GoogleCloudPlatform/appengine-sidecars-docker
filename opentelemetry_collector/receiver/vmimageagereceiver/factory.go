@@ -40,6 +40,7 @@ func createMetricsReceiver(
 	return receiver, nil
 }
 
+// NewFactory creates and returns a factory for the vm image age receiver.
 func NewFactory() component.ReceiverFactory {
 	return receiverhelper.NewFactory(
 		typeStr,

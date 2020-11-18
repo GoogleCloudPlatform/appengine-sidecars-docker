@@ -47,6 +47,7 @@ func createMetricsReceiver(
 	return receiver, nil
 }
 
+// NewFactory creates and returns a factory for the nginx receiver.
 func NewFactory() component.ReceiverFactory {
 	return receiverhelper.NewFactory(
 		typeStr,
