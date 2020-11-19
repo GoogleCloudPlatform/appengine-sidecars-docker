@@ -39,6 +39,7 @@ func createMetricsReceiver(ctx context.Context, params component.ReceiverCreateP
 	return &Receiver{scraper: s}, nil
 }
 
+// NewFactory creates and returns a factory for the docker stats receiver.
 func NewFactory() component.ReceiverFactory {
 	return receiverhelper.NewFactory(
 		typeStr,
