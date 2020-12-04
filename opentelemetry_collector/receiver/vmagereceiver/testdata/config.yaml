@@ -1,6 +1,6 @@
 receivers:
-  vmimageage:
-  vmimageage/customname:
+  vmage:
+  vmage/customname:
     export_interval: 10m
     build_date: 2006-01-02T15:04:05Z07:00
     vm_image_name: test_vm_image_name
@@ -14,6 +14,6 @@ exporters:
 service:
   pipelines:
     metrics:
-      receivers: [vmimageage]
+      receivers: [vmage]
       processors: [exampleprocessor]
       exporters: [exampleexporter]

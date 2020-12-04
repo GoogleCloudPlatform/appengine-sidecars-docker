@@ -1,4 +1,4 @@
-package vmimageagereceiver
+package vmagereceiver
 
 import (
 	"context"

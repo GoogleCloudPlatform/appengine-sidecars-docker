@@ -1,4 +1,4 @@
-package vmimageagereceiver
+package vmagereceiver
 
 import (
 	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
