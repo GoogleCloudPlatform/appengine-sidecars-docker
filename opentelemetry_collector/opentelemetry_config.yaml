@@ -2,9 +2,11 @@ receivers:
   dockerstats:
   nginxstats:
     stats_url: @NGINX_STATS_URL@
-  vmimageage:
+  vmage:
     build_date: @BUILD_DATE@
     vm_image_name: @IMAGE_NAME@
+    vm_ready_time: @VM_READY_TIME@
+    vm_start_time: @VM_START_TIME@
 
 processors:
   resource:
@@ -19,7 +21,7 @@ processors:
 exporters:
   stackdriver:
     metric:
-      prefix: appengine.googleapis.com/flex/internal
+      prefix: custom.googleapis.com/flex/internal
   stackdriver/instance:
     metric:
       prefix: appengine.googleapis.com/flex/instance
@@ -27,7 +29,7 @@ exporters:
 service:
   pipelines:
     metrics:
-      receivers: [vmimageage, nginxstats]
+      receivers: [vmage, nginxstats]
       processors: [resource]
       exporters: [stackdriver]
     metrics/instance:

@@ -828,6 +828,7 @@ github.com/googleapis/gnostic v0.1.0/go.mod h1:sJBsCZ4ayReDTBIg8b9dl28c5xFWyhBTV
 github.com/googleapis/gnostic v0.3.0 h1:CcQijm0XKekKjP/YCz28LXVSpgguuB+nCxaSjCe09y0=
 github.com/googleapis/gnostic v0.3.0/go.mod h1:sJBsCZ4ayReDTBIg8b9dl28c5xFWyhBTVRp3pOg5EKY=
 github.com/googleapis/gnostic v0.4.0/go.mod h1:on+2t9HRStVgn95RSsFWFz+6Q0Snyqv1awfrALZdbtU=
+github.com/googlecloudplatform/appengine-sidecars-docker v0.0.0-20201119192143-9691aa1f3b32 h1:UvLcLi1Byu+H1bQ5vIYeTpKqxNvDnIsNGCAC1Yx9Yig=
 github.com/googleinterns/cloud-operations-api-mock v0.0.0-20200709193332-a1e58c29bdd3/go.mod h1:h/KNeRx7oYU4SpA4SoY7W2/NxDKEEVuwA6j9A27L4OI=
 github.com/gookit/color v1.2.4/go.mod h1:AhIE+pS6D4Ql0SQWbBeXPHw7gY0/sjHoA4s/n1KB7xg=
 github.com/gookit/color v1.2.5 h1:s1gzb/fg3HhkSLKyWVUsZcVBUo+R1TwEYTmmxH8gGFg=
