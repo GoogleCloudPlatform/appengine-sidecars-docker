@@ -90,7 +90,6 @@ func (collector *VMAgeCollector) StartCollection() {
 			select {
 			case <-ticker.C:
 				collector.scrapeAndExportVMImageAge()
-				collector.scrapeAndExportVMStartTime()
 				collector.scrapeAndExportVMReadyTime()
 			case <-collector.done:
 				return
@@ -144,15 +143,6 @@ func (collector *VMAgeCollector) scrapeAndExportVMImageAge() {
 	}
 
 	collector.export(metrics, "Error sending VM image age metrics")
-}
-
-func (collector *VMAgeCollector) scrapeAndExportVMStartTime() {
-	if collector.vmStartTimeError {
-		return
-	}
-
-	timeseries := metricgenerator.MakeInt64TimeSeries(collector.parsedVMStartTime.Unix(), collector.collectorStartTime, time.Now(), collector.labelValues)
-	collector.export(makeMetrics(vmStartTimeMetric, timeseries), "Error sending VM start time metrics")
 }
 
 func (collector *VMAgeCollector) scrapeAndExportVMReadyTime() {

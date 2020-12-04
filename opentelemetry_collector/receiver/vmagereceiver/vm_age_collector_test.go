@@ -106,19 +106,6 @@ func TestScrapeAndExport(t *testing.T) {
 			metricType: "double",
 		},
 		{
-			exportFunc: collector.scrapeAndExportVMStartTime,
-			expectedDesc: &metricspb.MetricDescriptor{
-				Name:        "vm_start_time",
-				Description: "The time that the VM startup script began to run.",
-				Unit:        "Seconds",
-				Type:        metricspb.MetricDescriptor_GAUGE_INT64,
-				LabelKeys: []*metricspb.LabelKey{{
-					Key: "vm_image_name",
-				}},
-			},
-			metricType: "int64",
-		},
-		{
 			exportFunc: collector.scrapeAndExportVMReadyTime,
 			expectedDesc: &metricspb.MetricDescriptor{
 				Name:        "vm_ready_time",
