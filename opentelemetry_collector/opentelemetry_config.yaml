@@ -21,7 +21,7 @@ processors:
 exporters:
   stackdriver:
     metric:
-      prefix: custom.googleapis.com/flex/internal
+      prefix: appengine.googleapis.com/flex/internal
   stackdriver/instance:
     metric:
       prefix: appengine.googleapis.com/flex/instance
