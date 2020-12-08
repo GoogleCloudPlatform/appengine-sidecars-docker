@@ -1,4 +1,4 @@
-package vmimageagereceiver
+package vmagereceiver
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	typeStr = "vmimageage"
+	typeStr = "vmage"
 )
 
 // CreateDefaultConfig creates the default configuration for the receiver.
@@ -32,15 +32,15 @@ func createMetricsReceiver(
 ) (component.MetricsReceiver, error) {
 
 	cfg := config.(*Config)
-	collector := NewVMImageAgeCollector(cfg.ExportInterval, cfg.BuildDate, cfg.VMImageName, consumer, params.Logger)
+	collector := NewVMAgeCollector(cfg.ExportInterval, cfg.BuildDate, cfg.VMImageName, consumer, params.Logger)
 
 	receiver := &Receiver{
-		vmImageAgeCollector: collector,
+		vmAgeCollector: collector,
 	}
 	return receiver, nil
 }
 
-// NewFactory creates and returns a factory for the vm image age receiver.
+// NewFactory creates and returns a factory for the vm age receiver.
 func NewFactory() component.ReceiverFactory {
 	return receiverhelper.NewFactory(
 		typeStr,

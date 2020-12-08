@@ -2,7 +2,7 @@ receivers:
   dockerstats:
   nginxstats:
     stats_url: @NGINX_STATS_URL@
-  vmimageage:
+  vmage:
     build_date: @BUILD_DATE@
     vm_image_name: @IMAGE_NAME@
 
@@ -27,7 +27,7 @@ exporters:
 service:
   pipelines:
     metrics:
-      receivers: [vmimageage, nginxstats]
+      receivers: [vmage, nginxstats]
       processors: [resource]
       exporters: [stackdriver]
     metrics/instance:

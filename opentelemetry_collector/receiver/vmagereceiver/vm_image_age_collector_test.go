@@ -1,4 +1,4 @@
-package vmimageagereceiver
+package vmagereceiver
 
 import (
 	"context"
@@ -40,7 +40,7 @@ func TestCalculateImageAgeWith0Age(t *testing.T) {
 }
 
 func TestParseBuildDate(t *testing.T) {
-	collector := NewVMImageAgeCollector(0, "2006-01-02T15:04:05+00:00", "test_image_name", nil, nil)
+	collector := NewVMAgeCollector(0, "2006-01-02T15:04:05+00:00", "test_image_name", nil, nil)
 	collector.parseBuildDate()
 	assert.False(t, collector.buildDateError)
 	diff := collector.parsedBuildDate.Sub(time.Date(2006, time.January, 2, 15, 4, 5, 0, time.FixedZone("", 0)))
@@ -48,7 +48,7 @@ func TestParseBuildDate(t *testing.T) {
 }
 
 func TestParseBuildDateError(t *testing.T) {
-	collector := NewVMImageAgeCollector(0, "misformated_date", "test_image_name", nil, nil)
+	collector := NewVMAgeCollector(0, "misformated_date", "test_image_name", nil, nil)
 	collector.parseBuildDate()
 	assert.True(t, collector.buildDateError)
 }
@@ -72,7 +72,7 @@ func (consumer fakeConsumer) ConsumeMetrics(ctx context.Context, metrics pdata.M
 
 func TestScrapeAndExport(t *testing.T) {
 	consumer := fakeConsumer{storage: &metricsStore{}}
-	collector := NewVMImageAgeCollector(0, "2006-01-02T15:04:05+00:00", "test_image_name", consumer, zap.NewNop())
+	collector := NewVMAgeCollector(0, "2006-01-02T15:04:05+00:00", "test_image_name", consumer, zap.NewNop())
 	collector.setupCollection()
 	collector.scrapeAndExport()
 
@@ -107,7 +107,7 @@ func TestScrapeAndExport(t *testing.T) {
 
 func TestScrapeAndExportWithError(t *testing.T) {
 	consumer := fakeConsumer{storage: &metricsStore{}}
-	collector := NewVMImageAgeCollector(0, "", "test_image_name", consumer, zap.NewNop())
+	collector := NewVMAgeCollector(0, "", "test_image_name", consumer, zap.NewNop())
 	collector.setupCollection()
 	collector.scrapeAndExport()
 

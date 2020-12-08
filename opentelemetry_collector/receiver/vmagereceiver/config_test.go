@@ -1,4 +1,4 @@
-package vmimageagereceiver
+package vmagereceiver
 
 import (
 	"path"
@@ -26,15 +26,15 @@ func TestLoadConfig(t *testing.T) {
 
 	assert.Equal(t, len(cfg.Receivers), 2)
 
-	defaultReceiver := cfg.Receivers["vmimageage"]
+	defaultReceiver := cfg.Receivers["vmage"]
 	assert.Equal(t, defaultReceiver, factory.CreateDefaultConfig())
 
-	customReceiver := cfg.Receivers["vmimageage/customname"].(*Config)
+	customReceiver := cfg.Receivers["vmage/customname"].(*Config)
 	assert.Equal(t, customReceiver,
 		&Config{
 			ReceiverSettings: configmodels.ReceiverSettings{
 				TypeVal: typeStr,
-				NameVal: "vmimageage/customname",
+				NameVal: "vmage/customname",
 			},
 			ExportInterval: 10 * time.Minute,
 			BuildDate:      "2006-01-02T15:04:05Z07:00",

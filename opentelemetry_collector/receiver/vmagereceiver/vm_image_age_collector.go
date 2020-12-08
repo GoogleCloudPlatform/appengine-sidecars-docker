@@ -1,4 +1,4 @@
-package vmimageagereceiver
+package vmagereceiver
 
 import (
 	"context"
@@ -15,9 +15,8 @@ import (
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/metricgenerator"
 )
 
-// VMImageAgeCollector is a struct that generates metrics based on the
-// VM image age in the config.
-type VMImageAgeCollector struct {
+// VMAgeCollector is a struct that generates metrics based on the VM age in the config.
+type VMAgeCollector struct {
 	consumer consumer.MetricsConsumer
 
 	startTime time.Time
@@ -37,14 +36,14 @@ const (
 	defaultExportInterval = 10 * time.Minute
 )
 
-// NewVMImageAgeCollector creates a new VMImageAgeCollector that generates metrics
+// NewVMAgeCollector creates a new VMAgeCollector that generates metrics
 // based on the buildDate and vmImageName.
-func NewVMImageAgeCollector(exportInterval time.Duration, buildDate, vmImageName string, consumer consumer.MetricsConsumer, logger *zap.Logger) *VMImageAgeCollector {
+func NewVMAgeCollector(exportInterval time.Duration, buildDate, vmImageName string, consumer consumer.MetricsConsumer, logger *zap.Logger) *VMAgeCollector {
 	if exportInterval <= 0 {
 		exportInterval = defaultExportInterval
 	}
 
-	collector := &VMImageAgeCollector{
+	collector := &VMAgeCollector{
 		consumer:       consumer,
 		startTime:      time.Now(),
 		buildDate:      buildDate,
@@ -57,7 +56,7 @@ func NewVMImageAgeCollector(exportInterval time.Duration, buildDate, vmImageName
 	return collector
 }
 
-func (collector *VMImageAgeCollector) parseBuildDate() {
+func (collector *VMAgeCollector) parseBuildDate() {
 	var err error
 	collector.parsedBuildDate, err = time.Parse(time.RFC3339, collector.buildDate)
 	collector.buildDateError = err != nil
@@ -73,7 +72,7 @@ func calculateImageAge(buildDate time.Time, now time.Time) (float64, error) {
 }
 
 // StartCollection starts a go routine with a ticker that periodically generates and exports the metrics.
-func (collector *VMImageAgeCollector) StartCollection() {
+func (collector *VMAgeCollector) StartCollection() {
 	collector.setupCollection()
 
 	go func() {
@@ -89,17 +88,17 @@ func (collector *VMImageAgeCollector) StartCollection() {
 	}()
 }
 
-func (collector *VMImageAgeCollector) setupCollection() {
+func (collector *VMAgeCollector) setupCollection() {
 	collector.parseBuildDate()
 	collector.labelValues = []*metricspb.LabelValue{metricgenerator.MakeLabelValue(collector.vmImageName)}
 }
 
 // StopCollection stops the generation and export of the metrics.
-func (collector *VMImageAgeCollector) StopCollection() {
+func (collector *VMAgeCollector) StopCollection() {
 	close(collector.done)
 }
 
-func (collector *VMImageAgeCollector) makeErrorMetrics() *metricspb.Metric {
+func (collector *VMAgeCollector) makeErrorMetrics() *metricspb.Metric {
 	timeseries := metricgenerator.MakeInt64TimeSeries(1, collector.startTime, time.Now(), collector.labelValues)
 	return &metricspb.Metric{
 		MetricDescriptor: vmImageErrorMetric,
@@ -108,7 +107,7 @@ func (collector *VMImageAgeCollector) makeErrorMetrics() *metricspb.Metric {
 
 }
 
-func (collector *VMImageAgeCollector) scrapeAndExport() {
+func (collector *VMAgeCollector) scrapeAndExport() {
 	metrics := make([]*metricspb.Metric, 0, 1)
 
 	if collector.buildDateError {
