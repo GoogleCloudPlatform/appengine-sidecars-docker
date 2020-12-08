@@ -45,16 +45,10 @@ func TestCalculateImageAgeWith0Age(t *testing.T) {
 	assert.Equal(t, float64(0.25), age)
 }
 
-<<<<<<< HEAD:opentelemetry_collector/receiver/vmagereceiver/vm_age_collector_test.go
 func TestParseInputTimes(t *testing.T) {
 	collector := NewVMAgeCollector(0, "2006-01-02T15:04:05+00:00", testVMImageName, testVMStartTime, testVMReadyTime, nil, nil)
 	collector.setupCollection()
 
-=======
-func TestParseBuildDate(t *testing.T) {
-	collector := NewVMAgeCollector(0, "2006-01-02T15:04:05+00:00", "test_image_name", nil, nil)
-	collector.parseBuildDate()
->>>>>>> 0c04f9a3aef84e712c1b4c8ef60f09ca3755701f:opentelemetry_collector/receiver/vmagereceiver/vm_image_age_collector_test.go
 	assert.False(t, collector.buildDateError)
 	assert.False(t, collector.vmStartTimeError)
 	assert.False(t, collector.vmReadyTimeError)
@@ -64,13 +58,8 @@ func TestParseBuildDate(t *testing.T) {
 }
 
 func TestParseBuildDateError(t *testing.T) {
-<<<<<<< HEAD:opentelemetry_collector/receiver/vmagereceiver/vm_age_collector_test.go
 	collector := NewVMAgeCollector(0, "misformated_date", testVMImageName, testVMStartTime, testVMReadyTime, nil, nil)
 	collector.setupCollection()
-=======
-	collector := NewVMAgeCollector(0, "misformated_date", "test_image_name", nil, nil)
-	collector.parseBuildDate()
->>>>>>> 0c04f9a3aef84e712c1b4c8ef60f09ca3755701f:opentelemetry_collector/receiver/vmagereceiver/vm_image_age_collector_test.go
 	assert.True(t, collector.buildDateError)
 }
 
@@ -99,11 +88,7 @@ func TestScrapeAndExport(t *testing.T) {
 	}
 
 	consumer := fakeConsumer{storage: &metricsStore{}}
-<<<<<<< HEAD:opentelemetry_collector/receiver/vmagereceiver/vm_age_collector_test.go
 	collector := NewVMAgeCollector(0, "2006-01-02T15:04:05+00:00", testVMImageName, testVMStartTime, testVMReadyTime, consumer, zap.NewNop())
-=======
-	collector := NewVMAgeCollector(0, "2006-01-02T15:04:05+00:00", "test_image_name", consumer, zap.NewNop())
->>>>>>> 0c04f9a3aef84e712c1b4c8ef60f09ca3755701f:opentelemetry_collector/receiver/vmagereceiver/vm_image_age_collector_test.go
 	collector.setupCollection()
 
 	tests := []test{
@@ -164,11 +149,7 @@ func TestScrapeAndExport(t *testing.T) {
 
 func TestScrapeAndExportVMImageAgeWithError(t *testing.T) {
 	consumer := fakeConsumer{storage: &metricsStore{}}
-<<<<<<< HEAD:opentelemetry_collector/receiver/vmagereceiver/vm_age_collector_test.go
 	collector := NewVMAgeCollector(0, "", testVMImageName, testVMStartTime, testVMReadyTime, consumer, zap.NewNop())
-=======
-	collector := NewVMAgeCollector(0, "", "test_image_name", consumer, zap.NewNop())
->>>>>>> 0c04f9a3aef84e712c1b4c8ef60f09ca3755701f:opentelemetry_collector/receiver/vmagereceiver/vm_image_age_collector_test.go
 	collector.setupCollection()
 	collector.scrapeAndExportVMImageAge()
 
