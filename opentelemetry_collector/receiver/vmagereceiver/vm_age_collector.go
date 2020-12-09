@@ -124,7 +124,24 @@ func (collector *VMAgeCollector) makeErrorMetrics() *metricspb.Metric {
 		MetricDescriptor: vmImageAgesErrorMetric,
 		Timeseries:       []*metricspb.TimeSeries{timeseries},
 	}
+}
 
+func makeMetrics(metricDescriptor *metricspb.MetricDescriptor, timeseries *metricspb.TimeSeries) []*metricspb.Metric {
+	return []*metricspb.Metric{
+		{
+			MetricDescriptor: metricDescriptor,
+			Timeseries:       []*metricspb.TimeSeries{timeseries},
+		},
+	}
+}
+
+func (collector *VMAgeCollector) export(metrics []*metricspb.Metric, errorKey string) {
+	ctx := context.Background()
+	md := consumerdata.MetricsData{Metrics: metrics}
+	err := collector.consumer.ConsumeMetrics(ctx, internaldata.OCSliceToMetrics([]consumerdata.MetricsData{md}))
+	if err != nil {
+		collector.logger.Error(errorKey, zap.Error(err))
+	}
 }
 
 func (collector *VMAgeCollector) scrapeAndExportVMImageAge() {
@@ -153,22 +170,4 @@ func (collector *VMAgeCollector) scrapeAndExportVMReadyTime() {
 	readyTime := int64(collector.parsedVMReadyTime.Sub(collector.parsedVMStartTime) / time.Second)
 	timeseries := metricgenerator.MakeInt64TimeSeries(readyTime, collector.collectorStartTime, time.Now(), collector.labelValues)
 	collector.export(makeMetrics(vmReadyTimeMetric, timeseries), "Error sending VM ready time metrics")
-}
-
-func makeMetrics(metricDescriptor *metricspb.MetricDescriptor, timeseries *metricspb.TimeSeries) []*metricspb.Metric {
-	return []*metricspb.Metric{
-		&metricspb.Metric{
-			MetricDescriptor: metricDescriptor,
-			Timeseries:       []*metricspb.TimeSeries{timeseries},
-		},
-	}
-}
-
-func (collector *VMAgeCollector) export(metrics []*metricspb.Metric, errorKey string) {
-	ctx := context.Background()
-	md := consumerdata.MetricsData{Metrics: metrics}
-	err := collector.consumer.ConsumeMetrics(ctx, internaldata.OCSliceToMetrics([]consumerdata.MetricsData{md}))
-	if err != nil {
-		collector.logger.Error(errorKey, zap.Error(err))
-	}
 }
