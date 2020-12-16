@@ -29,7 +29,7 @@ var vmReadyTimeMetric = &metricspb.MetricDescriptor{
 	Name:        "vm_ready_time",
 	Description: "The amount of time from when Flex first started setting up the VM in the startup script to when it finished setting up all VM runtime components.",
 	Unit:        "Seconds",
-	Type:        metricspb.MetricDescriptor_GAUGE_INT64,
+	Type:        metricspb.MetricDescriptor_GAUGE_DOUBLE,
 	LabelKeys:   []*metricspb.LabelKey{vmImageNameLabel},
 }
 

@@ -68,7 +68,7 @@ func NewVMAgeCollector(exportInterval time.Duration, buildDate, vmImageName, vmS
 }
 
 func (collector *VMAgeCollector) parseDate(date string) (time.Time, error) {
-	return time.Parse(time.RFC3339, date)
+	return time.Parse(time.RFC3339Nano, date)
 }
 
 func calculateImageAge(buildDate time.Time, now time.Time) (float64, error) {
@@ -83,6 +83,7 @@ func calculateImageAge(buildDate time.Time, now time.Time) (float64, error) {
 // StartCollection starts a go routine with a ticker that periodically generates and exports the metrics.
 func (collector *VMAgeCollector) StartCollection() {
 	collector.setupCollection()
+	readyTime := float64(collector.parsedVMReadyTime.Sub(collector.parsedVMStartTime) / time.Second)
 
 	go func() {
 		ticker := time.NewTicker(collector.exportInterval)
@@ -90,7 +91,7 @@ func (collector *VMAgeCollector) StartCollection() {
 			select {
 			case <-ticker.C:
 				collector.scrapeAndExportVMImageAge()
-				collector.scrapeAndExportVMReadyTime()
+				collector.scrapeAndExportVMReadyTime(readyTime)
 			case <-collector.done:
 				return
 			}
@@ -105,10 +106,17 @@ func (collector *VMAgeCollector) setupCollection() {
 	collector.buildDateError = (err != nil)
 
 	collector.parsedVMStartTime, err = collector.parseDate(collector.vmStartTime)
-	collector.vmStartTimeError = (err != nil)
+	if err != nil {
+		collector.vmStartTimeError = true
+		collector.logger.Error("Error parsing vmStartTime", zap.Error(err))
+	}
 
 	collector.parsedVMReadyTime, err = collector.parseDate(collector.vmReadyTime)
 	collector.vmReadyTimeError = (err != nil)
+	if err != nil {
+		collector.vmReadyTimeError = true
+		collector.logger.Error("Error parsing vmReadyTime", zap.Error(err))
+	}
 
 	collector.labelValues = []*metricspb.LabelValue{metricgenerator.MakeLabelValue(collector.vmImageName)}
 }
@@ -162,12 +170,11 @@ func (collector *VMAgeCollector) scrapeAndExportVMImageAge() {
 	collector.export(metrics, "Error sending VM image age metrics")
 }
 
-func (collector *VMAgeCollector) scrapeAndExportVMReadyTime() {
+func (collector *VMAgeCollector) scrapeAndExportVMReadyTime(readyTime float64) {
 	if collector.vmReadyTimeError {
 		return
 	}
 
-	readyTime := int64(collector.parsedVMReadyTime.Sub(collector.parsedVMStartTime) / time.Second)
-	timeseries := metricgenerator.MakeInt64TimeSeries(readyTime, collector.collectorStartTime, time.Now(), collector.labelValues)
+	timeseries := metricgenerator.MakeDoubleTimeSeries(readyTime, collector.collectorStartTime, time.Now(), collector.labelValues)
 	collector.export(makeMetrics(vmReadyTimeMetric, timeseries), "Error sending VM ready time metrics")
 }
