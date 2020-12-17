@@ -19,6 +19,8 @@ set_metadata "${GAE_BACKEND_VERSION}" "VERSION"
 set_metadata "${GAE_BACKEND_NAME}" "SERVICE"
 set_metadata "${INSTANCE_ID}" "INSTANCE"
 set_metadata "${NGINX_STATS_URL}" "NGINX_STATS_URL"
+set_metadata "${VM_READY_TIME}" "VM_READY_TIME"
+set_metadata "${VM_START_TIME}" "VM_START_TIME"
 
 if [[ -z "${ZONE}" ]]; then
   sed -i "s/@REGION@/unknown/" "${OPENTELEMETRY_CONFIG_FILE}"

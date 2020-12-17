@@ -12,4 +12,6 @@ type Config struct {
 	ExportInterval                time.Duration `mapstructure:"export_interval"`
 	BuildDate                     string        `mapstructure:"build_date"`
 	VMImageName                   string        `mapstructure:"vm_image_name"`
+	VMStartTime                   string        `mapstructure:"vm_start_time"`
+	VMReadyTime                   string        `mapstructure:"vm_ready_time"`
 }

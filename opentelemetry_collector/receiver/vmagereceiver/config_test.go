@@ -39,5 +39,7 @@ func TestLoadConfig(t *testing.T) {
 			ExportInterval: 10 * time.Minute,
 			BuildDate:      "2006-01-02T15:04:05Z07:00",
 			VMImageName:    "test_vm_image_name",
+			VMStartTime:    "2007-01-01T01:01:00Z07:00",
+			VMReadyTime:    "2007-01-01T01:02:00Z07:00",
 		})
 }

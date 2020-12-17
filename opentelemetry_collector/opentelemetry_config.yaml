@@ -5,6 +5,8 @@ receivers:
   vmage:
     build_date: @BUILD_DATE@
     vm_image_name: @IMAGE_NAME@
+    vm_ready_time: @VM_READY_TIME@
+    vm_start_time: @VM_START_TIME@
 
 processors:
   resource:

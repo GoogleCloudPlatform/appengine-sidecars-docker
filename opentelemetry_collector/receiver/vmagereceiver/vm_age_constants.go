@@ -17,11 +17,19 @@ var vmImageAgeMetric = &metricspb.MetricDescriptor{
 	LabelKeys:   []*metricspb.LabelKey{vmImageNameLabel},
 }
 
-var vmImageErrorMetric = &metricspb.MetricDescriptor{
+var vmImageAgesErrorMetric = &metricspb.MetricDescriptor{
 	Name:        "vm_image_ages_error",
 	Description: "The current number of VM instances with errors exporting the VM image age.",
 	Unit:        "Count",
 	Type:        metricspb.MetricDescriptor_GAUGE_INT64,
+	LabelKeys:   []*metricspb.LabelKey{vmImageNameLabel},
+}
+
+var vmReadyTimeMetric = &metricspb.MetricDescriptor{
+	Name:        "vm_ready_time",
+	Description: "The amount of time from when Flex first started setting up the VM in the startup script to when it finished setting up all VM runtime components.",
+	Unit:        "Seconds",
+	Type:        metricspb.MetricDescriptor_GAUGE_DOUBLE,
 	LabelKeys:   []*metricspb.LabelKey{vmImageNameLabel},
 }
 

@@ -32,7 +32,7 @@ func createMetricsReceiver(
 ) (component.MetricsReceiver, error) {
 
 	cfg := config.(*Config)
-	collector := NewVMAgeCollector(cfg.ExportInterval, cfg.BuildDate, cfg.VMImageName, consumer, params.Logger)
+	collector := NewVMAgeCollector(cfg.ExportInterval, cfg.BuildDate, cfg.VMImageName, cfg.VMStartTime, cfg.VMReadyTime, consumer, params.Logger)
 
 	receiver := &Receiver{
 		vmAgeCollector: collector,
