@@ -1,2 +1,7 @@
+#!/bin/bash
+set -euo pipefail
+IMG=iap-watcher-tester
+echo "Building IAP Watcher"
+docker build -t "$IMG" --target iap-watcher-tester .
 echo "Running IAP Watcher tests..."
-python iap_watcher_test.py
+docker run --rm "$IMG"
