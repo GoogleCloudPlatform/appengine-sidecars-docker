@@ -1,4 +1,3 @@
-import httplib
 import os
 import shutil
 import tempfile

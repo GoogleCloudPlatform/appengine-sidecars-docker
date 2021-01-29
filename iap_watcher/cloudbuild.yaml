@@ -8,10 +8,27 @@
 #     --substitutions=_RC_NAME=20180101-RC00
 
 steps:
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/${PROJECT_ID}/iap-watcher:latest', '.']
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/${PROJECT_ID}/iap-watcher:${_RC_NAME}', '.']
+  - id: 'iap-watcher'
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--tag=gcr.io/$PROJECT_ID/iap-watcher:latest'
+      - '--tag=gcr.io/$PROJECT_ID/iap-watcher:${_RC_NAME}'
+      - '--target=iap-watcher'
+      - '.'
+  - id: 'iap-watcher-tester'
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--target=iap-watcher-tester'
+      - '--tag=gcr.io/$PROJECT_ID/iap-watcher-tester:latest'
+      - '.'
+  - id: 'iap-watcher-tests'
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'run'
+      - 'gcr.io/$PROJECT_ID/iap-watcher-tester:latest'
+    wait_for: ['iap-watcher-tester']
 images:
   - 'gcr.io/$PROJECT_ID/iap-watcher:latest'
   - 'gcr.io/$PROJECT_ID/iap-watcher:${_RC_NAME}'
