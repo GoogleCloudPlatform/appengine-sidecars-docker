@@ -9,9 +9,11 @@
 
 steps:
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/${PROJECT_ID}/stackdriver-monitoring-agent:latest', '.']
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/${PROJECT_ID}/stackdriver-monitoring-agent:${_RC_NAME}', '.']
+    args:
+      - 'build'
+      - '--tag=gcr.io/$PROJECT_ID/stackdriver-monitoring-agent:latest'
+      - '--tag=gcr.io/$PROJECT_ID/stackdriver-monitoring-agent:${_RC_NAME}'
+      - '.'
 images:
   - 'gcr.io/$PROJECT_ID/stackdriver-monitoring-agent:latest'
   - 'gcr.io/$PROJECT_ID/stackdriver-monitoring-agent:${_RC_NAME}'
