@@ -42,8 +42,3 @@ cd ..
 
 # NOTE(cbro): vet has false positives. If a check fails, consider removing this or ignoring that check.
 diff -u <(echo -n) <(gofmt -d -s .)
-
-#### Run tests for iap_watcher
-pushd iap_watcher
-./test.sh
-popd
