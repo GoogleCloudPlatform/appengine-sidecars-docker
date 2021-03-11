@@ -1,7 +1,7 @@
 # Nginx Proxy that forwards requests into the appengine application.
 
 ARG BASE_IMAGE_TAG=latest
-FROM gcr.io/google-appengine/debian9:${BASE_IMAGE_TAG}
+FROM gcr.io/google-appengine/debian10:${BASE_IMAGE_TAG}
 
 # Add the Cloud SDK distribution URI as a package source
 # Import the Google Cloud public key
@@ -14,8 +14,9 @@ RUN apt-get -q update && \
         | tee /etc/apt/sources.list.d/google-cloud-endpoints.list && \
     curl --silent https://packages.cloud.google.com/apt/doc/apt-key.gpg \
         | apt-key add - && \
+    apt-get remove -y -q curl gnupg2 && \
     apt-get update && \
-    apt-get install -y cron python endpoints-runtime && \
+    apt-get install -y cron endpoints-runtime && \
     apt-get clean && \
     rm /var/lib/apt/lists/*_*
 
