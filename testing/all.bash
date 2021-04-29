@@ -29,16 +29,7 @@ fi
 set -e -x
 
 #### Run Go tests.
+pushd opentelemetry_collector
+docker build .
+popd
 
-which go
-go env
-
-cd opentelemetry_collector
-env GO111MODULE=on go test -v ./...
-env GO111MODULE=on go vet ./...
-cd ..
-
-#### go vet, go fmt, etc.
-
-# NOTE(cbro): vet has false positives. If a check fails, consider removing this or ignoring that check.
-diff -u <(echo -n) <(gofmt -d -s .)
