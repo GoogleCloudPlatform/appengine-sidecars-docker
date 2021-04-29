@@ -18,6 +18,7 @@ ENV GOARCH=amd64
 
 RUN go mod download
 RUN go test -v ./...
+RUN go vet ./...
 RUN go build -o opentelemetry_collector .
 RUN cp ./opentelemetry_collector /opentelemetry_collector
 
