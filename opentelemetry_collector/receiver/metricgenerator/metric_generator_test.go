@@ -4,26 +4,11 @@ import (
 	"testing"
 	"time"
 
-	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
 	"github.com/stretchr/testify/assert"
+	timestamp "google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
 )
-
-func Test_TimeToTimestamp(t *testing.T) {
-	t1 := time.Unix(1541015015, 123456789)
-	ts := TimeToTimestamp(t1)
-	t2 := time.Unix(ts.Seconds, int64(ts.Nanos))
-
-	assert.Equal(t, t1, t2)
-}
-
-func Test_ZeroTimeToTimestamp(t *testing.T) {
-	var t1 time.Time
-	ts := TimeToTimestamp(t1)
-
-	assert.Nil(t, ts)
-}
 
 func Test_MakeInt64TimeSeries(t *testing.T) {
 	seconds1 := int64(1541015015)
@@ -35,16 +20,10 @@ func Test_MakeInt64TimeSeries(t *testing.T) {
 	timeseries := MakeInt64TimeSeries(1, startTime, currentTime, labelValues)
 
 	expectedTimeseries := &metricspb.TimeSeries{
-		StartTimestamp: &timestamp.Timestamp{
-			Seconds: seconds1,
-			Nanos:   int32(nanoseconds),
-		},
-		LabelValues: labelValues,
+		StartTimestamp: timestamp.New(startTime),
+		LabelValues:    labelValues,
 		Points: []*metricspb.Point{{
-			Timestamp: &timestamp.Timestamp{
-				Seconds: seconds2,
-				Nanos:   int32(nanoseconds),
-			},
+			Timestamp: timestamp.New(currentTime),
 			Value: &metricspb.Point_Int64Value{
 				Int64Value: 1,
 			},
@@ -63,16 +42,10 @@ func Test_MakeDoubleTimeSeries(t *testing.T) {
 	timeseries := MakeDoubleTimeSeries(1.1, startTime, currentTime, labelValues)
 
 	expectedTimeseries := &metricspb.TimeSeries{
-		StartTimestamp: &timestamp.Timestamp{
-			Seconds: seconds1,
-			Nanos:   int32(nanoseconds),
-		},
-		LabelValues: labelValues,
+		StartTimestamp: timestamp.New(startTime),
+		LabelValues:    labelValues,
 		Points: []*metricspb.Point{{
-			Timestamp: &timestamp.Timestamp{
-				Seconds: seconds2,
-				Nanos:   int32(nanoseconds),
-			},
+			Timestamp: timestamp.New(currentTime),
 			Value: &metricspb.Point_DoubleValue{
 				DoubleValue: 1.1,
 			},
@@ -171,10 +144,10 @@ func Test_MakeSingleDistributionTimeSeries(t *testing.T) {
 	labelValues := []*metricspb.LabelValue{MakeLabelValue("test_label")}
 	timeseries := MakeSingleValueDistributionTimeSeries(3, startTime, currentTime, bucketOptions, labelValues)
 
-	assert.Equal(t, timeseries.StartTimestamp, &timestamp.Timestamp{Seconds: seconds1, Nanos: int32(nanoseconds)})
+	assert.Equal(t, timeseries.StartTimestamp, timestamp.New(startTime))
 	assert.Equal(t, timeseries.LabelValues, labelValues)
 	assert.Len(t, timeseries.Points, 1)
-	assert.Equal(t, timeseries.Points[0].Timestamp, &timestamp.Timestamp{Seconds: seconds2, Nanos: int32(nanoseconds)})
+	assert.Equal(t, timeseries.Points[0].Timestamp, timestamp.New(currentTime))
 
 	distribution := timeseries.Points[0].GetDistributionValue()
 	assert.Equal(t, distribution.GetCount(), int64(1))

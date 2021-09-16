@@ -9,15 +9,16 @@ import (
 	"testing"
 	"time"
 
-	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
-
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/opencensus"
 	"github.com/stretchr/testify/assert"
-	"go.opentelemetry.io/collector/consumer/consumerdata"
-	"go.opentelemetry.io/collector/consumer/pdata"
-	"go.opentelemetry.io/collector/translator/internaldata"
+	"go.opentelemetry.io/collector/model/pdata"
 	"go.uber.org/zap"
+	timestamp "google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/metricgenerator"
+
+	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
+	"go.opentelemetry.io/collector/consumer"
 )
 
 func fakeNow() time.Time {
@@ -79,8 +80,14 @@ type fakeConsumer struct {
 	metrics pdata.Metrics
 }
 
-func (consumer *fakeConsumer) ConsumeMetrics(ctx context.Context, metrics pdata.Metrics) error {
-	consumer.metrics = metrics
+func (c *fakeConsumer) Capabilities() consumer.Capabilities {
+	return consumer.Capabilities{
+		MutatesData: false,
+	}
+}
+
+func (c *fakeConsumer) ConsumeMetrics(ctx context.Context, metrics pdata.Metrics) error {
+	c.metrics = metrics
 	return nil
 }
 
@@ -354,13 +361,13 @@ func TestAppendDistributionMetric(t *testing.T) {
 			Buckets:               []*metricspb.DistributionValue_Bucket{{Count: 0}, {Count: 2}, {Count: 1}},
 		}
 		expectedPoint := &metricspb.Point{
-			Timestamp: metricgenerator.TimeToTimestamp(fakeNow()),
+			Timestamp: timestamp.New(fakeNow()),
 			Value: &metricspb.Point_DistributionValue{
 				DistributionValue: expectedDistribution,
 			},
 		}
 		expectedTimeseries := &metricspb.TimeSeries{
-			StartTimestamp: metricgenerator.TimeToTimestamp(fakeNow()),
+			StartTimestamp: timestamp.New(fakeNow()),
 			LabelValues:    []*metricspb.LabelValue{},
 			Points:         []*metricspb.Point{expectedPoint},
 		}
@@ -372,9 +379,9 @@ func TestAppendDistributionMetric(t *testing.T) {
 	}
 }
 
-func checkDistributionMetricValue(t *testing.T, data consumerdata.MetricsData, name string, stats *LatencyStats) {
+func checkDistributionMetricValue(t *testing.T, data []*metricspb.Metric, name string, stats *LatencyStats) {
 	found := false
-	for _, metric := range data.Metrics {
+	for _, metric := range data {
 		if metric.MetricDescriptor.Name == name {
 			found = true
 			distribution := metric.Timeseries[0].Points[0].GetDistributionValue()
@@ -406,9 +413,8 @@ func TestScrapeAndExport(t *testing.T) {
 		getStatus:      fakeHTTPGet,
 	}
 	collector.scrapeAndExport()
-	data := internaldata.MetricsToOC(consumer.metrics)
-	assert.Len(t, data, 1)
-
+	_, _, data := opencensus.ResourceMetricsToOC(consumer.metrics.ResourceMetrics().At(0))
+	assert.Len(t, data, 3)
 	requestLatency := &LatencyStats{
 		RequestCount: 3,
 		LatencySum:   8,
@@ -427,9 +433,9 @@ func TestScrapeAndExport(t *testing.T) {
 		SumSquares:   16,
 		Distribution: []int64{0, 0, 1},
 	}
-	checkDistributionMetricValue(t, data[0], "on_vm_request_latencies", requestLatency)
-	checkDistributionMetricValue(t, data[0], "on_vm_upstream_latencies", upstreamLatency)
-	checkDistributionMetricValue(t, data[0], "web_socket/durations", websocketLatency)
+	checkDistributionMetricValue(t, data, "on_vm_request_latencies", requestLatency)
+	checkDistributionMetricValue(t, data, "on_vm_upstream_latencies", upstreamLatency)
+	checkDistributionMetricValue(t, data, "web_socket/durations", websocketLatency)
 }
 
 func TestScrapeAndExportError(t *testing.T) {
@@ -445,7 +451,5 @@ func TestScrapeAndExportError(t *testing.T) {
 		getStatus:      fakeHTTPGet,
 	}
 	collector.scrapeAndExport()
-	data := internaldata.MetricsToOC(consumer.metrics)
-
-	assert.Len(t, data, 0)
+	assert.Equal(t, consumer.metrics.MetricCount(), 0)
 }

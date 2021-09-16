@@ -17,14 +17,14 @@ package main
 
 import (
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/component/componenterror"
-	"go.opentelemetry.io/collector/processor/resourceprocessor"
+	"go.opentelemetry.io/collector/consumer/consumererror"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor"
 
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/dockerstats"
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/nginxreceiver"
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/vmagereceiver"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/stackdriverexporter"
 )
 
 func components() (component.Factories, error) {
@@ -40,7 +40,7 @@ func components() (component.Factories, error) {
 	}
 
 	exporters, err := component.MakeExporterFactoryMap(
-		stackdriverexporter.NewFactory(),
+		googlecloudexporter.NewFactory(),
 	)
 	if err != nil {
 		errs = append(errs, err)
@@ -59,5 +59,5 @@ func components() (component.Factories, error) {
 		Exporters:  exporters,
 	}
 
-	return factories, componenterror.CombineErrors(errs)
+	return factories, consumererror.Combine(errs)
 }

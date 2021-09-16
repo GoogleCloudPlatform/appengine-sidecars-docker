@@ -4,38 +4,26 @@ import (
 	"math"
 	"time"
 
+	timestamp "google.golang.org/protobuf/types/known/timestamppb"
+
 	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
-
-	"github.com/golang/protobuf/ptypes/timestamp"
 )
-
-// TimeToTimestamp converts a time.Time to a timestamp.Timestamp pointer.
-func TimeToTimestamp(t time.Time) *timestamp.Timestamp {
-	if t.IsZero() {
-		return nil
-	}
-	nanoTime := t.UnixNano()
-	return &timestamp.Timestamp{
-		Seconds: nanoTime / 1e9,
-		Nanos:   int32(nanoTime % 1e9),
-	}
-}
 
 // MakeInt64TimeSeries generates a proto representation of a timeseries containing a single point for an int64 metric.
 func MakeInt64TimeSeries(val int64, startTime, now time.Time, labels []*metricspb.LabelValue) *metricspb.TimeSeries {
 	return &metricspb.TimeSeries{
-		StartTimestamp: TimeToTimestamp(startTime),
+		StartTimestamp: timestamp.New(startTime),
 		LabelValues:    labels,
-		Points:         []*metricspb.Point{{Timestamp: TimeToTimestamp(now), Value: &metricspb.Point_Int64Value{Int64Value: val}}},
+		Points:         []*metricspb.Point{{Timestamp: timestamp.New(now), Value: &metricspb.Point_Int64Value{Int64Value: val}}},
 	}
 }
 
 // MakeDoubleTimeSeries generates a proto representation of a timeseries containing a single point for an double metric.
 func MakeDoubleTimeSeries(val float64, startTime, now time.Time, labels []*metricspb.LabelValue) *metricspb.TimeSeries {
 	return &metricspb.TimeSeries{
-		StartTimestamp: TimeToTimestamp(startTime),
+		StartTimestamp: timestamp.New(startTime),
 		LabelValues:    labels,
-		Points:         []*metricspb.Point{{Timestamp: TimeToTimestamp(now), Value: &metricspb.Point_DoubleValue{DoubleValue: val}}},
+		Points:         []*metricspb.Point{{Timestamp: timestamp.New(now), Value: &metricspb.Point_DoubleValue{DoubleValue: val}}},
 	}
 }
 
@@ -181,12 +169,12 @@ func makeTimeseriesFromDistribution(
 	startTime, currentTime time.Time,
 	labels []*metricspb.LabelValue) *metricspb.TimeSeries {
 	point := metricspb.Point{
-		Timestamp: TimeToTimestamp(currentTime),
+		Timestamp: timestamp.New(currentTime),
 		Value:     &metricspb.Point_DistributionValue{DistributionValue: distribution},
 	}
 
 	return &metricspb.TimeSeries{
-		StartTimestamp: TimeToTimestamp(startTime),
+		StartTimestamp: timestamp.New(startTime),
 		LabelValues:    labels,
 		Points:         []*metricspb.Point{&point},
 	}
