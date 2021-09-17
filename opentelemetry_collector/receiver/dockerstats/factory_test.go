@@ -4,12 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config/configerror"
-
 	"github.com/stretchr/testify/assert"
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/component/componenterror"
 	"go.opentelemetry.io/collector/config/configcheck"
-
 	"go.uber.org/zap"
 )
 
@@ -25,17 +23,25 @@ func TestCreateDefaultConfig(t *testing.T) {
 func TestCreateTracesReceiver(t *testing.T) {
 	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
-	params := component.ReceiverCreateParams{Logger: zap.NewNop()}
+	params := component.ReceiverCreateSettings{
+		TelemetrySettings: component.TelemetrySettings{
+			Logger: zap.NewNop(),
+		},
+	}
 
 	r, err := factory.CreateTracesReceiver(context.Background(), params, cfg, nil)
-	assert.Equal(t, err, configerror.ErrDataTypeIsNotSupported)
+	assert.Equal(t, err, componenterror.ErrDataTypeIsNotSupported)
 	assert.Nil(t, r)
 }
 
 func TestCreateMetricsReceiver(t *testing.T) {
 	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
-	params := component.ReceiverCreateParams{Logger: zap.NewNop()}
+	params := component.ReceiverCreateSettings{
+		TelemetrySettings: component.TelemetrySettings{
+			Logger: zap.NewNop(),
+		},
+	}
 
 	r, err := factory.CreateMetricsReceiver(context.Background(), params, cfg, nil)
 	assert.Nil(t, err)

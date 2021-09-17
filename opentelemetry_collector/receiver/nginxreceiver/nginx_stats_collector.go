@@ -10,19 +10,18 @@ import (
 	"net/url"
 	"time"
 
-	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
-
 	"go.opentelemetry.io/collector/consumer"
-	"go.opentelemetry.io/collector/consumer/consumerdata"
-	"go.opentelemetry.io/collector/translator/internaldata"
 	"go.uber.org/zap"
 
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/metricgenerator"
+
+	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/opencensus"
 )
 
 // NginxStatsCollector is a struct that generates metrics by polling the nginx status page at statsURL.
 type NginxStatsCollector struct {
-	consumer consumer.MetricsConsumer
+	consumer consumer.Metrics
 
 	now       func() time.Time
 	startTime time.Time
@@ -52,7 +51,7 @@ type NginxStats struct {
 
 // NewNginxStatsCollector creates a new NginxStatsCollector that generates metrics
 // based on nginx stats found by polling the url
-func NewNginxStatsCollector(interval time.Duration, statsURL string, logger *zap.Logger, consumer consumer.MetricsConsumer) (*NginxStatsCollector, error) {
+func NewNginxStatsCollector(interval time.Duration, statsURL string, logger *zap.Logger, consumer consumer.Metrics) (*NginxStatsCollector, error) {
 	if interval <= 0 {
 		return nil, errors.New("ExportInterval must be greater than 0")
 	}
@@ -121,7 +120,7 @@ func (collector *NginxStatsCollector) scrapeNginxStats() (*NginxStats, error) {
 // readStatsJSON parses the stats JSON and sets defaults.
 func readStatsJSON(statsJSON []byte) (*NginxStats, error) {
 	// Setting the default int value to -1 makes it possible to tell when a value is missing from the json
-	// since the regular defualt is 0, which is a valid value for the stats.
+	// since the regular default is 0, which is a valid value for the stats.
 	stats := NginxStats{
 		RequestLatency: LatencyStats{
 			RequestCount: -1,
@@ -227,9 +226,7 @@ func (collector *NginxStatsCollector) scrapeAndExport() {
 	}
 
 	ctx := context.Background()
-	md := consumerdata.MetricsData{Metrics: metrics}
-	resourceMetrics := internaldata.OCSliceToMetrics([]consumerdata.MetricsData{md})
-	err = collector.consumer.ConsumeMetrics(ctx, resourceMetrics)
+	err = collector.consumer.ConsumeMetrics(ctx, opencensus.OCToMetrics(nil, nil, metrics))
 	if err != nil {
 		collector.logger.Error("Error sending nginx metrics", zap.Error(err))
 	}

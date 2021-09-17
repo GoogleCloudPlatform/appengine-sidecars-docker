@@ -12,13 +12,12 @@ import (
 	"github.com/docker/docker/client"
 
 	"go.opentelemetry.io/collector/consumer"
-	"go.opentelemetry.io/collector/consumer/consumerdata"
-	"go.opentelemetry.io/collector/translator/internaldata"
 	"go.uber.org/zap"
 
-	mpb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
-
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/metricgenerator"
+
+	mpb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/opencensus"
 )
 
 var (
@@ -98,15 +97,15 @@ type scraper struct {
 	done           chan bool
 	scrapeCount    uint64
 
-	metricConsumer consumer.MetricsConsumer
+	metricConsumer consumer.Metrics
 	docker         client.ContainerAPIClient
 	logger         *zap.Logger
 
 	now func() time.Time
 }
 
-func newScraper(scrapeInterval time.Duration, metricConsumer consumer.MetricsConsumer, logger *zap.Logger) (*scraper, error) {
-	docker, err := client.NewEnvClient()
+func newScraper(scrapeInterval time.Duration, metricConsumer consumer.Metrics, logger *zap.Logger) (*scraper, error) {
+	docker, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize docker client: %v", err)
 	}
@@ -179,9 +178,7 @@ func (s *scraper) export() {
 			metrics = append(metrics, s.containerInfoToMetrics(info, labelValues)...)
 		}
 	}
-
-	md := consumerdata.MetricsData{Metrics: metrics}
-	err = s.metricConsumer.ConsumeMetrics(ctx, internaldata.OCSliceToMetrics([]consumerdata.MetricsData{md}))
+	err = s.metricConsumer.ConsumeMetrics(ctx, opencensus.OCToMetrics(nil, nil, metrics))
 	if err != nil {
 		s.logger.Error("Error sending docker stats metrics", zap.Error(err))
 	}

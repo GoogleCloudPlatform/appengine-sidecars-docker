@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config/configmodels"
+	"go.opentelemetry.io/collector/config"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver/receiverhelper"
 )
@@ -14,24 +14,21 @@ import (
 const typeStr = "dockerstats"
 
 // CreateDefaultConfig creates the default configuration for dockerstats receiver.
-func createDefaultConfig() configmodels.Receiver {
+func createDefaultConfig() config.Receiver {
 	return &Config{
-		ReceiverSettings: configmodels.ReceiverSettings{
-			TypeVal: typeStr,
-			NameVal: typeStr,
-		},
-		ScrapeInterval: time.Minute,
+		ReceiverSettings: config.NewReceiverSettings(config.NewID(typeStr)),
+		ScrapeInterval:   time.Minute,
 	}
 }
 
 // CreateMetricsReceiver creates a metric receiver for dockerstats.
-func createMetricsReceiver(ctx context.Context, params component.ReceiverCreateParams, cfg configmodels.Receiver, nextConsumer consumer.MetricsConsumer) (component.MetricsReceiver, error) {
+func createMetricsReceiver(ctx context.Context, settings component.ReceiverCreateSettings, cfg config.Receiver, nextConsumer consumer.Metrics) (component.MetricsReceiver, error) {
 	c := cfg.(*Config)
 	if c.ScrapeInterval <= 0 {
 		return nil, fmt.Errorf("invalid scrape duration: %v, must be positive", c.ScrapeInterval)
 	}
 
-	s, err := newScraper(c.ScrapeInterval, nextConsumer, params.Logger)
+	s, err := newScraper(c.ScrapeInterval, nextConsumer, settings.Logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dockerstats scraper: %v", err)
 	}

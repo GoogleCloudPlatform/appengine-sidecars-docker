@@ -10,29 +10,40 @@ receivers:
 
 processors:
   resource:
-    type: gae_instance
-    labels: {
-      "cloud.region": "@REGION@",
-      "appengine.service.id": "@SERVICE@",
-      "appengine.version.id": "@VERSION@",
-      "appengine.instance.id": "@INSTANCE@",
-  }
+    attributes:
+    - key: opencensus.resourcetype
+      value: "gae_instance"
+      action: upsert
+    - key: cloud.region
+      value: "@REGION@"
+      action: upsert
+    - key: appengine.service.id
+      value: "@SERVICE@"
+      action: upsert
+    - key: appengine.version.id
+      value: "@VERSION@"
+      action: upsert
+    - key: appengine.instance.id
+      value: "@INSTANCE@"
+      action: upsert
 
 exporters:
-  stackdriver:
+  googlecloud:
     metric:
       prefix: appengine.googleapis.com/flex/internal
-  stackdriver/instance:
+      skip_create_descriptor: true
+  googlecloud/instance:
     metric:
       prefix: appengine.googleapis.com/flex/instance
+      skip_create_descriptor: true
 
 service:
   pipelines:
     metrics:
       receivers: [vmage, nginxstats]
       processors: [resource]
-      exporters: [stackdriver]
+      exporters: [googlecloud]
     metrics/instance:
       receivers: [dockerstats]
       processors: [resource]
-      exporters: [stackdriver/instance]
+      exporters: [googlecloud/instance]

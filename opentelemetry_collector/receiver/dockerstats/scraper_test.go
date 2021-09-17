@@ -12,14 +12,14 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+
 	"github.com/stretchr/testify/assert"
+	"go.opentelemetry.io/collector/consumer"
+	"go.opentelemetry.io/collector/model/pdata"
 	"go.uber.org/zap"
 
-	"go.opentelemetry.io/collector/consumer/consumerdata"
-	"go.opentelemetry.io/collector/consumer/pdata"
-	"go.opentelemetry.io/collector/translator/internaldata"
-
 	mpb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/opencensus"
 )
 
 type fakeDocker struct {
@@ -152,6 +152,12 @@ type fakeMetricsConsumer struct {
 	metrics pdata.Metrics
 }
 
+func (c *fakeMetricsConsumer) Capabilities() consumer.Capabilities {
+	return consumer.Capabilities{
+		MutatesData: false,
+	}
+}
+
 func (c *fakeMetricsConsumer) ConsumeMetrics(ctx context.Context, md pdata.Metrics) error {
 	c.metrics = md
 	return nil
@@ -175,7 +181,7 @@ func TestScraperExport(t *testing.T) {
 
 	s.export()
 
-	data := internaldata.MetricsToOC(c.metrics)[0]
+	_, _, data := opencensus.ResourceMetricsToOC(c.metrics.ResourceMetrics().At(0))
 	verifyContainerMetricDoubleValue(t, data, "container/cpu/usage_time", "name1a", 0.1)
 	verifyContainerMetricAbsent(t, data, "container/cpu/limit", "name1a")
 	verifyContainerMetricInt64Value(t, data, "container/memory/usage", "name1a", 33)
@@ -202,9 +208,9 @@ func TestScraperExport(t *testing.T) {
 	verifyContainerMetricAbsent(t, data, "container/restart_count", "name3")
 }
 
-func verifyContainerMetricInt64Value(t *testing.T, data consumerdata.MetricsData, name, label string, value int64) {
+func verifyContainerMetricInt64Value(t *testing.T, data []*mpb.Metric, name, label string, value int64) {
 	var metric *mpb.Metric
-	for _, m := range data.Metrics {
+	for _, m := range data {
 		if m.MetricDescriptor.Name == name && m.Timeseries[0].LabelValues[0].Value == label {
 			metric = m
 		}
@@ -216,9 +222,9 @@ func verifyContainerMetricInt64Value(t *testing.T, data consumerdata.MetricsData
 	assert.Equal(t, value, metric.Timeseries[0].Points[0].GetInt64Value())
 }
 
-func verifyContainerMetricDoubleValue(t *testing.T, data consumerdata.MetricsData, name, label string, value float64) {
+func verifyContainerMetricDoubleValue(t *testing.T, data []*mpb.Metric, name, label string, value float64) {
 	var metric *mpb.Metric
-	for _, m := range data.Metrics {
+	for _, m := range data {
 		if m.MetricDescriptor.Name == name && m.Timeseries[0].LabelValues[0].Value == label {
 			metric = m
 		}
@@ -230,8 +236,8 @@ func verifyContainerMetricDoubleValue(t *testing.T, data consumerdata.MetricsDat
 	assert.Equal(t, value, metric.Timeseries[0].Points[0].GetDoubleValue())
 }
 
-func verifyContainerMetricAbsent(t *testing.T, data consumerdata.MetricsData, name, label string) {
-	for _, m := range data.Metrics {
+func verifyContainerMetricAbsent(t *testing.T, data []*mpb.Metric, name, label string) {
+	for _, m := range data {
 		if m.MetricDescriptor.Name == name && m.Timeseries[0].LabelValues[0].Value == label {
 			t.Errorf("Expected metric %s{container_name=%s} to be absent, found metric: %v", name, label, m)
 			break

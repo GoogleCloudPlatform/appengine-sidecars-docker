@@ -5,12 +5,13 @@ import (
 	"testing"
 	"time"
 
-	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
 	"github.com/stretchr/testify/assert"
-
-	"go.opentelemetry.io/collector/consumer/pdata"
-	"go.opentelemetry.io/collector/translator/internaldata"
+	"go.opentelemetry.io/collector/consumer"
+	"go.opentelemetry.io/collector/model/pdata"
 	"go.uber.org/zap"
+
+	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/opencensus"
 )
 
 const (
@@ -108,6 +109,12 @@ type fakeConsumer struct {
 	storage *metricsStore
 }
 
+func (c fakeConsumer) Capabilities() consumer.Capabilities {
+	return consumer.Capabilities{
+		MutatesData: false,
+	}
+}
+
 type metricsStore struct {
 	metrics pdata.Metrics
 }
@@ -116,14 +123,14 @@ func (s *metricsStore) storeMetric(toStore pdata.Metrics) {
 	s.metrics = toStore
 }
 
-func (consumer fakeConsumer) ConsumeMetrics(ctx context.Context, metrics pdata.Metrics) error {
-	consumer.storage.storeMetric(metrics)
+func (c fakeConsumer) ConsumeMetrics(ctx context.Context, metrics pdata.Metrics) error {
+	c.storage.storeMetric(metrics)
 	return nil
 }
 
 func TestScrapeAndExportVMImageAge(t *testing.T) {
-	consumer := fakeConsumer{storage: &metricsStore{}}
-	collector := NewVMAgeCollector(0, testVMImageBuildDate, testVMImageName, testVMStartTime, testVMReadyTime, consumer, zap.NewNop())
+	c := fakeConsumer{storage: &metricsStore{}}
+	collector := NewVMAgeCollector(0, testVMImageBuildDate, testVMImageName, testVMStartTime, testVMReadyTime, c, zap.NewNop())
 	collector.setupCollection()
 
 	expectedDesc := &metricspb.MetricDescriptor{
@@ -137,7 +144,7 @@ func TestScrapeAndExportVMImageAge(t *testing.T) {
 	}
 
 	collector.scrapeAndExportVMImageAge()
-	assertMetricGreaterThan0Double(t, expectedDesc, consumer.storage.metrics)
+	assertMetricGreaterThan0Double(t, expectedDesc, c.storage.metrics)
 }
 
 func scrapeAndExportVMReadyTime(t *testing.T) {
@@ -177,10 +184,10 @@ func TestScrapeAndExportVMImageAgeWithError(t *testing.T) {
 	collector.scrapeAndExportVMImageAge()
 
 	// TODO: Rewrite tests to directly use pdata.Metrics instead of converting back to consumerdata.MetricsData.
-	cdMetrics := internaldata.MetricsToOC(consumer.storage.metrics)[0]
-	if assert.Len(t, cdMetrics.Metrics, 1) {
+	_, _, cdMetrics := opencensus.ResourceMetricsToOC(consumer.storage.metrics.ResourceMetrics().At(0))
+	if assert.Len(t, cdMetrics, 1) {
 
-		actualMetric := cdMetrics.Metrics[0]
+		actualMetric := cdMetrics[0]
 		assert.Equal(t, expectedMetricDescriptor, actualMetric.MetricDescriptor)
 
 		if assert.Len(t, actualMetric.Timeseries, 1) {
@@ -197,9 +204,9 @@ func TestScrapeAndExportVMImageAgeWithError(t *testing.T) {
 
 func assertMetricGreaterThan0Double(t *testing.T, expectedMetricDescriptor *metricspb.MetricDescriptor, metrics pdata.Metrics) {
 	// TODO: Rewrite tests to directly use pdata.Metrics instead of converting back to consumerdata.MetricsData.
-	cdMetrics := internaldata.MetricsToOC(metrics)[0]
-	if assert.Len(t, cdMetrics.Metrics, 1) {
-		actualMetric := cdMetrics.Metrics[0]
+	_, _, cdMetrics := opencensus.ResourceMetricsToOC(metrics.ResourceMetrics().At(0))
+	if assert.Len(t, cdMetrics, 1) {
+		actualMetric := cdMetrics[0]
 		assert.Equal(t, expectedMetricDescriptor, actualMetric.MetricDescriptor)
 
 		if assert.Len(t, actualMetric.Timeseries, 1) {

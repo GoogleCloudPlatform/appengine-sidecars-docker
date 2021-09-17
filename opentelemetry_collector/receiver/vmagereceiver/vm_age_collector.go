@@ -5,20 +5,19 @@ import (
 	"errors"
 	"time"
 
-	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
-
 	"go.opentelemetry.io/collector/consumer"
-	"go.opentelemetry.io/collector/consumer/consumerdata"
-	"go.opentelemetry.io/collector/translator/internaldata"
 	"go.uber.org/zap"
 
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/metricgenerator"
+
+	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/opencensus"
 )
 
 // VMAgeCollector is a struct that generates metrics based on the
 // VM image age in the config.
 type VMAgeCollector struct {
-	consumer consumer.MetricsConsumer
+	consumer consumer.Metrics
 
 	collectorStartTime time.Time
 
@@ -47,7 +46,7 @@ const (
 
 // NewVMAgeCollector creates a new VMAgeCollector that generates metrics
 // based on the buildDate and vmImageName.
-func NewVMAgeCollector(exportInterval time.Duration, buildDate, vmImageName, vmStartTime, vmReadyTime string, consumer consumer.MetricsConsumer, logger *zap.Logger) *VMAgeCollector {
+func NewVMAgeCollector(exportInterval time.Duration, buildDate, vmImageName, vmStartTime, vmReadyTime string, consumer consumer.Metrics, logger *zap.Logger) *VMAgeCollector {
 	if exportInterval <= 0 {
 		exportInterval = defaultExportInterval
 	}
@@ -145,8 +144,7 @@ func makeMetrics(metricDescriptor *metricspb.MetricDescriptor, timeseries *metri
 
 func (collector *VMAgeCollector) export(metrics []*metricspb.Metric, errorKey string) {
 	ctx := context.Background()
-	md := consumerdata.MetricsData{Metrics: metrics}
-	err := collector.consumer.ConsumeMetrics(ctx, internaldata.OCSliceToMetrics([]consumerdata.MetricsData{md}))
+	err := collector.consumer.ConsumeMetrics(ctx, opencensus.OCToMetrics(nil, nil, metrics))
 	if err != nil {
 		collector.logger.Error(errorKey, zap.Error(err))
 	}

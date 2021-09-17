@@ -31,35 +31,23 @@ func main() {
 			log.Fatalf("Failed to run the service: %v", err)
 		}
 	}
-
 	factories, err := components()
 	handleErr(err)
 
-	info := component.ApplicationStartInfo{
-		ExeName:  "otelcontribcol",
-		LongName: "AppEngine Flex OpenTelemetry Contrib Collector",
-		Version:  "latest",
-	}
-	params := service.Parameters{
-		Factories:            factories,
-		ApplicationStartInfo: info,
-	}
+	app, err := service.New(service.CollectorSettings{
+		Factories: factories,
+		BuildInfo: component.BuildInfo{
+			Command:     "otelcontribcol",
+			Description: "AppEngine Flex OpenTelemetry Contrib Collector",
+			Version:     "latest",
+		},
+	})
 
-	if err := run(params); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func run(params service.Parameters) error {
-	app, err := service.New(params)
 	if err != nil {
-		return fmt.Errorf("failed to construct the application: %w", err)
+		handleErr(fmt.Errorf("failed to construct the application: %w", err))
 	}
 
-	err = app.Run()
-	if err != nil {
-		return fmt.Errorf("application run finished with error: %w", err)
+	if app.Run() != nil {
+		handleErr(fmt.Errorf("application run finished with error: %w", err))
 	}
-
-	return nil
 }
