@@ -17,20 +17,18 @@
 
 workspace(name = "appengine_nginx")
 
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load(":appengine_nginx.bzl", "appengine_nginx_repositories")
 
 appengine_nginx_repositories(False)
 
-load("@nginx//:build.bzl", "nginx_repositories")
+load("@nginx//bazel:repositories.bzl", "nginx_repositories")
 
-nginx_repositories(
-    bind = True,
-    nginx = "@nginx//",
-)
+nginx_repositories()
 
-new_http_archive(
+http_archive(
     name = "gtest",
     url = "https://github.com/google/googletest/archive/release-1.8.0.zip",
     sha256 = "f3ed3b58511efd272eb074a3a6d6fb79d7c2e6a0e374323d1e6bcbcc1ef141bf",
-    build_file = "third_party/iap_jwt_verify_nginx/gtest.BUILD",
+    build_file = "//:third_party/iap_jwt_verify_nginx/gtest.BUILD",
 )

@@ -39,10 +39,10 @@ py_test(
     name = "nginx_test",
     srcs = ["nginx_test.py"],
     data = [
-        ":nginx-iap",
         ":keys",
+        ":nginx-iap",
     ],
-    default_python_version = "PY2",
+    python_version = "PY2",
 )
 
 # Full nginx binary with module compiled in for testing
@@ -99,14 +99,14 @@ cc_binary(
     srcs = [
         "jwt_generator.cc",
     ],
+    copts = JSONCPP_COPTS_FLAGS,
+    data = [
+        ":keys",
+    ],
     deps = [
         ":iap_jwt_generation",
         "@jsoncpp//:lib_json",
     ],
-    data = [
-        ":keys",
-    ],
-    copts = JSONCPP_COPTS_FLAGS,
 )
 
 # Utility binary to create public/private key files for use in testing
@@ -116,12 +116,12 @@ cc_binary(
     srcs = [
         "key_generator.cc",
     ],
+    copts = JSONCPP_COPTS_FLAGS + [BSSL_INCLUDE_COPT],
     deps = [
         ":iap_jwt_generation",
         "@boringssl//:crypto",
         "@jsoncpp//:lib_json",
     ],
-    copts = JSONCPP_COPTS_FLAGS + [BSSL_INCLUDE_COPT],
 )
 
 cc_library(
@@ -137,14 +137,14 @@ cc_library(
         "jwt_generation.h",
         "key_generation.h",
     ],
+    copts = JSONCPP_COPTS_FLAGS + [BSSL_INCLUDE_COPT],
+    visibility = [
+        "//third_party/iap_jwt_verify_nginx/src:__pkg__",
+    ],
     deps = [
         "//third_party/iap_jwt_verify_nginx/src:iap_jwt_verification",
         "@boringssl//:crypto",
         "@jsoncpp//:lib_json",
-    ],
-    copts = JSONCPP_COPTS_FLAGS + [BSSL_INCLUDE_COPT],
-    visibility = [
-        "//third_party/iap_jwt_verify_nginx/src:__pkg__",
     ],
 )
 
