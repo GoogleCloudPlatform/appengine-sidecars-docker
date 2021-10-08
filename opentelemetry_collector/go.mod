@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go v1.40.44 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.3.0
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/containerd/containerd v1.5.5 // indirect
+	github.com/containerd/containerd v1.5.7 // indirect
 	github.com/docker/docker v20.10.8+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
