@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config"
-	"go.opentelemetry.io/collector/config/configtest"
+	"go.opentelemetry.io/collector/service/servicetest"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -18,20 +18,20 @@ func TestLoadConfig(t *testing.T) {
 
 	factory := NewFactory()
 	factories.Receivers[typeStr] = factory
-	cfg, err := configtest.LoadConfig(path.Join(".", "testdata", "config.yaml"), factories)
+	cfg, err := servicetest.LoadConfigAndValidate(path.Join(".", "testdata", "config.yaml"), factories)
 
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
 	assert.Equal(t, len(cfg.Receivers), 2)
 
-	defaultReceiver := cfg.Receivers[config.NewID("nginxstats")]
+	defaultReceiver := cfg.Receivers[config.NewComponentID("nginxstats")]
 	assert.Equal(t, defaultReceiver, factory.CreateDefaultConfig())
 
-	customReceiver := cfg.Receivers[config.NewIDWithName("nginxstats", "customname")].(*Config)
+	customReceiver := cfg.Receivers[config.NewComponentIDWithName("nginxstats", "customname")]
 	assert.Equal(t, customReceiver,
 		&Config{
-			ReceiverSettings: config.NewReceiverSettings(config.NewIDWithName("nginxstats", "customname")),
+			ReceiverSettings: config.NewReceiverSettings(config.NewComponentIDWithName("nginxstats", "customname")),
 			ExportInterval:   10 * time.Minute,
 			StatsURL:         "http://example.com",
 		})

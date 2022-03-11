@@ -8,7 +8,6 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config"
 	"go.opentelemetry.io/collector/consumer"
-	"go.opentelemetry.io/collector/receiver/receiverhelper"
 )
 
 const typeStr = "dockerstats"
@@ -16,7 +15,7 @@ const typeStr = "dockerstats"
 // CreateDefaultConfig creates the default configuration for dockerstats receiver.
 func createDefaultConfig() config.Receiver {
 	return &Config{
-		ReceiverSettings: config.NewReceiverSettings(config.NewID(typeStr)),
+		ReceiverSettings: config.NewReceiverSettings(config.NewComponentID(typeStr)),
 		ScrapeInterval:   time.Minute,
 	}
 }
@@ -38,8 +37,8 @@ func createMetricsReceiver(ctx context.Context, settings component.ReceiverCreat
 
 // NewFactory creates and returns a factory for the docker stats receiver.
 func NewFactory() component.ReceiverFactory {
-	return receiverhelper.NewFactory(
+	return component.NewReceiverFactory(
 		typeStr,
 		createDefaultConfig,
-		receiverhelper.WithMetrics(createMetricsReceiver))
+		component.WithMetricsReceiver(createMetricsReceiver))
 }
