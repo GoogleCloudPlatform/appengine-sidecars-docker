@@ -34,20 +34,18 @@ func main() {
 	factories, err := components()
 	handleErr(err)
 
-	app, err := service.New(service.CollectorSettings{
+	settings := service.CollectorSettings{
 		Factories: factories,
 		BuildInfo: component.BuildInfo{
 			Command:     "otelcontribcol",
 			Description: "AppEngine Flex OpenTelemetry Contrib Collector",
 			Version:     "latest",
 		},
-	})
-
-	if err != nil {
-		handleErr(fmt.Errorf("failed to construct the application: %w", err))
 	}
 
-	if app.Run() != nil {
-		handleErr(fmt.Errorf("application run finished with error: %w", err))
+	cmd := service.NewCommand(settings)
+
+	if cmd.Execute() != nil {
+		handleErr(fmt.Errorf("failed run the application: %w", err))
 	}
 }

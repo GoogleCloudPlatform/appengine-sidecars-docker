@@ -6,10 +6,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config"
-	"go.opentelemetry.io/collector/config/configtest"
+	"go.opentelemetry.io/collector/service/servicetest"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -18,19 +17,16 @@ func TestLoadConfig(t *testing.T) {
 
 	factory := NewFactory()
 	factories.Receivers[typeStr] = factory
-	cfg, err := configtest.LoadConfig(path.Join(".", "testdata", "config.yaml"), factories)
 
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
+	cfg, err := servicetest.LoadConfigAndValidate(path.Join(".", "testdata", "config.yaml"), factories)
+	assert.NoError(t, err)
 
-	assert.Equal(t, len(cfg.Receivers), 2)
-
-	defaultReceiver := cfg.Receivers[config.NewID("dockerstats")]
+	defaultReceiver := cfg.Receivers[config.NewComponentID("dockerstats")]
 	assert.Equal(t, defaultReceiver, factory.CreateDefaultConfig())
-	customReceiver := cfg.Receivers[config.NewIDWithName("dockerstats", "customname")].(*Config)
 
+	customReceiver := cfg.Receivers[config.NewComponentIDWithName("dockerstats", "customname")]
 	assert.Equal(t, customReceiver, &Config{
-		ReceiverSettings: config.NewReceiverSettings(config.NewIDWithName("dockerstats", "customname")),
+		ReceiverSettings: config.NewReceiverSettings(config.NewComponentIDWithName("dockerstats", "customname")),
 		ScrapeInterval:   10 * time.Minute,
 	})
 }

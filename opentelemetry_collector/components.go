@@ -16,8 +16,9 @@
 package main
 
 import (
+	"github.com/pkg/errors"
+
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/consumer/consumererror"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor"
@@ -27,8 +28,15 @@ import (
 	"github.com/googlecloudplatform/appengine-sidecars-docker/opentelemetry_collector/receiver/vmagereceiver"
 )
 
+func appendError(err error, newerr error) error {
+	if err == nil {
+		return newerr
+	}
+	return errors.Wrap(err, newerr.Error())
+}
+
 func components() (component.Factories, error) {
-	errs := []error{}
+	var errs error
 
 	receivers, err := component.MakeReceiverFactoryMap(
 		dockerstats.NewFactory(),
@@ -36,21 +44,21 @@ func components() (component.Factories, error) {
 		vmagereceiver.NewFactory(),
 	)
 	if err != nil {
-		errs = append(errs, err)
+		errs = appendError(errs, err)
 	}
 
 	exporters, err := component.MakeExporterFactoryMap(
 		googlecloudexporter.NewFactory(),
 	)
 	if err != nil {
-		errs = append(errs, err)
+		errs = appendError(errs, err)
 	}
 
 	processors, err := component.MakeProcessorFactoryMap(
 		resourceprocessor.NewFactory(),
 	)
 	if err != nil {
-		errs = append(errs, err)
+		errs = appendError(errs, err)
 	}
 
 	factories := component.Factories{
@@ -59,5 +67,5 @@ func components() (component.Factories, error) {
 		Exporters:  exporters,
 	}
 
-	return factories, consumererror.Combine(errs)
+	return factories, errs
 }
