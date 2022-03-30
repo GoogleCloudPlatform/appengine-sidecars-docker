@@ -102,6 +102,8 @@ func TestParseInputTimesError(t *testing.T) {
 		assert.Equal(t, tc.buildDateError, collector.buildDateError)
 		assert.Equal(t, tc.vmStartTimeError, collector.vmStartTimeError)
 		assert.Equal(t, tc.vmReadyTime, collector.vmReadyTime)
+		assert.Equal(t, tc.vmReadyTimeError, collector.vmReadyTimeError)
+		assert.Equal(t, tc.vmStartTimeError, collector.vmStartTimeError)
 	}
 }
 
@@ -147,15 +149,15 @@ func TestScrapeAndExportVMImageAge(t *testing.T) {
 	assertMetricGreaterThan0Double(t, expectedDesc, c.storage.metrics)
 }
 
-func scrapeAndExportVMReadyTime(t *testing.T) {
+func TestScrapeAndExportVMReadyTime(t *testing.T) {
 	consumer := fakeConsumer{storage: &metricsStore{}}
 	collector := NewVMAgeCollector(0, testVMImageBuildDate, testVMImageName, testVMStartTime, testVMReadyTime, consumer, zap.NewNop())
 	collector.setupCollection()
 
 	expectedDesc := &metricspb.MetricDescriptor{
-		Name:        "vm_image_age",
-		Description: "The VM image age for the VM instance",
-		Unit:        "Days",
+		Name:        "vm_ready_time",
+		Description: "The amount of time from when Flex first started setting up the VM in the startup script to when it finished setting up all VM runtime components.",
+		Unit:        "Seconds",
 		Type:        metricspb.MetricDescriptor_GAUGE_DOUBLE,
 		LabelKeys: []*metricspb.LabelKey{{
 			Key: "vm_image_name",

@@ -64,7 +64,7 @@ func FormatBucketOptions(bounds []float64) *metricspb.DistributionValue_BucketOp
 // MakeBuckets generates a proto representation of a distribution containing a single value.
 // bounds defines the bucket boundaries of the distribution.
 func MakeBuckets(values, bounds []float64) []*metricspb.DistributionValue_Bucket {
-	buckets := make([]*metricspb.DistributionValue_Bucket, len(bounds)+1, len(bounds)+1)
+	buckets := make([]*metricspb.DistributionValue_Bucket, len(bounds)+1)
 	for i := 0; i <= len(bounds); i++ {
 		buckets[i] = &metricspb.DistributionValue_Bucket{}
 	}
@@ -88,7 +88,7 @@ func getBucketIndex(val float64, bounds []float64) int {
 }
 
 func formatBuckets(distribution []int64) []*metricspb.DistributionValue_Bucket {
-	buckets := make([]*metricspb.DistributionValue_Bucket, len(distribution), len(distribution))
+	buckets := make([]*metricspb.DistributionValue_Bucket, len(distribution))
 	for i := 0; i < len(distribution); i++ {
 		buckets[i] = &metricspb.DistributionValue_Bucket{
 			Count: distribution[i],
