@@ -32,8 +32,3 @@ var vmReadyTimeMetric = &metricspb.MetricDescriptor{
 	Type:        metricspb.MetricDescriptor_GAUGE_DOUBLE,
 	LabelKeys:   []*metricspb.LabelKey{vmImageNameLabel},
 }
-
-var (
-	numBounds  = float64(8)
-	boundsBase = float64(2)
-)
