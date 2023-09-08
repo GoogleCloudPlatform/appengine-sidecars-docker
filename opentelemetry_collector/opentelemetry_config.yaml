@@ -34,7 +34,7 @@ exporters:
       skip_create_descriptor: true
   googlecloud/instance:
     metric:
-      prefix: appengine.googleapis.com/flex/instance
+      prefix: appengine.googleapis.com/flex/instance/agent
       skip_create_descriptor: true
 
 service:
